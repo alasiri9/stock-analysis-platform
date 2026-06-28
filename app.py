@@ -87,8 +87,12 @@ def create_app():
 
     @app.route("/screener/refresh", methods=["POST"])
     def screener_refresh():
-        # إعادة بناء كاش الماسح يدوياً (يستهلك استدعاءات API — لذلك يدوي)
-        screener.refresh_cache()
+        # إعادة بناء كاش الماسح يدوياً (يستهلك استدعاءات API — لذلك يدوي).
+        # نلتقط أي خطأ حتى لا تظهر صفحة 500؛ ما تم حفظه (commit لكل سهم) يبقى.
+        try:
+            screener.refresh_cache()
+        except Exception as e:  # noqa: BLE001
+            print(f"[app] خطأ أثناء تحديث الماسح: {e}")
         return redirect(url_for("index"))
 
     @app.route("/stock")

@@ -13,8 +13,6 @@ screener.py — فلترة الأسهم (Screener) مع تخزين مؤقت لح
 import json
 from datetime import datetime, timezone
 
-from sqlalchemy import func
-
 from models import db, StockCache, Signal
 from services import fmp_client
 from services import scoring
@@ -44,7 +42,11 @@ def _build_record(ticker):
     quote = fmp_client.get_quote(ticker)
     profile = fmp_client.get_profile(ticker)
     financials = fmp_client.get_financials(ticker)
-    if not quote and not financials:
+
+    # financials قاموس {income, balance, cashflow}؛ قد تكون كلها None عند انتهاء حد الـ API.
+    # لا نخزّن سجلّاً فارغاً (None ≠ 0): نتخطّى السهم لو لا سعر ولا أي قائمة مالية حقيقية.
+    has_financials = bool(financials and any(financials.values()))
+    if not quote and not has_financials:
         return None
 
     catalyst = scoring.catalyst_score(financials)
@@ -63,12 +65,13 @@ def _record_signal(ticker, signal_type, price):
     """يسجّل إشارة في جدول signals مرة واحدة كل يوم لكل (سهم، نوع).
 
     None ≠ 0 : price قد يكون None (سعر غير متوفّر) ويُخزّن كذلك دون تلفيق.
+    نستخدم مقارنة بداية اليوم (UTC) بدل دوال SQL خاصة بقاعدة بيانات معيّنة.
     """
-    today = datetime.now(timezone.utc).date()
+    start_of_day = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
     exists = (
         Signal.query
         .filter(Signal.ticker == ticker, Signal.signal_type == signal_type,
-                func.date(Signal.triggered_at) == today)
+                Signal.triggered_at >= start_of_day)
         .first()
     )
     if exists:
@@ -79,35 +82,39 @@ def _record_signal(ticker, signal_type, price):
 def refresh_cache():
     """يعيد بناء كاش الماسح لكل أسهم UNIVERSE، ويولّد إشارات للأسهم القوية.
 
-    يُرجع عدد الأسهم المحدّثة.
+    يُحفظ كل سهم على حدة (commit لكل سهم) حتى لا يضيع التقدّم لو توقّف لاحقاً،
+    وأي خطأ في سهم واحد لا يُسقط بقية الأسهم. يُرجع عدد الأسهم المحدّثة.
     """
     updated = 0
     for ticker in UNIVERSE:
         try:
             record = _build_record(ticker)
+            if not record:
+                continue
+
+            key = _PREFIX + ticker
+            row = db.session.get(StockCache, key)
+            payload = json.dumps(record, ensure_ascii=False)
+            now = datetime.now(timezone.utc)
+            if row:
+                row.data_json = payload
+                row.updated_at = now
+            else:
+                db.session.add(StockCache(ticker=key, data_json=payload, updated_at=now))
+
+            # توليد إشارات تعليمية عند تجاوز العتبات
+            if record.get("piotroski") is not None and record["piotroski"] >= PIOTROSKI_SIGNAL_MIN:
+                _record_signal(ticker, "piotroski_strong", record.get("price"))
+            if record.get("catalyst") is not None and record["catalyst"] >= CATALYST_SIGNAL_MIN:
+                _record_signal(ticker, "catalyst_strong", record.get("price"))
+
+            db.session.commit()  # حفظ هذا السهم مباشرة
+            updated += 1
         except Exception as e:  # noqa: BLE001 — سهم واحد لا يجب أن يُسقط كل التحديث
-            print(f"[screener] تعذّر بناء {ticker}: {e}")
+            print(f"[screener] تعذّر تحديث {ticker}: {e}")
+            db.session.rollback()
             continue
-        if not record:
-            continue
-        key = _PREFIX + ticker
-        row = db.session.get(StockCache, key)
-        payload = json.dumps(record, ensure_ascii=False)
-        now = datetime.now(timezone.utc)
-        if row:
-            row.data_json = payload
-            row.updated_at = now
-        else:
-            db.session.add(StockCache(ticker=key, data_json=payload, updated_at=now))
-        updated += 1
 
-        # توليد إشارات تعليمية عند تجاوز العتبات
-        if record.get("piotroski") is not None and record["piotroski"] >= PIOTROSKI_SIGNAL_MIN:
-            _record_signal(ticker, "piotroski_strong", record.get("price"))
-        if record.get("catalyst") is not None and record["catalyst"] >= CATALYST_SIGNAL_MIN:
-            _record_signal(ticker, "catalyst_strong", record.get("price"))
-
-    db.session.commit()
     return updated
 
 
