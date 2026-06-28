@@ -83,7 +83,11 @@ def refresh_cache():
     """
     updated = 0
     for ticker in UNIVERSE:
-        record = _build_record(ticker)
+        try:
+            record = _build_record(ticker)
+        except Exception as e:  # noqa: BLE001 — سهم واحد لا يجب أن يُسقط كل التحديث
+            print(f"[screener] تعذّر بناء {ticker}: {e}")
+            continue
         if not record:
             continue
         key = _PREFIX + ticker
