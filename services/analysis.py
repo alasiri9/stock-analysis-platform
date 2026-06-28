@@ -22,6 +22,7 @@ from services import fmp_client
 from services import finnhub_client
 from services import scoring
 from services import edgar_client
+from services import indicators
 
 
 def _pct(fraction):
@@ -127,13 +128,15 @@ def build_stock_report(ticker):
     if finnhub_price is not None:
         price_sources += 1
 
-    # --- خطة ATR التداولية (تعليمية) من أسعار FMP التاريخية ---
+    # --- خطة ATR + المؤشرات الفنية من أسعار FMP التاريخية (جلب واحد) ---
     try:
-        candles = fmp_client.get_historical_prices(ticker, limit=60)
+        candles = fmp_client.get_historical_prices(ticker, limit=120)
         atr_plan = scoring.atr_trade_plan(price, candles)
+        tech_indicators = indicators.build_indicators(candles)
     except Exception as e:  # noqa: BLE001
-        print(f"[analysis] تعذّر حساب خطة ATR لـ {ticker}: {e}")
+        print(f"[analysis] تعذّر حساب ATR/المؤشرات لـ {ticker}: {e}")
         atr_plan = None
+        tech_indicators = []
 
     # --- معاملات المطلعين من SEC EDGAR (لا تكسر الصفحة لو فشلت) ---
     try:
@@ -167,4 +170,5 @@ def build_stock_report(ticker):
         "insider_trades": insider_trades,  # من SEC EDGAR (قد تكون قائمة فارغة)
         "finnhub_price": finnhub_price,    # سعر تأكيد ثانٍ (أو None)
         "atr_plan": atr_plan,              # خطة ATR التعليمية (أو None)
+        "indicators": tech_indicators,     # مؤشرات فنية (قد تكون قائمة فارغة)
     }

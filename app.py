@@ -64,17 +64,25 @@ def create_app():
         records, latest = screener.load_records()
         sectors = sorted({r["sector"] for r in records if r.get("sector")})
 
+        # القيمة السوقية تُدخل بالمليارات في الواجهة وتُحوّل لدولار خام
+        market_cap_billions = _to_float("market_cap_min")
+        market_cap_min = market_cap_billions * 1e9 if market_cap_billions is not None else None
+
         filters = {
             "piotroski_min": _to_float("piotroski_min"),
             "catalyst_min": _to_float("catalyst_min"),
             "price_max": _to_float("price_max"),
+            "market_cap_min": market_cap_min,
             "sector": request.args.get("sector", "").strip() or None,
         }
         results = screener.filter_records(records, **filters)
+        # نمرّر قيمة المليارات للواجهة (لإبقائها في الخانة)
+        filters["market_cap_billions"] = market_cap_billions
         return render_template(
             "index.html",
             results=results, sectors=sectors, latest=latest,
             filters=filters, total=len(records),
+            signals=screener.recent_signals(),
         )
 
     @app.route("/screener/refresh", methods=["POST"])

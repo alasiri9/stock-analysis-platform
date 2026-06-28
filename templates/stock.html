@@ -65,6 +65,19 @@
     </div>
   </div>
 
+  {# ===== المؤشرات الفنية ===== #}
+  {% if report.indicators %}
+  <div class="section">
+    <h2>📐 المؤشرات الفنية</h2>
+    <div class="tech-badges">
+      {% for b in report.indicators %}
+        <span class="tbadge {{ b.status }}">{{ b.label }}<span class="tval">{{ b.value }}</span></span>
+      {% endfor %}
+    </div>
+    <div class="note">📌 مؤشرات وصفية محسوبة من الأسعار التاريخية (FMP) — تعليمية فقط، ليست توصية.</div>
+  </div>
+  {% endif %}
+
   {# ===== المقاييس المالية ===== #}
   <div class="section">
     <h2>📊 المقاييس المالية</h2>

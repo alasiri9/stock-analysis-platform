@@ -27,6 +27,10 @@
       <input type="number" name="price_max" min="0" step="1" value="{{ filters.price_max|int if filters.price_max is not none else '' }}">
     </div>
     <div class="filter">
+      <label>القيمة السوقية الأدنى (مليار $)</label>
+      <input type="number" name="market_cap_min" min="0" step="1" value="{{ filters.market_cap_billions|int if filters.market_cap_billions is not none else '' }}">
+    </div>
+    <div class="filter">
       <label>القطاع</label>
       <select name="sector">
         <option value="">الكل</option>
@@ -50,6 +54,21 @@
       <button class="btn-add" type="submit">🔄 تحديث البيانات</button>
     </form>
   </div>
+
+  {# قسم الإشارات الحديثة (تعليمية) #}
+  {% if signals %}
+    <div class="section" style="margin-top:8px">
+      <h2>⚡ إشارات حديثة <span class="muted" style="font-size:12px;font-weight:400">(تعليمية — لا توصية)</span></h2>
+      <div class="tech-badges">
+        {% for s in signals %}
+          {% set label = 'Piotroski قوي ≥8' if s.signal_type == 'piotroski_strong' else ('Catalyst قوي ≥80' if s.signal_type == 'catalyst_strong' else s.signal_type) %}
+          <a href="{{ url_for('stock_report', ticker=s.ticker) }}" class="tbadge bull" style="text-decoration:none">
+            {{ s.ticker }}<span class="tval">{{ label }} · {{ s.triggered_at.strftime('%m-%d') }}</span>
+          </a>
+        {% endfor %}
+      </div>
+    </div>
+  {% endif %}
 
   {% if results %}
     <table class="insider screener">

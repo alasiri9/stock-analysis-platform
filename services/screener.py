@@ -13,14 +13,23 @@ screener.py — فلترة الأسهم (Screener) مع تخزين مؤقت لح
 import json
 from datetime import datetime, timezone
 
-from models import db, StockCache
+from sqlalchemy import func
+
+from models import db, StockCache, Signal
 from services import fmp_client
 from services import scoring
 
-# قائمة أسهم مختارة للماسح (نبقيها صغيرة لحماية حدود الـ API)
+# عتبات توليد الإشارات (تعليمية، لا توصية)
+PIOTROSKI_SIGNAL_MIN = 8   # جودة مالية قوية
+CATALYST_SIGNAL_MIN = 80   # زخم نمو قوي
+
+# قائمة أسهم مختارة للماسح (موسّعة، لكن محدودة لحماية حدود الـ API المجانية)
+# ملاحظة: كل سهم يستهلك عدة استدعاءات عند التحديث؛ زيادة العدد كثيراً قد تتجاوز الباقة.
 UNIVERSE = [
     "AAPL", "MSFT", "NVDA", "GOOGL", "AMZN", "META",
     "TSLA", "AMD", "NFLX", "JPM", "V", "WMT",
+    "AVGO", "ORCL", "CRM", "ADBE", "COST", "HD",
+    "KO", "PEP", "DIS", "INTC", "QCOM", "PYPL",
 ]
 
 # بادئة لتمييز سجلّات الماسح داخل stock_cache
@@ -50,8 +59,28 @@ def _build_record(ticker):
     }
 
 
+def _record_signal(ticker, signal_type, price):
+    """يسجّل إشارة في جدول signals مرة واحدة كل يوم لكل (سهم، نوع).
+
+    None ≠ 0 : price قد يكون None (سعر غير متوفّر) ويُخزّن كذلك دون تلفيق.
+    """
+    today = datetime.now(timezone.utc).date()
+    exists = (
+        Signal.query
+        .filter(Signal.ticker == ticker, Signal.signal_type == signal_type,
+                func.date(Signal.triggered_at) == today)
+        .first()
+    )
+    if exists:
+        return
+    db.session.add(Signal(ticker=ticker, signal_type=signal_type, price_at_signal=price))
+
+
 def refresh_cache():
-    """يعيد بناء كاش الماسح لكل أسهم UNIVERSE. يُرجع عدد الأسهم المحدّثة."""
+    """يعيد بناء كاش الماسح لكل أسهم UNIVERSE، ويولّد إشارات للأسهم القوية.
+
+    يُرجع عدد الأسهم المحدّثة.
+    """
     updated = 0
     for ticker in UNIVERSE:
         record = _build_record(ticker)
@@ -67,8 +96,20 @@ def refresh_cache():
         else:
             db.session.add(StockCache(ticker=key, data_json=payload, updated_at=now))
         updated += 1
+
+        # توليد إشارات تعليمية عند تجاوز العتبات
+        if record.get("piotroski") is not None and record["piotroski"] >= PIOTROSKI_SIGNAL_MIN:
+            _record_signal(ticker, "piotroski_strong", record.get("price"))
+        if record.get("catalyst") is not None and record["catalyst"] >= CATALYST_SIGNAL_MIN:
+            _record_signal(ticker, "catalyst_strong", record.get("price"))
+
     db.session.commit()
     return updated
+
+
+def recent_signals(limit=12):
+    """يُرجع أحدث الإشارات (الأحدث أولاً) للعرض في الواجهة."""
+    return Signal.query.order_by(Signal.triggered_at.desc()).limit(limit).all()
 
 
 def load_records():
@@ -87,11 +128,12 @@ def load_records():
 
 
 def filter_records(records, piotroski_min=None, catalyst_min=None,
-                   price_max=None, sector=None):
+                   price_max=None, market_cap_min=None, sector=None):
     """يطبّق الفلاتر على السجلّات المخزّنة.
 
     None ≠ 0 : السجلّ الذي تكون قيمته المطلوبة None لا يجتاز فلتراً يحدّ تلك القيمة
     (لا نعامله كصفر).
+    market_cap_min بالدولار (خام)، يُحوّل من المليارات في طبقة الـ route.
     """
     out = []
     for r in records:
@@ -103,6 +145,9 @@ def filter_records(records, piotroski_min=None, catalyst_min=None,
                 continue
         if price_max is not None:
             if r.get("price") is None or r["price"] > price_max:
+                continue
+        if market_cap_min is not None:
+            if r.get("market_cap") is None or r["market_cap"] < market_cap_min:
                 continue
         if sector:
             if r.get("sector") != sector:
