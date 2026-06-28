@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% set active = 'home' %}
+{% block title %}الرئيسية — Screener{% endblock %}
+
+{% block content %}
+  <h1 class="page-title">🎯 ماسح الأسهم — Screener</h1>
+  <p class="page-sub">أداة فحص وتحليل تعليمية للأسهم الأمريكية — لا توصيات ولا تنبؤات.</p>
+
+  {# بحث مباشر عن أي سهم #}
+  <form class="search" action="{{ url_for('stock_search') }}" method="get">
+    <input type="text" name="ticker" placeholder="حلّل أي سهم (مثال: AAPL)">
+    <button class="btn" type="submit">تحليل</button>
+  </form>
+
+  {# لوحة الفلاتر — تعمل على البيانات المخزّنة (فورية) #}
+  <form class="filters" action="{{ url_for('index') }}" method="get">
+    <div class="filter">
+      <label>Piotroski (الأدنى)</label>
+      <input type="number" name="piotroski_min" min="0" max="9" step="1" value="{{ filters.piotroski_min|int if filters.piotroski_min is not none else '' }}">
+    </div>
+    <div class="filter">
+      <label>Catalyst (الأدنى)</label>
+      <input type="number" name="catalyst_min" min="0" max="100" step="1" value="{{ filters.catalyst_min|int if filters.catalyst_min is not none else '' }}">
+    </div>
+    <div class="filter">
+      <label>السعر الأقصى ($)</label>
+      <input type="number" name="price_max" min="0" step="1" value="{{ filters.price_max|int if filters.price_max is not none else '' }}">
+    </div>
+    <div class="filter">
+      <label>القطاع</label>
+      <select name="sector">
+        <option value="">الكل</option>
+        {% for s in sectors %}<option value="{{ s }}" {{ 'selected' if filters.sector == s else '' }}>{{ s }}</option>{% endfor %}
+      </select>
+    </div>
+    <button class="btn" type="submit">فلترة</button>
+  </form>
+
+  {# شريط الحالة + زر التحديث #}
+  <div class="screener-bar">
+    <div class="confidence">
+      {% if latest %}
+        المعروض: <b>{{ results|length }}</b> من <b>{{ total }}</b> سهم ·
+        آخر تحديث للبيانات: <span dir="ltr">{{ latest.strftime('%Y-%m-%d %H:%M') }} UTC</span>
+      {% else %}
+        لا توجد بيانات مخزّنة بعد — اضغط "تحديث البيانات" لأول مرة (يستغرق دقيقة).
+      {% endif %}
+    </div>
+    <form action="{{ url_for('screener_refresh') }}" method="post" style="margin:0">
+      <button class="btn-add" type="submit">🔄 تحديث البيانات</button>
+    </form>
+  </div>
+
+  {% if results %}
+    <table class="insider screener">
+      <thead>
+        <tr><th>#</th><th>الرمز</th><th>الشركة</th><th>القطاع</th><th>السعر</th><th>القيمة السوقية</th><th>Piotroski</th><th>Catalyst</th></tr>
+      </thead>
+      <tbody>
+        {% for r in results %}
+          <tr>
+            <td class="muted">{{ loop.index }}</td>
+            <td><a href="{{ url_for('stock_report', ticker=r.ticker) }}"><b>{{ r.ticker }}</b></a>
+              {% if r.piotroski is not none and r.piotroski >= 8 %}<span class="badge-gem" style="margin:0 6px">💎</span>{% endif %}
+            </td>
+            <td>{{ r.name or '—' }}</td>
+            <td class="muted">{{ r.sector or '—' }}</td>
+            <td dir="ltr">{{ "%.2f $"|format(r.price) if r.price is not none else '—' }}</td>
+            <td dir="ltr">{{ "{:,.0f}".format(r.market_cap) if r.market_cap is not none else '—' }}</td>
+            <td><b>{{ r.piotroski if r.piotroski is not none else '—' }}</b> / 9</td>
+            <td><b>{{ "%.0f"|format(r.catalyst) if r.catalyst is not none else '—' }}</b> / 100</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% elif latest %}
+    <div class="empty">لا توجد أسهم تطابق الفلاتر. جرّب تخفيفها.</div>
+  {% endif %}
+
+  <div class="note" style="margin-top:18px">
+    ⚠️ أوزان Catalyst افتراضية وغير مُختبرة تاريخياً. القائمة محصورة في عيّنة مختارة لحماية حدود الـ API المجانية.
+  </div>
+{% endblock %}

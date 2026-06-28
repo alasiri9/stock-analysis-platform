@@ -1,0 +1,100 @@
+# CLAUDE.md — سياق مشروع منصة تحليل الأسهم
+
+## 🤖 دورك (Claude Code)
+أنت مهندس برمجيات لأحمد. ابنِ هذا المشروع بدقة وخطوة بخطوة:
+- أحمد مبتدئ تماماً — اشرح بإيجاز قبل كل خطوة (وش تسوي + ليش)، بأسلوب بسيط.
+- خطوة وحدة في كل مرة، كلام قليل ومركّز ("الكلام الكثير يلخبطني").
+- الرد بالعربي، بتنسيق منظّم.
+- اشرح أي مصطلح تقني (SQLAlchemy، endpoint، migration...).
+- لا تفترض — اسأل أحمد عند أي قرار غامض.
+
+## 🎯 المشروع
+منصة ويب لتحليل الأسهم الأمريكية — أداة فحص وتحليل تعليمية فقط، لا توصيات ولا تنبؤات.
+
+## 🧱 المعمارية
+- Backend: Python Flask
+- Database: PostgreSQL (عبر SQLAlchemy)
+- Deploy: Railway (auto-deploy من GitHub)
+- مصادر البيانات:
+  - FMP (Financial Modeling Prep) — بيانات مالية أساسية — endpoint: financialmodelingprep.com/stable/
+  - Finnhub — أسعار لحظية وكاندل
+  - SEC EDGAR — معاملات المطلعين (insider transactions)
+
+## ⛔ المبادئ الجوهرية (لا تحيد عنها أبداً)
+1. لا رقم بدون داتا حقيقية — أي قيمة غير متوفرة تُعرض — (وليس صفر أو رقم ملفّق).
+2. لا لغة توصية أو تنبؤ — شاشة فحص تعليمية فقط.
+3. None ≠ 0 — فرّق بوضوح بين بيانات غائبة وصفر حقيقي في كل مكان.
+4. Unit Guards إلزامية: FMP يعيد نسب مئوية (ROE=15.3 تعني 15.3%)؛ Finnhub بعضها fraction (0.153). عاير كل حقل بوضوح مع تعليق يوضّح المصدر والوحدة.
+
+## 🗄️ قاعدة البيانات
+- watchlist — (id, ticker, user_id, added_at, added_price)
+- stock_cache — (ticker, data_json, updated_at)
+- signals — (ticker, signal_type, triggered_at, price_at_signal)
+
+## 📄 الصفحات المطلوبة
+1. الرئيسية — Screener: فلاتر (Piotroski 0–9، Catalyst 0–100، السعر، Market Cap، القطاع).
+2. صفحة السهم — Report: سعر لحظي + تغير يومي، مقاييس مالية (ROE, ROA, هامش تشغيل, هامش ربح إجمالي, P/E, PEG)، Piotroski بتفصيل كل نقطة، Catalyst بتفصيل كل مكوّن، درجة ثقة البيانات (كم مصدر أكّد)، خطة تداول بناءً على ATR (دخول/وقف/هدف — كحساب تعليمي لا توصية)، معاملات المطلعين من SEC.
+3. Watchlist: إضافة/حذف + تتبّع العائد منذ الإضافة.
+4. مقارنة: سهمين أو أكثر جنباً لجنب على كل المقاييس.
+
+## 📐 Piotroski Score (9 نقاط — احسبها يدوياً من FMP)
+1. ROA > 0
+2. CFO > 0
+3. ΔROA > 0
+4. Accruals = CFO/Assets − ROA < 0
+5. ΔLeverage < 0
+6. ΔLiquidity > 0
+7. لا إصدار أسهم جديدة
+8. ΔGross Margin > 0
+9. ΔAsset Turnover > 0
+
+## 📊 Catalyst Score (0–100)
+- نمو الإيرادات YoY (25%)
+- نمو صافي الأرباح YoY (25%)
+- ROE (20%)
+- هامش التشغيل (15%)
+- ROA (15%)
+ملاحظة: الأوزان افتراضية وغير مُختبرة تاريخياً — ضع ملاحظة بهذا في الواجهة.
+
+## 📁 هيكل الملفات
+  app.py
+  models.py
+  services/
+      fmp_client.py
+      finnhub_client.py
+      edgar_client.py
+      scoring.py
+  templates/
+      index.html
+      stock.html
+      watchlist.html
+      compare.html
+  static/
+  requirements.txt
+  Procfile
+
+## 🔧 ربط GitHub + Railway
+1. repo جديد على GitHub.
+2. ارفع كود Flask.
+3. Railway: New Project → Deploy from GitHub Repo.
+4. أضف PostgreSQL: Add Service → PostgreSQL.
+5. متغيرات البيئة (Settings → Variables): FMP_API_KEY، FINNHUB_API_KEY، DATABASE_URL (يُضاف تلقائياً مع PostgreSQL).
+6. Procfile للتشغيل. وكل push لـ main → نشر تلقائي.
+
+## ✅ ترتيب البناء (التزم به)
+1. models.py — الجداول أولاً.
+2. fmp_client.py — جلب سهم واحد + تحقّق من الداتا في الترمنال.
+3. scoring.py — Piotroski ثم Catalyst.
+4. app.py — routes بسيطة.
+5. Templates — الواجهة أخيراً.
+تنبيه: لا تبدأ الواجهة قبل التحقق من صحة البيانات في الترمنال أولاً.
+
+## 🎨 الهدف البصري
+الواجهة النهائية مستوحاة من تصميم "Next Catalyst AI Pro / Pre-Breakout Scanner" (كروت، Piotroski، Catalyst، تصنيف "جوهرة"، صناديق إحصائية، ثيم داكن احترافي). أحمد عنده الصورة المرجعية — اطلبها منه عند بناء الواجهة.
+
+## 👤 معلومات أحمد (للنشر)
+- GitHub: alasiri9 | ويندوز، Python 3.13 (أمر py)، VS Code.
+- Railway: حساب تجريبي (رصيد منخفض — قد يحتاج خطة مدفوعة).
+- تنبيه: مفاتيح FMP و Finnhub فيها باقات مجانية محدودة؛ Piotroski يستهلك عدة استدعاءات لكل سهم → راقب حدود الاستخدام، وللتوسّع يحتاج باقة مدفوعة.
+
+اقرأ هذا الملف بالكامل قبل البدء، والتزم بالمبادئ الجوهرية وترتيب البناء.

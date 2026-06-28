@@ -1,0 +1,77 @@
+"""
+models.py — تعريف جداول قاعدة البيانات باستخدام SQLAlchemy.
+
+ملاحظة على المبادئ الجوهرية:
+- None ≠ 0 : نخزّن البيانات كما هي. القيمة الغائبة تبقى NULL (None) وليست صفر.
+- stock_cache يخزّن البيانات كنص JSON (data_json) عشان نقدر نخزّن أي شكل بيانات
+  بدون ما نضطر نعرّف عمود لكل مقياس.
+"""
+
+from datetime import datetime, timezone
+
+from flask_sqlalchemy import SQLAlchemy
+
+# كائن قاعدة البيانات — يُربط بتطبيق Flask لاحقاً في app.py عبر db.init_app(app)
+db = SQLAlchemy()
+
+
+def _utcnow():
+    """الوقت الحالي بتوقيت UTC (موحّد، بدون اعتماد على توقيت السيرفر المحلي)."""
+    return datetime.now(timezone.utc)
+
+
+class Watchlist(db.Model):
+    """قائمة المتابعة — كل صف = سهم أضافه المستخدم.
+
+    الأعمدة حسب المواصفات: (id, ticker, user_id, added_at, added_price)
+    - added_price: سعر السهم لحظة الإضافة (نتتبّع منه العائد). قد يكون None
+      لو ما توفّر السعر وقت الإضافة (لا نضع صفر ملفّق).
+    """
+
+    __tablename__ = "watchlist"
+
+    id = db.Column(db.Integer, primary_key=True)
+    ticker = db.Column(db.String(16), nullable=False, index=True)
+    user_id = db.Column(db.String(64), nullable=False, index=True)
+    added_at = db.Column(db.DateTime(timezone=True), nullable=False, default=_utcnow)
+    added_price = db.Column(db.Float, nullable=True)  # None = السعر لم يتوفّر وقت الإضافة
+
+    def __repr__(self):
+        return f"<Watchlist {self.ticker} user={self.user_id}>"
+
+
+class StockCache(db.Model):
+    """تخزين مؤقت لبيانات سهم — نقلّل عدد استدعاءات الـ API (الباقات المجانية محدودة).
+
+    الأعمدة حسب المواصفات: (ticker, data_json, updated_at)
+    - ticker هو المفتاح الأساسي (سهم واحد = صف واحد، نحدّثه عند كل جلب جديد).
+    - data_json: نص JSON يحتوي البيانات المجمّعة للسهم.
+    """
+
+    __tablename__ = "stock_cache"
+
+    ticker = db.Column(db.String(16), primary_key=True)
+    data_json = db.Column(db.Text, nullable=False)
+    updated_at = db.Column(db.DateTime(timezone=True), nullable=False, default=_utcnow)
+
+    def __repr__(self):
+        return f"<StockCache {self.ticker} updated={self.updated_at}>"
+
+
+class Signal(db.Model):
+    """إشارة محسوبة لسهم (مثلاً تجاوز Piotroski حدّ معيّن) — لأغراض تعليمية لا توصية.
+
+    الأعمدة حسب المواصفات: (ticker, signal_type, triggered_at, price_at_signal)
+    - price_at_signal: السعر لحظة الإشارة. None لو ما توفّر (لا صفر ملفّق).
+    """
+
+    __tablename__ = "signals"
+
+    id = db.Column(db.Integer, primary_key=True)
+    ticker = db.Column(db.String(16), nullable=False, index=True)
+    signal_type = db.Column(db.String(64), nullable=False)
+    triggered_at = db.Column(db.DateTime(timezone=True), nullable=False, default=_utcnow)
+    price_at_signal = db.Column(db.Float, nullable=True)  # None = السعر لم يتوفّر
+
+    def __repr__(self):
+        return f"<Signal {self.ticker} {self.signal_type}>"

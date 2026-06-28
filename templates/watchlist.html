@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% set active = 'watchlist' %}
+{% block title %}قائمة المتابعة{% endblock %}
+
+{% block content %}
+  <h1 class="page-title">⭐ قائمة المتابعة</h1>
+  <p class="page-sub">تتبّع عائد الأسهم منذ لحظة إضافتها — تعليمي فقط، لا توصية.</p>
+
+  <form class="search" action="{{ url_for('watchlist_add') }}" method="post">
+    <input type="text" name="ticker" placeholder="أضف رمز سهم (مثال: MSFT)">
+    <button class="btn" type="submit">➕ إضافة</button>
+  </form>
+
+  {% if rows %}
+    <table class="insider">
+      <thead>
+        <tr><th>الرمز</th><th>سعر الإضافة</th><th>السعر الحالي</th><th>العائد منذ الإضافة</th><th>تاريخ الإضافة</th><th></th></tr>
+      </thead>
+      <tbody>
+        {% for r in rows %}
+          <tr>
+            <td><a href="{{ url_for('stock_report', ticker=r.ticker) }}"><b>{{ r.ticker }}</b></a></td>
+            <td dir="ltr">{{ "%.2f $"|format(r.added_price) if r.added_price is not none else '—' }}</td>
+            <td dir="ltr">{{ "%.2f $"|format(r.current) if r.current is not none else '—' }}</td>
+            <td dir="ltr">
+              {% if r.return_pct is not none %}
+                <span class="pill {{ 'buy' if r.return_pct >= 0 else 'sell' }}">
+                  {{ '▲' if r.return_pct >= 0 else '▼' }} {{ "%.2f"|format(r.return_pct) }}%
+                </span>
+              {% else %}<span class="muted">—</span>{% endif %}
+            </td>
+            <td class="muted" dir="ltr">{{ r.added_at.strftime('%Y-%m-%d') }}</td>
+            <td>
+              <form action="{{ url_for('watchlist_remove') }}" method="post" style="margin:0">
+                <input type="hidden" name="id" value="{{ r.id }}">
+                <button class="btn-del" type="submit">حذف</button>
+              </form>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <div class="empty">قائمتك فارغة. أضف رمز سهم بالأعلى للبدء.</div>
+  {% endif %}
+{% endblock %}

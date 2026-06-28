@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% set active = 'compare' %}
+{% block title %}مقارنة الأسهم{% endblock %}
+
+{% macro cell(value, suffix='', digits=1) -%}
+  {%- if value is none -%}<span class="muted">—</span>
+  {%- else -%}{{ "%.{}f".format(digits) | format(value) }}{{ suffix }}{%- endif -%}
+{%- endmacro %}
+
+{% block content %}
+  <h1 class="page-title">⚖️ مقارنة الأسهم</h1>
+  <p class="page-sub">قارن سهمين أو أكثر جنباً لجنب (حتى 4) — تعليمي فقط.</p>
+
+  <form class="search" action="{{ url_for('compare') }}" method="get">
+    <input type="text" name="tickers" value="{{ raw }}" placeholder="رموز مفصولة بفاصلة (مثال: AAPL, MSFT, NVDA)">
+    <button class="btn" type="submit">قارن</button>
+  </form>
+
+  {% if summaries %}
+    <table class="insider compare">
+      <thead>
+        <tr>
+          <th>المقياس</th>
+          {% for s in summaries %}<th><a href="{{ url_for('stock_report', ticker=s.ticker) }}"><b>{{ s.ticker }}</b></a></th>{% endfor %}
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td class="muted">الشركة</td>{% for s in summaries %}<td>{{ s.name or '—' }}</td>{% endfor %}</tr>
+        <tr><td class="muted">السعر</td>{% for s in summaries %}<td dir="ltr">{{ cell(s.price, ' $', 2) }}</td>{% endfor %}</tr>
+        <tr><td class="muted">التغيّر %</td>{% for s in summaries %}<td dir="ltr">{{ cell(s.change_percent, '%', 2) }}</td>{% endfor %}</tr>
+        <tr><td class="muted">Piotroski</td>{% for s in summaries %}<td><b>{{ s.piotroski.score }}</b> / 9</td>{% endfor %}</tr>
+        <tr><td class="muted">Catalyst</td>{% for s in summaries %}<td><b>{{ cell(s.catalyst.score, '', 0) }}</b> / 100</td>{% endfor %}</tr>
+        <tr><td class="muted">ROE</td>{% for s in summaries %}<td dir="ltr">{{ cell(s.metrics.roe, '%') }}</td>{% endfor %}</tr>
+        <tr><td class="muted">ROA</td>{% for s in summaries %}<td dir="ltr">{{ cell(s.metrics.roa, '%') }}</td>{% endfor %}</tr>
+        <tr><td class="muted">هامش التشغيل</td>{% for s in summaries %}<td dir="ltr">{{ cell(s.metrics.op_margin, '%') }}</td>{% endfor %}</tr>
+        <tr><td class="muted">الهامش الإجمالي</td>{% for s in summaries %}<td dir="ltr">{{ cell(s.metrics.gross_margin, '%') }}</td>{% endfor %}</tr>
+        <tr><td class="muted">P/E</td>{% for s in summaries %}<td dir="ltr">{{ cell(s.metrics.pe, '', 1) }}</td>{% endfor %}</tr>
+      </tbody>
+    </table>
+    <div class="note">⚠️ Catalyst يعتمد أوزاناً افتراضية غير مُختبرة. كل الأرقام تعليمية، لا توصية.</div>
+  {% elif raw %}
+    <div class="empty">لم نعثر على بيانات للرموز المُدخلة. تأكّد من صحتها.</div>
+  {% else %}
+    <div class="empty">اكتب رموز أسهم بالأعلى للمقارنة (مثال: AAPL, MSFT).</div>
+  {% endif %}
+{% endblock %}

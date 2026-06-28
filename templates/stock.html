@@ -1,0 +1,163 @@
+{% extends "base.html" %}
+{% block title %}{{ ticker }} — تقرير السهم{% endblock %}
+
+{# دالة مساعدة لعرض القيم: None تظهر "—" تطبيقاً لمبدأ None ≠ 0 #}
+{% macro show(value, suffix='', digits=2) -%}
+  {%- if value is none -%}<span class="na">—</span>
+  {%- else -%}{{ "%.{}f".format(digits) | format(value) }}{{ suffix }}
+  {%- endif -%}
+{%- endmacro %}
+
+{% block content %}
+{% if report is none %}
+  <div class="empty">
+    🔍 لم نعثر على بيانات للسهم <b>{{ ticker }}</b>.<br>
+    تأكّد من رمز السهم (أحرف إنجليزية، مثل AAPL) أو حاول لاحقاً.
+  </div>
+{% else %}
+
+  {# ===== رأس السهم: الاسم + السعر ===== #}
+  <div class="stock-head">
+    <div>
+      <div class="ticker">{{ report.ticker }}</div>
+      <div class="name">{{ report.name or '—' }}</div>
+      <div class="sector">{{ report.sector or '—' }}{% if report.industry %} · {{ report.industry }}{% endif %}</div>
+    </div>
+    <div class="price-block">
+      <div class="price">{{ show(report.price, ' $') }}</div>
+      {% if report.change is not none %}
+        <div class="change {{ 'up' if report.change >= 0 else 'down' }}">
+          {{ '▲' if report.change >= 0 else '▼' }}
+          {{ show(report.change, ' $') }}
+          ({{ show(report.change_percent, '%') }})
+        </div>
+      {% endif %}
+      <form action="{{ url_for('watchlist_add') }}" method="post" style="margin:0">
+        <input type="hidden" name="ticker" value="{{ report.ticker }}">
+        <button class="btn-add" type="submit">⭐ أضف للمتابعة</button>
+      </form>
+    </div>
+  </div>
+
+  {# ===== درجة ثقة البيانات ===== #}
+  <div class="confidence">درجة ثقة السعر: <b>{{ report.price_sources }}</b> من المصادر أكّدت السعر
+    {%- if report.finnhub_price is not none %} (FMP + Finnhub){% else %} (FMP){% endif %}.
+    {% if report.finnhub_price is not none %}<span class="muted">سعر Finnhub: {{ "%.2f $"|format(report.finnhub_price) }}</span>{% endif %}</div>
+
+  {# ===== الدرجتان الكبيرتان ===== #}
+  <div class="section">
+    <div class="score-cards">
+      <div class="score-card">
+        {% if report.piotroski.score >= 8 %}<div class="badge-gem">💎 جوهرة</div>{% endif %}
+        <div class="cap">Piotroski Score</div>
+        <div><span class="big">{{ report.piotroski.score }}</span><span class="out"> / 9</span></div>
+        {% if report.piotroski.computable < 9 %}
+          <div class="cap">أمكن حساب {{ report.piotroski.computable }} نقاط فقط</div>
+        {% endif %}
+      </div>
+      <div class="score-card">
+        <div class="cap">Catalyst Score</div>
+        <div>
+          <span class="big">{{ show(report.catalyst.score, '', 0) }}</span><span class="out"> / 100</span>
+        </div>
+        <div class="cap">⚠️ أوزان افتراضية غير مُختبرة تاريخياً</div>
+      </div>
+    </div>
+  </div>
+
+  {# ===== المقاييس المالية ===== #}
+  <div class="section">
+    <h2>📊 المقاييس المالية</h2>
+    <div class="grid">
+      <div class="metric"><div class="label">ROE (العائد على حقوق الملكية)</div><div class="num">{{ show(report.metrics.roe, '%', 1) }}</div></div>
+      <div class="metric"><div class="label">ROA (العائد على الأصول)</div><div class="num">{{ show(report.metrics.roa, '%', 1) }}</div></div>
+      <div class="metric"><div class="label">هامش التشغيل</div><div class="num">{{ show(report.metrics.op_margin, '%', 1) }}</div></div>
+      <div class="metric"><div class="label">الهامش الإجمالي</div><div class="num">{{ show(report.metrics.gross_margin, '%', 1) }}</div></div>
+      <div class="metric"><div class="label">P/E (مكرر الربحية)</div><div class="num">{{ show(report.metrics.pe, '', 1) }}</div></div>
+      <div class="metric"><div class="label">PEG</div><div class="num">{{ show(report.metrics.peg, '', 2) }}</div></div>
+    </div>
+  </div>
+
+  {# ===== تفصيل Piotroski ===== #}
+  <div class="section">
+    <h2>✅ تفصيل Piotroski (9 نقاط)</h2>
+    <div class="checks">
+      {% for c in report.piotroski.components %}
+        <div class="check {{ 'pass' if c.passed == true else ('fail' if c.passed == false else 'na') }}">
+          <div class="ic">{{ '✓' if c.passed == true else ('✕' if c.passed == false else '—') }}</div>
+          <div>
+            <div>[{{ c.n }}] {{ c.name }}</div>
+            <div class="detail">{{ c.detail }}</div>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  {# ===== تفصيل Catalyst ===== #}
+  <div class="section">
+    <h2>🚀 تفصيل Catalyst</h2>
+    {% for c in report.catalyst.components %}
+      <div class="bar-row">
+        <div class="name">{{ c.name }} <span class="na">({{ "%.0f"|format(c.weight*100) }}%)</span></div>
+        <div class="bar-track">
+          {% if c.points is not none %}<div class="bar-fill" style="width: {{ c.points }}%"></div>{% endif %}
+        </div>
+        <div class="val">{{ c.detail }}{% if c.points is not none %} · {{ "%.0f"|format(c.points) }}/100{% endif %}</div>
+      </div>
+    {% endfor %}
+    <div class="note">⚠️ أوزان وحدود Catalyst افتراضية ولم تُختبر تاريخياً — لأغراض تعليمية فقط.</div>
+  </div>
+
+  {# ===== معاملات المطلعين (SEC EDGAR) ===== #}
+  <div class="section">
+    <h2>🏛️ معاملات المطلعين (SEC EDGAR)</h2>
+    {% if report.insider_trades %}
+      <table class="insider">
+        <thead>
+          <tr><th>التاريخ</th><th>المطلع</th><th>المنصب</th><th>العملية</th><th>النوع</th><th>الأسهم</th><th>السعر</th></tr>
+        </thead>
+        <tbody>
+          {% for t in report.insider_trades %}
+            <tr>
+              <td dir="ltr">{{ t.date or '—' }}</td>
+              <td>{{ t.owner or '—' }}</td>
+              <td class="muted">{{ t.title or '—' }}</td>
+              <td><span class="pill {{ 'buy' if t.direction == 'شراء' else ('sell' if t.direction == 'بيع' else '') }}">{{ t.direction or '—' }}</span></td>
+              <td class="muted">{{ t.code_label or '—' }}</td>
+              <td dir="ltr">{{ "{:,.0f}".format(t.shares) if t.shares is not none else '—' }}</td>
+              <td dir="ltr">{{ "%.2f $"|format(t.price) if t.price is not none else '—' }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      <div class="note">📌 الأسعار 0.00$ في عمليات "هدية" قيم حقيقية من SEC (لا مقابل)، بينما "—" تعني سعراً غير متوفّر.</div>
+    {% else %}
+      <div class="soon">لا توجد معاملات مطلعين حديثة متاحة لهذا السهم من SEC EDGAR.</div>
+    {% endif %}
+  </div>
+
+  {# ===== خطة ATR التعليمية ===== #}
+  <div class="section">
+    <h2>📈 خطة التداول (ATR) — تعليمية</h2>
+    {% if report.atr_plan %}
+      {% set p = report.atr_plan %}
+      <div class="grid">
+        <div class="metric"><div class="label">ATR ({{ p.period }} يوم)</div><div class="num">{{ "%.2f $"|format(p.atr) }}</div></div>
+        <div class="metric"><div class="label">الدخول (السعر الحالي)</div><div class="num">{{ "%.2f $"|format(p.entry) }}</div></div>
+        <div class="metric"><div class="label">وقف الخسارة (−{{ "%.1f"|format(p.stop_mult) }}×ATR)</div><div class="num" style="color:var(--red)">{{ "%.2f $"|format(p.stop) }}</div></div>
+        <div class="metric"><div class="label">الهدف (+{{ "%.1f"|format(p.target_mult) }}×ATR)</div><div class="num" style="color:var(--green)">{{ "%.2f $"|format(p.target) }}</div></div>
+        <div class="metric"><div class="label">العائد/المخاطرة</div><div class="num">{{ "%.1f : 1"|format(p.risk_reward) if p.risk_reward is not none else '—' }}</div></div>
+      </div>
+      <div class="note">⚠️ حساب تعليمي بحت مبني على ATR ومضاعفات افتراضية — ليس توصية بالدخول أو الخروج.</div>
+    {% else %}
+      <div class="soon">تعذّر حساب خطة ATR (بيانات الأسعار التاريخية غير كافية لهذا السهم).</div>
+    {% endif %}
+  </div>
+
+  <div class="note" style="margin-top:24px">
+    📌 هذه شاشة فحص تعليمية فقط. كل الأرقام مشتقّة من بيانات حقيقية (FMP) ولا تمثّل توصية أو تنبؤاً.
+  </div>
+
+{% endif %}
+{% endblock %}
