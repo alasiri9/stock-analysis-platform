@@ -78,10 +78,17 @@ def create_app():
         results = screener.filter_records(records, **filters)
         # نمرّر قيمة المليارات للواجهة (لإبقائها في الخانة)
         filters["market_cap_billions"] = market_cap_billions
+
+        # إحصائيات علوية (من كامل العيّنة، لا المُفلتر)
+        stats = {
+            "total": len(records),
+            "gems": sum(1 for r in records if r.get("piotroski") is not None and r["piotroski"] >= 8),
+            "strong": sum(1 for r in records if r.get("catalyst") is not None and r["catalyst"] >= 80),
+        }
         return render_template(
             "index.html",
             results=results, sectors=sectors, latest=latest,
-            filters=filters, total=len(records),
+            filters=filters, total=len(records), stats=stats,
             signals=screener.recent_signals(),
         )
 

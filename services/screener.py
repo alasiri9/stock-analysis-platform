@@ -17,6 +17,7 @@ from datetime import datetime, timezone
 from models import db, StockCache, Signal
 from services import fmp_client
 from services import scoring
+from services import indicators
 
 # عتبات توليد الإشارات (تعليمية، لا توصية)
 PIOTROSKI_SIGNAL_MIN = 8   # جودة مالية قوية
@@ -51,6 +52,14 @@ def _build_record(ticker):
         return None
 
     catalyst = scoring.catalyst_score(financials)
+
+    # مؤشرات فنية للكرت (جلب تاريخي إضافي؛ لا يكسر السجلّ لو فشل)
+    try:
+        candles = fmp_client.get_historical_prices(ticker, limit=120)
+        tech = indicators.build_indicators(candles)
+    except Exception:  # noqa: BLE001
+        tech = []
+
     return {
         "ticker": ticker,
         "name": (quote.get("name") if quote else None) or (profile.get("name") if profile else None),
@@ -59,6 +68,7 @@ def _build_record(ticker):
         "market_cap": quote.get("market_cap") if quote else None,
         "piotroski": scoring.piotroski_score(financials)["score"],
         "catalyst": catalyst["score"],
+        "indicators": tech,
     }
 
 
