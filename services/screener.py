@@ -11,6 +11,7 @@ screener.py — فلترة الأسهم (Screener) مع تخزين مؤقت لح
 """
 
 import json
+import time
 from datetime import datetime, timezone
 
 from models import db, StockCache, Signal
@@ -79,21 +80,33 @@ def _record_signal(ticker, signal_type, price):
     db.session.add(Signal(ticker=ticker, signal_type=signal_type, price_at_signal=price))
 
 
-def refresh_cache():
-    """يعيد بناء كاش الماسح لكل أسهم UNIVERSE، ويولّد إشارات للأسهم القوية.
+def refresh_cache(time_budget=20):
+    """يحدّث كاش الماسح على دفعات ضمن حدّ زمني آمن، ويولّد إشارات للأسهم القوية.
 
-    يُحفظ كل سهم على حدة (commit لكل سهم) حتى لا يضيع التقدّم لو توقّف لاحقاً،
-    وأي خطأ في سهم واحد لا يُسقط بقية الأسهم. يُرجع عدد الأسهم المحدّثة.
+    - حدّ زمني (time_budget ثانية) يضمن رجوع الطلب قبل مهلة الخادم (فلا خطأ 500).
+    - يتخطّى الأسهم المحدّثة اليوم بالفعل → الضغطات المتتالية تُكمل الباقي بلا إعادة.
+    - يُحفظ كل سهم على حدة، وفشل سهم لا يُسقط الباقي.
+    يُرجع عدد الأسهم المحدّثة في هذه الدفعة.
     """
+    start = time.monotonic()
+    today = datetime.now(timezone.utc).date()
     updated = 0
     for ticker in UNIVERSE:
+        if time.monotonic() - start > time_budget:
+            break  # انتهى الحدّ الزمني — نرجع، وضغطة أخرى تُكمل الباقي
+
+        key = _PREFIX + ticker
+        existing = db.session.get(StockCache, key)
+        # تخطّي ما حُدّث اليوم (إكمال على دفعات دون إعادة استهلاك الـ API)
+        if existing and existing.updated_at and existing.updated_at.date() == today:
+            continue
+
         try:
             record = _build_record(ticker)
             if not record:
                 continue
 
-            key = _PREFIX + ticker
-            row = db.session.get(StockCache, key)
+            row = existing
             payload = json.dumps(record, ensure_ascii=False)
             now = datetime.now(timezone.utc)
             if row:

@@ -22,7 +22,7 @@ FMP_API_KEY = os.getenv("FMP_API_KEY")
 BASE_URL = "https://financialmodelingprep.com/stable"
 
 # مهلة الاتصال بالثواني — حتى لا يعلّق البرنامج لو الخادم بطيء
-TIMEOUT = 15
+TIMEOUT = 8
 
 
 def _get(endpoint, params=None):
