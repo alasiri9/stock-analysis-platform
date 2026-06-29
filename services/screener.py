@@ -146,6 +146,43 @@ def recent_signals(limit=12):
     return Signal.query.order_by(Signal.triggered_at.desc()).limit(limit).all()
 
 
+def launched_stocks(limit=6):
+    """الأسهم التي صدرت لها إشارة + عائدها منذ الإشارة (لوحة "انطلقت بالفعل").
+
+    العائد = (السعر الحالي المخزّن − السعر وقت الإشارة) / السعر وقت الإشارة.
+    None ≠ 0 : يُحسب العائد فقط لو توفّر السعران. لا استدعاءات API (نقرأ من الكاش).
+    يُرجع (قائمة، إحصائيات الأداء).
+    """
+    sigs = Signal.query.order_by(Signal.triggered_at.desc()).limit(limit).all()
+    records, _ = load_records()
+    price_by_ticker = {r["ticker"]: r.get("price") for r in records}
+
+    rows = []
+    returns = []
+    for s in sigs:
+        current = price_by_ticker.get(s.ticker)
+        ret = None
+        if current is not None and s.price_at_signal:
+            ret = (current - s.price_at_signal) / s.price_at_signal * 100.0
+            returns.append(ret)
+        rows.append({
+            "ticker": s.ticker,
+            "signal_type": s.signal_type,
+            "price_at_signal": s.price_at_signal,
+            "current": current,
+            "return_pct": ret,
+            "date": s.triggered_at,
+        })
+
+    # إحصائيات الأداء العام (من الإشارات القابلة للحساب فقط)
+    stats = {"avg": None, "win_rate": None, "best": None, "count": len(returns)}
+    if returns:
+        stats["avg"] = sum(returns) / len(returns)
+        stats["win_rate"] = sum(1 for r in returns if r > 0) / len(returns) * 100.0
+        stats["best"] = max(returns)
+    return rows, stats
+
+
 def load_records():
     """يقرأ سجلّات الماسح المخزّنة. يُرجع (قائمة السجلّات، أحدث وقت تحديث أو None)."""
     rows = StockCache.query.filter(StockCache.ticker.like(_PREFIX + "%")).all()

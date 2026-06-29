@@ -3,23 +3,13 @@
 {% block title %}الرئيسية — Screener{% endblock %}
 
 {% block content %}
-  <h1 class="page-title">🎯 ماسح الأسهم — Screener</h1>
-  <p class="page-sub">أداة فحص وتحليل تعليمية للأسهم الأمريكية — لا توصيات ولا تنبؤات.</p>
-
   {# بحث مباشر عن أي سهم #}
   <form class="search" action="{{ url_for('stock_search') }}" method="get">
     <input type="text" name="ticker" placeholder="حلّل أي سهم (مثال: AAPL)">
     <button class="btn" type="submit">تحليل</button>
   </form>
 
-  {# صناديق إحصائية علوية #}
-  <div class="stat-row">
-    <div class="stat-box"><div class="label">💎 الجواهر</div><div class="value">{{ stats.gems }}</div></div>
-    <div class="stat-box"><div class="label">⚡ إشارة قوية</div><div class="value">{{ stats.strong }}</div></div>
-    <div class="stat-box"><div class="label">👁 إجمالي العيّنة</div><div class="value">{{ stats.total }}</div></div>
-  </div>
-
-  {# لوحة الفلاتر — تعمل على البيانات المخزّنة (فورية) #}
+  {# لوحة الفلاتر #}
   <form class="filters" action="{{ url_for('index') }}" method="get">
     <div class="filter">
       <label>Piotroski (الأدنى)</label>
@@ -34,7 +24,7 @@
       <input type="number" name="price_max" min="0" step="1" value="{{ filters.price_max|int if filters.price_max is not none else '' }}">
     </div>
     <div class="filter">
-      <label>القيمة السوقية الأدنى (مليار $)</label>
+      <label>القيمة السوقية (مليار $)</label>
       <input type="number" name="market_cap_min" min="0" step="1" value="{{ filters.market_cap_billions|int if filters.market_cap_billions is not none else '' }}">
     </div>
     <div class="filter">
@@ -47,84 +37,116 @@
     <button class="btn" type="submit">فلترة</button>
   </form>
 
-  {# شريط الحالة + زر التحديث #}
-  <div class="screener-bar">
-    <div class="confidence">
-      {% if latest %}
-        المعروض: <b>{{ results|length }}</b> من <b>{{ total }}</b> سهم ·
-        آخر تحديث للبيانات: <span dir="ltr">{{ latest.strftime('%Y-%m-%d %H:%M') }} UTC</span>
-      {% else %}
-        لا توجد بيانات مخزّنة بعد — اضغط "تحديث البيانات" لأول مرة (يستغرق دقيقة).
-      {% endif %}
-    </div>
-    <form action="{{ url_for('screener_refresh') }}" method="post" style="margin:0">
-      <button class="btn-add" type="submit">🔄 تحديث البيانات</button>
-    </form>
-  </div>
+  <div class="dashboard">
 
-  {# قسم الإشارات الحديثة (تعليمية) #}
-  {% if signals %}
-    <div class="section" style="margin-top:8px">
-      <h2>⚡ إشارات حديثة <span class="muted" style="font-size:12px;font-weight:400">(تعليمية — لا توصية)</span></h2>
-      <div class="tech-badges">
-        {% for s in signals %}
-          {% set label = 'Piotroski قوي ≥8' if s.signal_type == 'piotroski_strong' else ('Catalyst قوي ≥80' if s.signal_type == 'catalyst_strong' else s.signal_type) %}
-          <a href="{{ url_for('stock_report', ticker=s.ticker) }}" class="tbadge bull" style="text-decoration:none">
-            {{ s.ticker }}<span class="tval">{{ label }} · {{ s.triggered_at.strftime('%m-%d') }}</span>
-          </a>
-        {% endfor %}
+    {# ============ اللوحة اليمنى: الأسهم التي انطلقت ============ #}
+    <section class="panel launched-panel">
+      <div class="panel-head">
+        <h2>🚀 الأسهم التي انطلقت بعد الإشارة</h2>
+        <p class="panel-sub">أداء الأسهم منذ صدور إشارتها — تعليمي، لا توصية.</p>
       </div>
-    </div>
-  {% endif %}
 
-  {% if results %}
-    <div class="screener-cards">
-      {% for r in results %}
-        {% set is_gem = r.piotroski is not none and r.piotroski >= 8 %}
-        <a class="scard {{ 'gem' if is_gem }}" href="{{ url_for('stock_report', ticker=r.ticker) }}">
-          {# الرتبة (يمين) #}
-          <div class="scard-rank">{{ loop.index }}</div>
-
-          {# الكتلة الوسطى #}
-          <div class="scard-main">
-            <div class="scard-top">
-              <span class="scard-ticker">{{ r.ticker }}</span>
-              <span class="scard-price" dir="ltr">{{ "%.2f $"|format(r.price) if r.price is not none else '—' }}</span>
-              {% if is_gem %}<span class="badge-gem">💎 جوهرة</span>{% endif %}
-            </div>
-            <div class="scard-name">{{ r.name or '—' }} · <span class="muted">{{ r.sector or '—' }}</span></div>
-
-            {# شارات المؤشرات الفنية #}
-            {% if r.indicators %}
-              <div class="scard-badges">
-                {% for b in r.indicators %}<span class="mini-badge {{ b.status }}">{{ b.label }}</span>{% endfor %}
+      {% if launched and perf.count %}
+        <div class="launched-grid">
+          {% for l in launched %}
+            <a class="lcard {{ 'up' if l.return_pct is not none and l.return_pct >= 0 else 'down' }}" href="{{ url_for('stock_report', ticker=l.ticker) }}">
+              <div class="lcard-ticker">{{ l.ticker }}</div>
+              <div class="lcard-ret">
+                {% if l.return_pct is not none %}{{ '+' if l.return_pct >= 0 else '' }}{{ "%.1f"|format(l.return_pct) }}%{% else %}—{% endif %}
               </div>
-            {% endif %}
+              <div class="lcard-sub">منذ الإشارة · {{ l.date.strftime('%m-%d') }}</div>
+            </a>
+          {% endfor %}
+        </div>
 
-            <div class="scard-scores">
-              <span>Piotroski <b>{{ r.piotroski if r.piotroski is not none else '—' }}</b>/9</span>
-              <span class="dot">·</span>
-              <span>Catalyst <b>{{ "%.0f"|format(r.catalyst) if r.catalyst is not none else '—' }}</b></span>
-              <span class="dot">·</span>
-              <span class="muted" dir="ltr">{{ "{:,.0f}".format(r.market_cap) if r.market_cap is not none else '—' }}</span>
-            </div>
-          </div>
+        <h3 class="perf-title">📊 إحصائيات الأداء العام</h3>
+        <div class="stat-row">
+          <div class="stat-box"><div class="label">متوسط العائد</div><div class="value {{ 'pos' if perf.avg is not none and perf.avg >= 0 else 'neg' }}" dir="ltr">{{ ('%+.1f'|format(perf.avg)) ~ '%' if perf.avg is not none else '—' }}</div></div>
+          <div class="stat-box"><div class="label">نسبة النجاح</div><div class="value" dir="ltr">{{ ('%.0f'|format(perf.win_rate)) ~ '%' if perf.win_rate is not none else '—' }}</div></div>
+          <div class="stat-box"><div class="label">أعلى عائد</div><div class="value pos" dir="ltr">{{ ('%+.1f'|format(perf.best)) ~ '%' if perf.best is not none else '—' }}</div></div>
+        </div>
+      {% else %}
+        <div class="soon">
+          ستظهر هنا الأسهم التي صدرت لها إشارة وعائدها منذ الإشارة —
+          بعد توليد الإشارات (اضغط "تحديث البيانات" في لوحة الماسح).
+        </div>
+      {% endif %}
+    </section>
 
-          {# الدرجة الكبيرة (يسار) #}
-          <div class="scard-score">
-            <div class="scard-big">{{ "%.0f"|format(r.catalyst) if r.catalyst is not none else '—' }}</div>
-            <div class="scard-status">
-              {% if is_gem %}جودة عالية{% elif r.catalyst is not none and r.catalyst >= 80 %}زخم قوي{% else %}متوسط{% endif %}
-            </div>
-          </div>
-        </a>
-      {% endfor %}
-    </div>
-  {% elif latest %}
-    <div class="empty">لا توجد أسهم تطابق الفلاتر. جرّب تخفيفها.</div>
-  {% endif %}
+    {# ============ اللوحة اليسرى: الماسح ============ #}
+    <section class="panel scanner-panel">
+      <div class="panel-head">
+        <h2>🎯 ماسح الانطلاق — Pre-Breakout Scanner</h2>
+        <p class="panel-sub">يفحص الأسهم ويرتّبها حسب الجودة (Piotroski) والزخم (Catalyst).</p>
+      </div>
 
-  <div class="note" style="margin-top:18px">
-    ⚠️ أوزان Catalyst افتراضية وغير مُختبرة تاريخياً. القائمة محصورة في عيّنة مختارة لحماية حدود الـ API المجانية.
+      {# صناديق إحصائية #}
+      <div class="stat-row tight">
+        <div class="stat-box gem-box"><div class="label">💎 الجواهر</div><div class="value">{{ stats.gems }}</div></div>
+        <div class="stat-box"><div class="label">⚡ إشارة قوية</div><div class="value">{{ stats.strong }}</div></div>
+        <div class="stat-box"><div class="label">👁 الإجمالي</div><div class="value">{{ stats.total }}</div></div>
+      </div>
+
+      {# شريط: حبّة "الجواهر فقط" + تحديث + آخر تحديث #}
+      <div class="scanner-bar">
+        <a class="gem-pill {{ 'active' if filters.piotroski_min == 8 }}" href="{{ url_for('index', piotroski_min=8) }}">💎 الجواهر فقط ({{ stats.gems }})</a>
+        <a class="gem-pill ghost" href="{{ url_for('index') }}">عرض الكل</a>
+        <form action="{{ url_for('screener_refresh') }}" method="post" style="margin:0 auto 0 0">
+          <button class="btn-add" type="submit">🔄 تحديث</button>
+        </form>
+      </div>
+      <div class="confidence" style="margin-bottom:12px">
+        {% if latest %}
+          المعروض <b>{{ results|length }}</b> / <b>{{ total }}</b> · آخر تحديث <span dir="ltr">{{ latest.strftime('%Y-%m-%d %H:%M') }} UTC</span>
+        {% else %}
+          لا توجد بيانات بعد — اضغط "تحديث".
+        {% endif %}
+      </div>
+
+      {% if results %}
+        <div class="screener-cards">
+          {% for r in results %}
+            {% set is_gem = r.piotroski is not none and r.piotroski >= 8 %}
+            <a class="scard {{ 'gem' if is_gem }}" href="{{ url_for('stock_report', ticker=r.ticker) }}">
+              <div class="scard-rank">{{ loop.index }}</div>
+
+              <div class="scard-info">
+                <div class="scard-top">
+                  {% if is_gem %}<span class="badge-gem">💎 جوهرة</span>{% endif %}
+                  <span class="scard-ticker">{{ r.ticker }}</span>
+                  <span class="scard-price" dir="ltr">{{ "%.2f $"|format(r.price) if r.price is not none else '—' }}</span>
+                </div>
+                <div class="scard-name">{{ r.name or '—' }}</div>
+                <div class="scard-scores">
+                  Piotroski <b>{{ r.piotroski if r.piotroski is not none else '—' }}</b>/9
+                  <span class="dot">·</span>
+                  Catalyst <b>{{ "%.0f"|format(r.catalyst) if r.catalyst is not none else '—' }}</b>
+                </div>
+              </div>
+
+              {% if r.indicators %}
+                <div class="scard-badges">
+                  {% for b in r.indicators %}<span class="mini-badge {{ b.status }}">{{ b.label }}</span>{% endfor %}
+                </div>
+              {% endif %}
+
+              <div class="scard-score">
+                <div class="scard-big">{{ "%.0f"|format(r.catalyst) if r.catalyst is not none else '—' }}</div>
+                <div class="scard-status">
+                  {% if is_gem %}جودة عالية{% elif r.catalyst is not none and r.catalyst >= 80 %}زخم قوي{% else %}متوسط{% endif %}
+                </div>
+              </div>
+            </a>
+          {% endfor %}
+        </div>
+      {% elif latest %}
+        <div class="empty">لا توجد أسهم تطابق الفلاتر.</div>
+      {% endif %}
+
+      <div class="note" style="margin-top:14px">
+        ⚠️ أوزان Catalyst افتراضية وغير مُختبرة. الدرجة الكبيرة = Catalyst. العيّنة محدودة لحماية حدود الـ API.
+      </div>
+    </section>
+
   </div>
 {% endblock %}

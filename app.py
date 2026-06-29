@@ -85,11 +85,13 @@ def create_app():
             "gems": sum(1 for r in records if r.get("piotroski") is not None and r["piotroski"] >= 8),
             "strong": sum(1 for r in records if r.get("catalyst") is not None and r["catalyst"] >= 80),
         }
+        launched, perf = screener.launched_stocks()
         return render_template(
             "index.html",
             results=results, sectors=sectors, latest=latest,
             filters=filters, total=len(records), stats=stats,
             signals=screener.recent_signals(),
+            launched=launched, perf=perf,
         )
 
     @app.route("/screener/refresh", methods=["POST"])

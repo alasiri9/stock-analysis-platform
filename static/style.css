@@ -93,42 +93,77 @@ a { color: inherit; text-decoration: none; }
 .screener-bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; flex-wrap: wrap; }
 .screener td, .screener th { text-align: right; }
 
-/* ---------- كروت الماسح (مطابقة للتصميم المرجعي) ---------- */
-.screener-cards { display: flex; flex-direction: column; gap: 12px; }
+/* ---------- لوحة بلوحتين (Dashboard) ---------- */
+.dashboard { display: grid; grid-template-columns: 1fr 1.5fr; gap: 16px; align-items: start; }
+@media (max-width: 1100px) { .dashboard { grid-template-columns: 1fr; } }
+.panel { background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px; }
+.panel-head h2 { font-size: 17px; margin: 0 0 4px; }
+.panel-sub { color: var(--muted); font-size: 12px; margin: 0 0 14px; }
+.stat-row.tight { gap: 10px; margin-bottom: 14px; }
+.stat-box.gem-box { border-color: rgba(245,196,81,.3); }
+.stat-box .value.pos { color: var(--green); }
+.stat-box .value.neg { color: var(--red); }
+
+/* ---------- اللوحة اليمنى: انطلقت ---------- */
+.launched-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+.lcard {
+  background: var(--panel-2); border: 1px solid var(--border); border-radius: 12px;
+  padding: 12px 14px; color: var(--text); display: block;
+}
+.lcard.up { border-color: rgba(34,197,94,.3); background: linear-gradient(160deg, rgba(34,197,94,.06), var(--panel-2) 55%); }
+.lcard.down { border-color: rgba(239,68,68,.25); }
+.lcard:hover { filter: brightness(1.08); }
+.lcard-ticker { font-weight: 800; font-size: 15px; }
+.lcard-ret { font-size: 22px; font-weight: 800; margin-top: 4px; }
+.lcard.up .lcard-ret { color: var(--green); }
+.lcard.down .lcard-ret { color: var(--red); }
+.lcard-sub { color: var(--muted); font-size: 11px; margin-top: 2px; }
+.perf-title { font-size: 14px; margin: 18px 0 10px; }
+
+/* ---------- شريط الماسح + حبّة الجواهر ---------- */
+.scanner-bar { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; flex-wrap: wrap; }
+.gem-pill {
+  display: inline-block; padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 700;
+  background: rgba(245,196,81,.12); color: var(--gold); border: 1px solid rgba(245,196,81,.35);
+}
+.gem-pill.active { background: var(--gold); color: #2a2103; }
+.gem-pill.ghost { background: var(--card); color: var(--muted); border-color: var(--border); }
+.gem-pill:hover { filter: brightness(1.1); }
+
+/* ---------- كروت الماسح (4 أعمدة: رتبة | معلومات | شارات | درجة) ---------- */
+.screener-cards { display: flex; flex-direction: column; gap: 10px; }
 .scard {
-  display: flex; align-items: center; gap: 16px;
+  display: flex; align-items: center; gap: 14px;
   background: var(--panel-2); border: 1px solid var(--border);
-  border-radius: var(--radius); padding: 14px 18px; color: var(--text);
+  border-radius: 12px; padding: 12px 14px; color: var(--text);
   transition: border-color .15s, transform .05s;
 }
 .scard:hover { border-color: #2f3b58; transform: translateY(-1px); }
 .scard.gem { border-color: rgba(245,196,81,.35); background: linear-gradient(90deg, rgba(245,196,81,.05), var(--panel-2) 40%); }
 
-.scard-rank { width: 26px; text-align: center; font-size: 18px; font-weight: 700; color: var(--muted); flex-shrink: 0; }
+.scard-rank { width: 22px; text-align: center; font-size: 16px; font-weight: 700; color: var(--muted); flex-shrink: 0; }
 
-.scard-main { flex: 1; min-width: 0; }
-.scard-top { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-.scard-ticker { font-size: 18px; font-weight: 800; }
-.scard-price { color: var(--muted); font-size: 14px; }
-.scard-name { color: var(--text); font-size: 13px; margin-top: 3px; }
-.scard-name .muted { color: var(--muted); }
+.scard-info { flex: 1; min-width: 0; }
+.scard-top { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.scard-ticker { font-size: 16px; font-weight: 800; }
+.scard-price { color: var(--muted); font-size: 13px; }
+.scard-name { color: var(--text); font-size: 12px; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.scard-scores { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; margin-top: 6px; font-size: 12px; color: var(--muted); }
+.scard-scores b { color: var(--text); font-size: 13px; }
+.scard-scores .dot { color: var(--border); }
 
-.scard-badges { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 9px; }
+.scard-badges { display: flex; flex-wrap: wrap; gap: 5px; max-width: 150px; justify-content: flex-end; flex-shrink: 0; }
 .mini-badge {
-  font-size: 11px; padding: 2px 8px; border-radius: 6px;
+  font-size: 10px; padding: 2px 7px; border-radius: 6px;
   background: var(--card); border: 1px solid var(--border); color: var(--muted);
 }
 .mini-badge.bull { border-color: rgba(34,197,94,.4); color: var(--green); }
 .mini-badge.bear { border-color: rgba(239,68,68,.35); color: var(--red); }
 
-.scard-scores { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 9px; font-size: 12px; color: var(--muted); }
-.scard-scores b { color: var(--text); font-size: 13px; }
-.scard-scores .dot { color: var(--border); }
-
-.scard-score { text-align: center; flex-shrink: 0; min-width: 64px; }
-.scard-big { font-size: 34px; font-weight: 800; line-height: 1; }
+.scard-score { text-align: center; flex-shrink: 0; min-width: 56px; }
+.scard-big { font-size: 30px; font-weight: 800; line-height: 1; }
 .scard.gem .scard-big { color: var(--green); }
-.scard-status { color: var(--muted); font-size: 11px; margin-top: 4px; }
+.scard-status { color: var(--muted); font-size: 10px; margin-top: 4px; }
 
 /* ---------- بطاقة السهم ---------- */
 .stock-head {
