@@ -4,13 +4,15 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{% block title %}ماسح الأسهم الأمريكية الذكي{% endblock %}</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=20260629x">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=20260629y">
 </head>
 <body>
   <div class="layout">
     <aside class="sidebar">
       <div class="brand">
-        <img src="{{ url_for('static', filename='logo.png') }}?v=1" alt="Algomatix" class="brand-logo">
+        <img src="{{ url_for('static', filename='logo.png') }}?v=2" alt="Algomatix" class="brand-logo">
+        <div class="brand-tag">تحليل ذكي للأسهم الأمريكية</div>
+        <div class="brand-phrases">نرصد الفرص · نحلل الاختراقات · نواكب الصعود</div>
       </div>
       <nav class="nav">
         <a href="{{ url_for('index') }}"><span class="ic">📊</span> الرئيسية</a>

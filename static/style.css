@@ -45,6 +45,8 @@ a { color: inherit; text-decoration: none; }
   display: block; width: 100%; border-radius: 0;
   mix-blend-mode: lighten;
 }
+.brand-tag { color: #e6ebf5; font-size: 18px; font-weight: 800; margin-top: 8px; padding: 0 12px; }
+.brand-phrases { color: var(--muted); font-size: 12.5px; margin-top: 5px; padding: 0 12px; }
 .brand-ar {
   display: block; font-weight: 800; font-size: 20px; line-height: 1.35;
   color: var(--green); letter-spacing: .3px;
