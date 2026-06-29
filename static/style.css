@@ -43,11 +43,11 @@ a { color: inherit; text-decoration: none; }
 .brand { margin-bottom: 2px; text-align: center; }
 .brand-ar {
   display: block; font-weight: 800; font-size: 20px; line-height: 1.35;
-  color: #1f6e62; text-shadow: 0 0 14px rgba(31,110,98,.4); letter-spacing: .3px;
+  color: #1fe0a0; text-shadow: 0 0 16px rgba(31,224,160,.55); letter-spacing: .3px;
 }
 .brand-en {
   display: block; font-size: 16px; font-weight: 700; margin-top: 5px;
-  color: #1f6e62; letter-spacing: .6px;
+  color: #1fe0a0; text-shadow: 0 0 12px rgba(31,224,160,.45); letter-spacing: .6px;
 }
 .brand small { display: block; color: var(--muted); font-size: 11px; font-weight: 400; margin-top: 4px; }
 .nav { margin-top: 18px; display: flex; flex-direction: column; gap: 4px; }
