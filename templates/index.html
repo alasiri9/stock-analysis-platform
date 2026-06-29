@@ -124,16 +124,19 @@
                 </div>
               </div>
 
-              {% if r.indicators %}
-                <div class="scard-badges">
-                  {% for b in r.indicators %}<span class="mini-badge {{ b.status }}">{{ b.label }}</span>{% endfor %}
-                </div>
-              {% endif %}
+              {# شارات فنية ثابتة (7) — الفعّالة تُضاء خضراء حسب المؤشرات المحسوبة #}
+              {% set ind = {} %}
+              {% for b in (r.indicators or []) %}{% set _ = ind.update({b.label: b.status}) %}{% endfor %}
+              <div class="scard-badges">
+                {% for cat, key in [('حجم','الحجم'), ('RS','RSI'), ('MACD','MACD'), ('EMA','EMA'), ('اختراق','اختراق'), ('ADX', none), ('قمة', none)] %}
+                  <span class="cat-pill {{ 'on' if key and ind.get(key) == 'bull' }}">{{ cat }}</span>
+                {% endfor %}
+              </div>
 
               <div class="scard-score">
                 <div class="scard-big">{{ "%.0f"|format(r.catalyst) if r.catalyst is not none else '—' }}</div>
                 <div class="scard-status">
-                  {% if is_gem %}جودة عالية{% elif r.catalyst is not none and r.catalyst >= 80 %}زخم قوي{% else %}متوسط{% endif %}
+                  {% if is_gem %}جودة عالية{% elif r.catalyst is not none and r.catalyst >= 80 %}زخم قوي{% else %}قيد الفحص{% endif %}
                 </div>
               </div>
             </a>

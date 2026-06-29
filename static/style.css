@@ -97,7 +97,7 @@ a { color: inherit; text-decoration: none; }
 .dashboard { display: grid; grid-template-columns: 1fr 1.5fr; gap: 16px; align-items: start; }
 @media (max-width: 1100px) { .dashboard { grid-template-columns: 1fr; } }
 .panel { background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px; }
-.panel-head h2 { font-size: 17px; margin: 0 0 4px; }
+.panel-head h2 { font-size: 18px; margin: 0 0 4px; color: var(--green); text-shadow: 0 0 16px rgba(34,197,94,.2); }
 .panel-sub { color: var(--muted); font-size: 12px; margin: 0 0 14px; }
 .stat-row.tight { gap: 10px; margin-bottom: 14px; }
 .stat-box.gem-box { border-color: rgba(245,196,81,.3); }
@@ -139,7 +139,7 @@ a { color: inherit; text-decoration: none; }
   transition: border-color .15s, transform .05s;
 }
 .scard:hover { border-color: #2f3b58; transform: translateY(-1px); }
-.scard.gem { border-color: rgba(245,196,81,.35); background: linear-gradient(90deg, rgba(245,196,81,.05), var(--panel-2) 40%); }
+.scard.gem { border-color: rgba(245,196,81,.55); box-shadow: 0 0 0 1px rgba(245,196,81,.15); background: linear-gradient(90deg, rgba(245,196,81,.07), var(--panel-2) 45%); }
 
 .scard-rank { width: 22px; text-align: center; font-size: 16px; font-weight: 700; color: var(--muted); flex-shrink: 0; }
 
@@ -152,18 +152,16 @@ a { color: inherit; text-decoration: none; }
 .scard-scores b { color: var(--text); font-size: 13px; }
 .scard-scores .dot { color: var(--border); }
 
-.scard-badges { display: flex; flex-wrap: wrap; gap: 5px; max-width: 150px; justify-content: flex-end; flex-shrink: 0; }
-.mini-badge {
-  font-size: 10px; padding: 2px 7px; border-radius: 6px;
+.scard-badges { display: flex; flex-wrap: wrap; gap: 5px; width: 196px; justify-content: flex-start; flex-shrink: 0; }
+.cat-pill {
+  font-size: 10px; padding: 3px 9px; border-radius: 20px;
   background: var(--card); border: 1px solid var(--border); color: var(--muted);
 }
-.mini-badge.bull { border-color: rgba(34,197,94,.4); color: var(--green); }
-.mini-badge.bear { border-color: rgba(239,68,68,.35); color: var(--red); }
+.cat-pill.on { border-color: rgba(34,197,94,.5); color: var(--green); background: rgba(34,197,94,.08); }
 
-.scard-score { text-align: center; flex-shrink: 0; min-width: 56px; }
-.scard-big { font-size: 30px; font-weight: 800; line-height: 1; }
-.scard.gem .scard-big { color: var(--green); }
-.scard-status { color: var(--muted); font-size: 10px; margin-top: 4px; }
+.scard-score { text-align: center; flex-shrink: 0; min-width: 58px; }
+.scard-big { font-size: 30px; font-weight: 800; line-height: 1; color: var(--green); text-shadow: 0 0 18px rgba(34,197,94,.25); }
+.scard-status { color: var(--green); opacity: .8; font-size: 10px; margin-top: 5px; }
 
 /* ---------- بطاقة السهم ---------- */
 .stock-head {
