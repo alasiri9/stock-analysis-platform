@@ -33,15 +33,19 @@ a { color: inherit; text-decoration: none; }
 /* ---------- السايدبار ---------- */
 .sidebar {
   width: 320px;
-  background: var(--panel);
+  background: #080b14;
   border-right: 1px solid var(--border);
   padding: 18px 14px;
   flex-shrink: 0;
   display: flex; flex-direction: column;
   position: sticky; top: 0; height: 100vh;
 }
-.brand { margin-bottom: 2px; text-align: center; }
-.brand-logo { display: block; width: 100%; border-radius: 12px; }
+.brand { margin: -18px -14px 12px; text-align: center; }
+.brand-logo {
+  display: block; width: 100%; border-radius: 0;
+  -webkit-mask-image: linear-gradient(to bottom, #000 72%, transparent 100%);
+  mask-image: linear-gradient(to bottom, #000 72%, transparent 100%);
+}
 .brand-ar {
   display: block; font-weight: 800; font-size: 20px; line-height: 1.35;
   color: var(--green); letter-spacing: .3px;
