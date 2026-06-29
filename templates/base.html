@@ -9,12 +9,25 @@
 <body>
   <div class="layout">
     <aside class="sidebar">
-      <div class="brand">منصة التحليل<small>أداة فحص تعليمية — لا توصيات</small></div>
+      <div class="brand">منصة التحليل ⚡<small>أداة فحص تعليمية — لا توصيات</small></div>
       <nav class="nav">
-        <a href="{{ url_for('index') }}" class="{{ 'active' if active=='home' else '' }}">🏠 الرئيسية (Screener)</a>
-        <a href="{{ url_for('watchlist') }}" class="{{ 'active' if active=='watchlist' else '' }}">⭐ قائمة المتابعة</a>
-        <a href="{{ url_for('compare') }}" class="{{ 'active' if active=='compare' else '' }}">⚖️ مقارنة أسهم</a>
+        <a href="{{ url_for('index') }}" class="{{ 'active' if active=='home' else '' }}"><span class="ic">📊</span> الرئيسية</a>
+        <a href="#" class="soon"><span class="ic">🚀</span> القادة المستقبليون <span class="soon-tag">قريباً</span></a>
+        <a href="#" class="soon"><span class="ic">💎</span> الجواهر المخفية <span class="soon-tag">قريباً</span></a>
+        <a href="#" class="soon"><span class="ic">🎯</span> رادار المحفزات <span class="soon-tag">قريباً</span></a>
+        <a href="#" class="soon"><span class="ic">📡</span> التدقّق الذكي <span class="soon-tag">قريباً</span></a>
+        <a href="#" class="soon"><span class="ic">🧠</span> المحفظة الذكية <span class="soon-tag">قريباً</span></a>
+        <a href="#" class="soon"><span class="ic">⚡</span> إشارات التداول <span class="soon-tag">قريباً</span></a>
+        <a href="{{ url_for('index') }}" class="{{ 'active' if active=='home' else '' }}"><span class="ic">🔍</span> ماسح الانطلاق</a>
+        <a href="#" class="soon"><span class="ic">📅</span> التقرير اليومي <span class="soon-tag">قريباً</span></a>
+        <a href="{{ url_for('compare') }}" class="{{ 'active' if active=='compare' else '' }}"><span class="ic">⚖️</span> مقارنة أسهم</a>
+        <a href="#" class="soon"><span class="ic">📰</span> أخبار السوق <span class="soon-tag">قريباً</span></a>
+        <a href="#" class="soon"><span class="ic">📈</span> اختيار الأداء <span class="soon-tag">قريباً</span></a>
+        <a href="{{ url_for('watchlist') }}" class="{{ 'active' if active=='watchlist' else '' }}"><span class="ic">👁</span> قائمة المراقبة</a>
       </nav>
+      <div class="sidebar-foot">
+        <small>منصة التحليل التعليمية © 2026</small>
+      </div>
     </aside>
     <main class="content">
       {% block content %}{% endblock %}

@@ -32,21 +32,36 @@ a { color: inherit; text-decoration: none; }
 
 /* ---------- السايدبار ---------- */
 .sidebar {
-  width: 230px;
+  width: 240px;
   background: var(--panel);
   border-left: 1px solid var(--border);
   padding: 18px 14px;
   flex-shrink: 0;
+  display: flex; flex-direction: column;
+  position: sticky; top: 0; height: 100vh;
 }
-.brand { font-weight: 700; font-size: 18px; margin-bottom: 4px; }
-.brand small { display: block; color: var(--muted); font-size: 11px; font-weight: 400; }
-.nav { margin-top: 22px; display: flex; flex-direction: column; gap: 4px; }
+.brand { font-weight: 800; font-size: 17px; margin-bottom: 2px; color: var(--green); }
+.brand small { display: block; color: var(--muted); font-size: 10px; font-weight: 400; margin-top: 2px; }
+.nav { margin-top: 18px; display: flex; flex-direction: column; gap: 2px; overflow-y: auto; flex: 1; }
+.nav::-webkit-scrollbar { width: 6px; }
+.nav::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
 .nav a {
-  padding: 10px 12px; border-radius: 10px; color: var(--muted);
-  font-size: 14px; display: flex; align-items: center; gap: 8px;
+  padding: 9px 12px; border-radius: 10px; color: var(--muted);
+  font-size: 13px; display: flex; align-items: center; gap: 9px; white-space: nowrap;
 }
+.nav a .ic { font-size: 14px; width: 18px; text-align: center; }
 .nav a:hover { background: var(--panel-2); color: var(--text); }
-.nav a.active { background: var(--card); color: var(--text); border: 1px solid var(--border); }
+.nav a.active { background: var(--card); color: var(--text); border: 1px solid var(--border); font-weight: 600; }
+.nav a.active .ic { filter: drop-shadow(0 0 6px rgba(34,197,94,.5)); }
+.nav a.soon { color: #59647e; }
+.nav a.soon:hover { background: transparent; cursor: default; color: #59647e; }
+.soon-tag {
+  margin-right: auto; font-size: 9px; color: var(--muted);
+  background: var(--card); border: 1px solid var(--border);
+  padding: 1px 6px; border-radius: 10px;
+}
+.sidebar-foot { padding: 12px 8px 4px; border-top: 1px solid var(--border); margin-top: 8px; }
+.sidebar-foot small { color: var(--muted); font-size: 10px; }
 
 /* ---------- المحتوى ---------- */
 .content { flex: 1; padding: 26px 30px; }
