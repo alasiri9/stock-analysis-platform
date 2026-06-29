@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{% block title %}منصة تحليل الأسهم{% endblock %}</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=20260629b">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=20260629c">
 </head>
 <body>
   <div class="layout">
@@ -12,17 +12,17 @@
       <div class="brand">منصة التحليل ⚡<small>أداة فحص تعليمية — لا توصيات</small></div>
       <nav class="nav">
         <a href="{{ url_for('index') }}"><span class="ic">📊</span> الرئيسية</a>
-        <a href="#" class="soon"><span class="ic">🚀</span> القادة المستقبليون <span class="soon-tag">قريباً</span></a>
-        <a href="#" class="soon"><span class="ic">💎</span> الجواهر المخفية <span class="soon-tag">قريباً</span></a>
-        <a href="#" class="soon"><span class="ic">🎯</span> رادار المحفزات <span class="soon-tag">قريباً</span></a>
-        <a href="#" class="soon"><span class="ic">📡</span> التدقّق الذكي <span class="soon-tag">قريباً</span></a>
-        <a href="#" class="soon"><span class="ic">🧠</span> المحفظة الذكية <span class="soon-tag">قريباً</span></a>
-        <a href="#" class="soon"><span class="ic">⚡</span> إشارات التداول <span class="soon-tag">قريباً</span></a>
+        <a href="#"><span class="ic">🚀</span> القادة المستقبليون</a>
+        <a href="#"><span class="ic">💎</span> الجواهر المخفية</a>
+        <a href="#"><span class="ic">🎯</span> رادار المحفزات</a>
+        <a href="#"><span class="ic">📡</span> التدقّق الذكي</a>
+        <a href="#"><span class="ic">🧠</span> المحفظة الذكية</a>
+        <a href="#"><span class="ic">⚡</span> إشارات التداول</a>
         <a href="{{ url_for('index') }}" class="{{ 'active' if active=='home' else '' }}"><span class="ic">🔍</span> ماسح الانطلاق</a>
-        <a href="#" class="soon"><span class="ic">📅</span> التقرير اليومي <span class="soon-tag">قريباً</span></a>
+        <a href="#"><span class="ic">📅</span> التقرير اليومي</a>
         <a href="{{ url_for('compare') }}" class="{{ 'active' if active=='compare' else '' }}"><span class="ic">⚖️</span> مقارنة أسهم</a>
-        <a href="#" class="soon"><span class="ic">📰</span> أخبار السوق <span class="soon-tag">قريباً</span></a>
-        <a href="#" class="soon"><span class="ic">📈</span> اختيار الأداء <span class="soon-tag">قريباً</span></a>
+        <a href="#"><span class="ic">📰</span> أخبار السوق</a>
+        <a href="#"><span class="ic">📈</span> اختيار الأداء</a>
         <a href="{{ url_for('watchlist') }}" class="{{ 'active' if active=='watchlist' else '' }}"><span class="ic">👁</span> قائمة المراقبة</a>
       </nav>
       <a href="#" class="nav-logout"><span class="ic">🚪</span> خروج</a>
