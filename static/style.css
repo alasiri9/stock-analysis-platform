@@ -1,6 +1,6 @@
 /* ================= الثيم الداكن — مستوحى من Next Catalyst / Pre-Breakout Scanner ================= */
 :root {
-  --bg: #101c38;
+  --bg: #0d1830;
   --panel: #16274a;
   --panel-2: #1b2f57;
   --card: #20396a;
@@ -20,8 +20,7 @@
 
 body {
   margin: 0;
-  background: linear-gradient(160deg, #1b2f57, #0d1830 70%);
-  background-attachment: fixed;
+  background: var(--bg);
   color: var(--text);
   font-family: "Segoe UI", Tahoma, system-ui, sans-serif;
   direction: rtl;
@@ -34,7 +33,7 @@ a { color: inherit; text-decoration: none; }
 /* ---------- السايدبار ---------- */
 .sidebar {
   width: 320px;
-  background: #0d1830;
+  background: var(--bg);
   border-right: 1px solid var(--border);
   padding: 18px 14px;
   flex-shrink: 0;
