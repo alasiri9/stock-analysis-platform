@@ -182,12 +182,19 @@ a { color: inherit; text-decoration: none; }
 }
 .lcard-tag-pill.up { color: var(--green); background: rgba(34,197,94,.12); border: 1px solid rgba(34,197,94,.3); }
 .lcard-tag-pill.down { color: var(--red); background: rgba(239,68,68,.1); border: 1px solid rgba(239,68,68,.25); }
-.trophy-box {
-  display: flex; align-items: center; gap: 10px; font-size: 22px;
-  border-color: rgba(245,196,81,.35); background: rgba(245,196,81,.06);
-}
-.trophy-text { font-size: 11px; font-weight: 700; color: var(--gold); line-height: 1.4; }
 .perf-title { font-size: 14px; font-weight: 900; margin: 18px 0 10px; }
+
+.success-equation {
+  position: relative; text-align: center; margin-top: 16px; padding: 16px 50px;
+  border: 1px solid rgba(245,196,81,.35); border-radius: var(--radius);
+  background: rgba(245,196,81,.06);
+}
+.success-equation-title { color: var(--gold); font-weight: 800; font-size: 13px; margin-bottom: 6px; }
+.success-equation-text { color: var(--text); font-weight: 700; font-size: 13px; }
+.success-equation-icon {
+  position: absolute; inset-inline-end: 16px; top: 50%; transform: translateY(-50%);
+  font-size: 24px;
+}
 
 /* ---------- شريط الماسح + حبّة الجواهر ---------- */
 .scanner-bar { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; flex-wrap: wrap; }

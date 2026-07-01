@@ -84,10 +84,11 @@
           <div class="stat-box"><div class="label">نسبة النجاح</div><div class="value" dir="ltr">{{ ('%.0f'|format(perf.win_rate)) ~ '%' if perf.win_rate is not none else '—' }}</div></div>
           <div class="stat-box"><div class="label">أعلى عائد</div><div class="value pos" dir="ltr">{{ ('%+.1f'|format(perf.best)) ~ '%' if perf.best is not none else '—' }}</div></div>
           <div class="stat-box"><div class="label">متوسط أيام المتابعة</div><div class="value" dir="ltr">{{ ('%.0f'|format(perf.avg_days)) ~ ' يوم' if perf.avg_days is not none else '—' }}</div></div>
-          <div class="stat-box trophy-box">🏆<div class="trophy-text">كل الأرقام أعلاه من بيانات حقيقية — لا بيانات مصطنعة</div></div>
         </div>
-        <div class="note">
-          ℹ️ الإحصائيات أعلاه مبنية على عيّنة صغيرة وحديثة العهد، ولا تمثّل ضماناً لأداء مستقبلي.
+        <div class="success-equation">
+          <div class="success-equation-title">معادلة النجاح</div>
+          <div class="success-equation-text">الذكاء الاصطناعي + 13 مؤشراً فنياً = اكتشاف الانفجار قبل حدوثه</div>
+          <div class="success-equation-icon">🎯</div>
         </div>
       {% else %}
         <div class="soon">
