@@ -108,8 +108,11 @@ a { color: inherit; text-decoration: none; }
 .stat-row { display: flex; gap: 14px; flex-wrap: wrap; margin-bottom: 22px; }
 .stat-box {
   background: rgba(6,10,26,.35); border: 1px solid rgba(255,255,255,.12);
-  border-radius: var(--radius); padding: 14px 18px; min-width: 130px;
+  border-radius: var(--radius); padding: 14px 18px; min-width: 130px; display: block;
 }
+a.stat-box { cursor: pointer; transition: transform .1s, filter .1s; }
+a.stat-box:hover { filter: brightness(1.15); transform: translateY(-1px); }
+.stat-box.active-filter { border-color: var(--gold); box-shadow: 0 0 0 1px var(--gold); }
 .stat-box .label { color: var(--text); font-size: 15px; }
 .stat-box .value { font-size: 28px; font-weight: 900; margin-top: 4px; }
 
@@ -206,15 +209,8 @@ a { color: inherit; text-decoration: none; }
 .success-equation-text { color: var(--text); font-weight: 900; font-size: 17px; }
 .success-equation-icon { font-size: 42px; flex-shrink: 0; }
 
-/* ---------- شريط الماسح + حبّة الجواهر ---------- */
+/* ---------- شريط الماسح ---------- */
 .scanner-bar { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; flex-wrap: wrap; }
-.gem-pill {
-  display: inline-block; padding: 6px 14px; border-radius: 20px; font-size: 16px; font-weight: 900;
-  background: rgba(245,196,81,.12); color: var(--gold); border: 1px solid rgba(245,196,81,.35);
-}
-.gem-pill.active { background: var(--gold); color: #2a2103; }
-.gem-pill.ghost { background: var(--card); color: var(--green); border-color: var(--border); }
-.gem-pill:hover { filter: brightness(1.1); }
 
 /* ---------- كروت الماسح (4 أعمدة: رتبة | معلومات | شارات | درجة) ---------- */
 .screener-cards { display: flex; flex-direction: column; gap: 10px; }

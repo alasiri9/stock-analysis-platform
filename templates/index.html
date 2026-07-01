@@ -107,17 +107,15 @@
         <p class="panel-sub">يفحص الأسهم ويرتّبها حسب الجودة (Piotroski) والزخم (Catalyst).</p>
       </div>
 
-      {# صناديق إحصائية #}
+      {# صناديق إحصائية — الجواهر تفلتر على الجواهر فقط، والجميع تعرض الكل #}
       <div class="stat-row tight">
-        <div class="stat-box gem-box"><div class="label">💎 الجواهر</div><div class="value">{{ stats.gems }}</div></div>
+        <a class="stat-box gem-box {{ 'active-filter' if filters.piotroski_min == 8 }}" href="{{ url_for('index', piotroski_min=8) }}"><div class="label">💎 الجواهر</div><div class="value">{{ stats.gems }}</div></a>
         <div class="stat-box strong-box"><div class="label">⚡ إشارة قوية</div><div class="value">{{ stats.strong }}</div></div>
-        <div class="stat-box total-box"><div class="label">👁 الجميع</div><div class="value">{{ stats.total }}</div></div>
+        <a class="stat-box total-box {{ 'active-filter' if filters.piotroski_min != 8 }}" href="{{ url_for('index') }}"><div class="label">👁 الجميع</div><div class="value">{{ stats.total }}</div></a>
       </div>
 
-      {# شريط: حبّة "الجواهر فقط" + تحديث + آخر تحديث #}
+      {# شريط: تحديث + آخر تحديث #}
       <div class="scanner-bar">
-        <a class="gem-pill {{ 'active' if filters.piotroski_min == 8 }}" href="{{ url_for('index', piotroski_min=8) }}">💎 الجواهر فقط ({{ stats.gems }})</a>
-        <a class="gem-pill ghost" href="{{ url_for('index') }}">عرض الكل</a>
         <form action="{{ url_for('screener_backfill_history') }}" method="post" style="margin:0 auto 0 0">
           <button class="btn-add" type="submit" title="يعبّئ الرسم البياني للأسهم المحدّثة أصلاً باستدعاء واحد فقط لكل سهم">📈 تحديث الرسم فقط</button>
         </form>
