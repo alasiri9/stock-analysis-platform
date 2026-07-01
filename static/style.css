@@ -48,7 +48,7 @@ a { color: inherit; text-decoration: none; }
   mix-blend-mode: lighten;
 }
 .brand-name {
-  font-size: 32px; font-weight: 500; letter-spacing: 1px; margin-top: 4px;
+  font-size: 32px; font-weight: 700; letter-spacing: 1px; margin-top: 4px;
   line-height: 1.3; padding-bottom: 4px;
   background: linear-gradient(180deg, #eaf1ff 0%, #a7c0e8 48%, #5e7bb0 100%);
   -webkit-background-clip: text; background-clip: text;
@@ -56,18 +56,18 @@ a { color: inherit; text-decoration: none; }
 }
 .brand-tag {
   display: flex; align-items: center; justify-content: center; gap: 9px;
-  color: #f2f5fb; font-size: 18px; font-weight: 500; margin-top: 8px; padding: 0 10px;
+  color: #f2f5fb; font-size: 18px; font-weight: 700; margin-top: 8px; padding: 0 10px;
 }
 .tag-line { width: 20px; height: 2px; border-radius: 2px; background: linear-gradient(90deg, transparent, #5b87c9); }
 .tag-line:last-child { background: linear-gradient(90deg, #5b87c9, transparent); }
 .brand-phrases { color: #aab4c6; font-size: 13px; font-weight: 600; margin-top: 7px; padding: 0 10px; }
 .brand-phrases .sep { color: #39445e; margin: 0 8px; }
 .brand-ar {
-  display: block; font-weight: 500; font-size: 20px; line-height: 1.35;
+  display: block; font-weight: 700; font-size: 20px; line-height: 1.35;
   color: var(--green); letter-spacing: .3px;
 }
 .brand-en {
-  display: block; font-size: 16px; font-weight: 500; margin-top: 5px;
+  display: block; font-size: 16px; font-weight: 700; margin-top: 5px;
   color: var(--green); letter-spacing: .6px;
 }
 .brand small { display: block; color: var(--muted); font-size: 11px; font-weight: 400; margin-top: 4px; }
@@ -101,7 +101,7 @@ a { color: inherit; text-decoration: none; }
 
 /* ---------- المحتوى ---------- */
 .content { flex: 1; padding: 26px 30px; }
-.page-title { font-size: 22px; font-weight: 500; margin: 0 0 4px; }
+.page-title { font-size: 22px; font-weight: 700; margin: 0 0 4px; }
 .page-sub { color: var(--muted); font-size: 13px; margin: 0 0 22px; }
 
 /* ---------- صناديق إحصائية ---------- */
@@ -111,7 +111,7 @@ a { color: inherit; text-decoration: none; }
   border-radius: var(--radius); padding: 14px 18px; min-width: 130px;
 }
 .stat-box .label { color: var(--muted); font-size: 12px; }
-.stat-box .value { font-size: 22px; font-weight: 500; margin-top: 4px; }
+.stat-box .value { font-size: 22px; font-weight: 700; margin-top: 4px; }
 
 /* ---------- البحث ---------- */
 .search {
@@ -124,7 +124,7 @@ a { color: inherit; text-decoration: none; }
 }
 .search input::placeholder { color: var(--muted); letter-spacing: 0; }
 .btn {
-  background: var(--green); color: #06210f; border: none; font-weight: 500;
+  background: var(--green); color: #06210f; border: none; font-weight: 700;
   padding: 12px 20px; border-radius: 10px; cursor: pointer; font-size: 15px;
 }
 .btn:hover { filter: brightness(1.08); }
@@ -151,7 +151,7 @@ a { color: inherit; text-decoration: none; }
   background: linear-gradient(160deg, #0e3a4d 0%, #16305c 35%, #2c2660 65%, #431f57 100%);
   border: 1px solid var(--border); border-radius: var(--radius); padding: 18px; min-width: 0;
 }
-.panel-head h2 { font-size: 18px; font-weight: 500; margin: 0 0 4px; color: var(--green); text-shadow: 0 0 16px rgba(34,197,94,.2); }
+.panel-head h2 { font-size: 18px; font-weight: 700; margin: 0 0 4px; color: var(--green); text-shadow: 0 0 16px rgba(34,197,94,.2); }
 .panel-sub { color: var(--muted); font-size: 12px; margin: 0 0 14px; }
 .stat-row.tight { gap: 10px; margin-bottom: 14px; }
 .stat-box.gem-box { border-color: rgba(245,196,81,.3); }
@@ -170,9 +170,9 @@ a { color: inherit; text-decoration: none; }
 .lcard.down { border-color: rgba(239,68,68,.35); }
 .lcard:hover { filter: brightness(1.08); }
 .lcard-top { margin-bottom: 2px; }
-.lcard-ticker { font-weight: 500; font-size: 14px; }
+.lcard-ticker { font-weight: 700; font-size: 14px; }
 .lcard-name { color: var(--muted); font-size: 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.lcard-ret { font-size: 20px; font-weight: 500; margin-top: 4px; }
+.lcard-ret { font-size: 20px; font-weight: 700; margin-top: 4px; }
 .lcard.up .lcard-ret { color: var(--green); }
 .lcard.down .lcard-ret { color: var(--red); }
 .lcard-sub { color: var(--muted); font-size: 10px; margin-top: 2px; }
@@ -180,12 +180,12 @@ a { color: inherit; text-decoration: none; }
 .lcard-spark.up { color: var(--green); }
 .lcard-spark.down { color: var(--red); }
 .lcard-tag-pill {
-  font-size: 10px; font-weight: 500; margin-top: 8px; padding: 5px 8px;
+  font-size: 10px; font-weight: 700; margin-top: 8px; padding: 5px 8px;
   border-radius: 8px; text-align: center;
 }
 .lcard-tag-pill.up { color: var(--green); background: rgba(34,197,94,.12); border: 1px solid rgba(34,197,94,.3); }
 .lcard-tag-pill.down { color: var(--red); background: rgba(239,68,68,.1); border: 1px solid rgba(239,68,68,.25); }
-.perf-title { font-size: 14px; font-weight: 500; margin: 18px 0 10px; }
+.perf-title { font-size: 14px; font-weight: 700; margin: 18px 0 10px; }
 
 .success-equation {
   display: flex; align-items: center; justify-content: space-between; gap: 16px;
@@ -194,14 +194,14 @@ a { color: inherit; text-decoration: none; }
   background: linear-gradient(135deg, rgba(59,130,246,.12), rgba(245,196,81,.06));
 }
 .success-equation-body { text-align: right; }
-.success-equation-title { color: var(--gold); font-weight: 500; font-size: 12px; margin-bottom: 4px; }
-.success-equation-text { color: var(--text); font-weight: 500; font-size: 13px; }
+.success-equation-title { color: var(--gold); font-weight: 700; font-size: 12px; margin-bottom: 4px; }
+.success-equation-text { color: var(--text); font-weight: 700; font-size: 13px; }
 .success-equation-icon { font-size: 32px; flex-shrink: 0; }
 
 /* ---------- شريط الماسح + حبّة الجواهر ---------- */
 .scanner-bar { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; flex-wrap: wrap; }
 .gem-pill {
-  display: inline-block; padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 500;
+  display: inline-block; padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 700;
   background: rgba(245,196,81,.12); color: var(--gold); border: 1px solid rgba(245,196,81,.35);
 }
 .gem-pill.active { background: var(--gold); color: #2a2103; }
@@ -219,11 +219,11 @@ a { color: inherit; text-decoration: none; }
 .scard:hover { border-color: #2f3b58; transform: translateY(-1px); }
 .scard.gem { border-color: rgba(245,196,81,.55); box-shadow: 0 0 0 1px rgba(245,196,81,.15); background: linear-gradient(90deg, rgba(245,196,81,.12), rgba(6,10,26,.4) 45%); }
 
-.scard-rank { width: 22px; text-align: center; font-size: 16px; font-weight: 500; color: var(--muted); flex-shrink: 0; }
+.scard-rank { width: 22px; text-align: center; font-size: 16px; font-weight: 700; color: var(--muted); flex-shrink: 0; }
 
 .scard-info { flex: 1; min-width: 0; }
 .scard-top { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-.scard-ticker { font-size: 16px; font-weight: 500; }
+.scard-ticker { font-size: 16px; font-weight: 700; }
 .scard-price { color: var(--muted); font-size: 13px; }
 .scard-name { color: var(--text); font-size: 12px; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .scard-scores { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; margin-top: 6px; font-size: 12px; color: var(--muted); }
@@ -238,12 +238,12 @@ a { color: inherit; text-decoration: none; }
 }
 .cat-pill.on { border-color: rgba(34,197,94,.5); color: var(--green); background: rgba(34,197,94,.08); }
 .scard-ready {
-  font-size: 10px; font-weight: 500; text-align: center; padding: 4px 8px; border-radius: 8px;
+  font-size: 10px; font-weight: 700; text-align: center; padding: 4px 8px; border-radius: 8px;
   color: var(--green); background: rgba(34,197,94,.1); border: 1px solid rgba(34,197,94,.4);
 }
 
 .scard-score { text-align: center; flex-shrink: 0; min-width: 58px; }
-.scard-big { font-size: 30px; font-weight: 500; line-height: 1; color: var(--green); text-shadow: 0 0 18px rgba(34,197,94,.25); }
+.scard-big { font-size: 30px; font-weight: 700; line-height: 1; color: var(--green); text-shadow: 0 0 18px rgba(34,197,94,.25); }
 .scard-status { color: var(--green); opacity: .8; font-size: 10px; margin-top: 5px; }
 
 /* ---------- بطاقة السهم ---------- */
@@ -252,11 +252,11 @@ a { color: inherit; text-decoration: none; }
   background: var(--panel-2); border: 1px solid var(--border);
   border-radius: var(--radius); padding: 20px 24px; margin-bottom: 18px;
 }
-.stock-head .ticker { font-size: 30px; font-weight: 500; }
+.stock-head .ticker { font-size: 30px; font-weight: 700; }
 .stock-head .name { color: var(--muted); font-size: 14px; margin-top: 2px; }
 .stock-head .sector { color: var(--muted); font-size: 12px; margin-top: 6px; }
 .price-block { text-align: left; }
-.price-block .price { font-size: 30px; font-weight: 500; }
+.price-block .price { font-size: 30px; font-weight: 700; }
 .change.up { color: var(--green); }
 .change.down { color: var(--red); }
 
@@ -267,12 +267,12 @@ a { color: inherit; text-decoration: none; }
   border-radius: 12px; padding: 14px 16px;
 }
 .metric .label { color: var(--muted); font-size: 12px; }
-.metric .num { font-size: 20px; font-weight: 500; margin-top: 6px; }
+.metric .num { font-size: 20px; font-weight: 700; margin-top: 6px; }
 .metric .na { color: var(--muted); }
 
 /* ---------- الأقسام ---------- */
 .section { margin-top: 26px; }
-.section h2 { font-size: 17px; font-weight: 500; margin: 0 0 12px; display: flex; align-items: center; gap: 8px; }
+.section h2 { font-size: 17px; font-weight: 700; margin: 0 0 12px; display: flex; align-items: center; gap: 8px; }
 
 /* ---------- درجة كبيرة (Piotroski / Catalyst) ---------- */
 .score-cards { display: flex; gap: 14px; flex-wrap: wrap; }
@@ -280,13 +280,13 @@ a { color: inherit; text-decoration: none; }
   background: var(--panel-2); border: 1px solid var(--border);
   border-radius: var(--radius); padding: 18px 22px; min-width: 200px; flex: 1;
 }
-.score-card .big { font-size: 40px; font-weight: 500; }
+.score-card .big { font-size: 40px; font-weight: 700; }
 .score-card .out { color: var(--muted); font-size: 16px; font-weight: 600; }
 .score-card .cap { color: var(--muted); font-size: 12px; margin-top: 4px; }
 .badge-gem {
   display: inline-block; background: rgba(245,196,81,.12); color: var(--gold);
   border: 1px solid rgba(245,196,81,.3); padding: 2px 10px; border-radius: 20px;
-  font-size: 12px; font-weight: 500; margin-bottom: 8px;
+  font-size: 12px; font-weight: 700; margin-bottom: 8px;
 }
 
 /* ---------- تفصيل Piotroski ---------- */
@@ -338,7 +338,7 @@ a { color: inherit; text-decoration: none; }
 .insider thead th { color: var(--muted); font-weight: 600; font-size: 12px; background: var(--panel-2); }
 .insider tbody tr:hover { background: var(--panel-2); }
 .insider .muted { color: var(--muted); }
-.pill { padding: 2px 10px; border-radius: 20px; font-size: 12px; font-weight: 500; }
+.pill { padding: 2px 10px; border-radius: 20px; font-size: 12px; font-weight: 700; }
 .pill.buy { background: var(--green-dim); color: var(--green); }
 .pill.sell { background: var(--red-dim); color: var(--red); }
 .btn-del { background: transparent; border: 1px solid var(--border); color: var(--muted); padding: 5px 12px; border-radius: 8px; cursor: pointer; font-size: 12px; }
