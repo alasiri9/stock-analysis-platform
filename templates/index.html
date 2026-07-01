@@ -86,8 +86,10 @@
           <div class="stat-box"><div class="label">متوسط أيام المتابعة</div><div class="value" dir="ltr">{{ ('%.0f'|format(perf.avg_days)) ~ ' يوم' if perf.avg_days is not none else '—' }}</div></div>
         </div>
         <div class="success-equation">
-          <div class="success-equation-title">معادلة النجاح</div>
-          <div class="success-equation-text">الذكاء الاصطناعي + 13 مؤشراً فنياً = اكتشاف الانفجار قبل حدوثه</div>
+          <div class="success-equation-body">
+            <div class="success-equation-title">معادلة النجاح</div>
+            <div class="success-equation-text">13 مؤشراً فنياً + الذكاء الاصطناعي = اكتشاف الانفجار قبل حدوثه</div>
+          </div>
           <div class="success-equation-icon">🎯</div>
         </div>
       {% else %}
