@@ -212,10 +212,10 @@ a.stat-box:hover { filter: brightness(1.15); transform: translateY(-1px); }
 .lcard-tag-pill.up { color: var(--green); background: rgba(34,197,94,.12); border: 1px solid rgba(34,197,94,.3); }
 .lcard-tag-pill.down { color: var(--red); background: rgba(239,68,68,.1); border: 1px solid rgba(239,68,68,.25); }
 .perf-panel {
-  background: var(--panel-2); border: 1px solid var(--border); border-radius: var(--radius);
+  background: rgba(34,197,94,.12); border: 1px solid rgba(34,197,94,.3); border-radius: var(--radius);
   padding: 18px; margin-top: 16px;
 }
-.perf-title { font-size: 23px; font-weight: 900; margin: 0 0 14px; color: var(--green); text-align: center; }
+.perf-title { font-size: 23px; font-weight: 900; margin: 0 0 14px; color: var(--green); text-align: right; }
 
 .success-equation {
   display: flex; align-items: center; justify-content: space-between; gap: 16px;
