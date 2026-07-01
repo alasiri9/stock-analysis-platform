@@ -20,7 +20,8 @@
 
 body {
   margin: 0;
-  background: var(--bg);
+  background: linear-gradient(160deg, #0e3a4d 0%, #16305c 35%, #2c2660 65%, #431f57 100%);
+  background-attachment: fixed;
   color: var(--text);
   font-family: "Segoe UI", Tahoma, system-ui, sans-serif;
   direction: rtl;
@@ -33,7 +34,7 @@ a { color: inherit; text-decoration: none; }
 /* ---------- السايدبار ---------- */
 .sidebar {
   width: 320px;
-  background: var(--bg);
+  background: linear-gradient(160deg, #0e3a4d 0%, #16305c 35%, #2c2660 65%, #431f57 100%);
   border-right: 1px solid var(--border);
   padding: 18px 14px;
   flex-shrink: 0;
