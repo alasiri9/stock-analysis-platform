@@ -35,8 +35,8 @@
       </select>
     </div>
     <button class="btn" type="submit">فلترة</button>
-    <button class="btn-add" type="submit" formaction="{{ url_for('screener_backfill_history') }}" formmethod="post" title="يعبّئ الرسم البياني للأسهم المحدّثة أصلاً باستدعاء واحد فقط لكل سهم">📈 تحديث شارت الأسهم التي انطلقت</button>
-    <button class="btn-add" type="submit" formaction="{{ url_for('screener_refresh') }}" formmethod="post">🔄 تحديث البيانات</button>
+    <button class="btn" type="submit" formaction="{{ url_for('screener_backfill_history') }}" formmethod="post" title="يعبّئ الرسم البياني للأسهم المحدّثة أصلاً باستدعاء واحد فقط لكل سهم">📈 تحديث شارت الأسهم التي انطلقت</button>
+    <button class="btn" type="submit" formaction="{{ url_for('screener_refresh') }}" formmethod="post">🔄 تحديث البيانات</button>
   </form>
 
   <div class="dashboard">
