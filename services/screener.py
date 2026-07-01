@@ -153,13 +153,19 @@ def launched_stocks(limit=6):
     None ≠ 0 : يُحسب العائد فقط لو توفّر السعران. لا استدعاءات API (نقرأ من الكاش).
     يُرجع (قائمة، إحصائيات الأداء).
     """
-    sigs = Signal.query.order_by(Signal.triggered_at.desc()).limit(limit).all()
+    # نجيب دفعة أكبر من الإشارات لأن السهم الواحد قد يُسجَّل له أكثر من إشارة (Piotroski + Catalyst)،
+    # ثم نُبقي أحدث إشارة فقط لكل سهم حتى تظهر لوحة "انطلقت" بأسهم متنوّعة لا مكرّرة.
+    sigs = Signal.query.order_by(Signal.triggered_at.desc()).limit(limit * 4).all()
     records, _ = load_records()
     price_by_ticker = {r["ticker"]: r.get("price") for r in records}
 
     rows = []
     returns = []
+    seen = set()
     for s in sigs:
+        if s.ticker in seen:
+            continue
+        seen.add(s.ticker)
         current = price_by_ticker.get(s.ticker)
         ret = None
         if current is not None and s.price_at_signal:
@@ -173,6 +179,8 @@ def launched_stocks(limit=6):
             "return_pct": ret,
             "date": s.triggered_at,
         })
+        if len(rows) >= limit:
+            break
 
     # إحصائيات الأداء العام (من الإشارات القابلة للحساب فقط)
     stats = {"avg": None, "win_rate": None, "best": None, "count": len(returns)}
