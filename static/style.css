@@ -191,7 +191,7 @@ a.stat-box:hover { filter: brightness(1.15); transform: translateY(-1px); }
 @media (max-width: 420px) { .launched-grid { grid-template-columns: minmax(0, 1fr); } }
 .lcard {
   background: rgba(6,10,26,.4); border: 1px solid rgba(255,255,255,.12); border-radius: 12px;
-  padding: 20px; color: var(--text); display: block;
+  padding: 28px 20px; color: var(--text); display: block;
 }
 .lcard.up { border-color: rgba(34,197,94,.4); }
 .lcard.down { border-color: rgba(239,68,68,.35); }
@@ -203,7 +203,7 @@ a.stat-box:hover { filter: brightness(1.15); transform: translateY(-1px); }
 .lcard.up .lcard-ret { color: var(--green); }
 .lcard.down .lcard-ret { color: var(--red); }
 .lcard-sub { color: var(--muted); font-size: 16px; margin-top: 2px; }
-.lcard-spark { width: 100%; height: 80px; margin-top: 12px; display: block; }
+.lcard-spark { width: 100%; height: 110px; margin-top: 16px; display: block; }
 .lcard-spark.up { color: var(--green); }
 .lcard-spark.down { color: var(--red); }
 .lcard-tag-pill {
