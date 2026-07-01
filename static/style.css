@@ -232,7 +232,7 @@ a.stat-box:hover { filter: brightness(1.15); transform: translateY(-1px); }
 .screener-cards { display: flex; flex-direction: column; gap: 10px; }
 .scard {
   display: flex; flex-wrap: wrap; align-items: center; gap: 14px;
-  background: rgba(6,10,26,.4); border: 1px solid rgba(255,255,255,.12);
+  background: rgba(6,10,26,.4); border: 2px solid rgba(255,255,255,.35);
   border-radius: 12px; padding: 12px 14px; color: var(--text);
   transition: border-color .15s, transform .05s;
 }
