@@ -154,9 +154,11 @@ a { color: inherit; text-decoration: none; }
 .panel-head h2 { font-size: 23px; font-weight: 900; margin: 0 0 4px; color: var(--green); text-shadow: 0 0 16px rgba(34,197,94,.2); }
 .panel-sub { color: var(--text); font-size: 15px; margin: 0 0 14px; }
 .stat-row.tight { gap: 10px; margin-bottom: 14px; }
-.stat-box.gem-box { border-color: rgba(245,196,81,.3); }
+.stat-box.gem-box { border-color: rgba(245,196,81,.3); background: rgba(245,196,81,.12); }
 .stat-box.gem-box .label { color: var(--gold); }
+.stat-box.strong-box { background: rgba(34,197,94,.12); border-color: rgba(34,197,94,.3); }
 .stat-box.strong-box .label { color: var(--green); }
+.stat-box.total-box { background: linear-gradient(135deg, rgba(59,130,246,.12), rgba(245,196,81,.06)); }
 .stat-box.total-box .label { color: var(--gold); }
 .stat-box .value.pos { color: var(--green); }
 .stat-box .value.neg { color: var(--red); }
