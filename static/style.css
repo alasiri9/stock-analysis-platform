@@ -160,7 +160,7 @@ a { color: inherit; text-decoration: none; }
 .stat-box.strong-box { background: rgba(34,197,94,.12); border-color: rgba(34,197,94,.3); }
 .stat-box.strong-box .label { color: var(--green); }
 .stat-box.total-box { background: linear-gradient(135deg, rgba(59,130,246,.24), rgba(245,196,81,.14)); }
-.stat-box.total-box .label { color: #000000; }
+.stat-box.total-box .label { color: var(--text); }
 .stat-box .value.pos { color: var(--green); }
 .stat-box .value.neg { color: var(--red); }
 
