@@ -94,6 +94,51 @@ def create_app():
             launched=launched, perf=perf,
         )
 
+    @app.route("/gems")
+    def gems():
+        # الجواهر المخفية = نفس فلتر Piotroski>=8 من الماسح، بصفحة مستقلة
+        records, latest = screener.load_records()
+        results = screener.filter_records(records, piotroski_min=8)
+        return render_template("gems.html", results=results, latest=latest, total=len(records))
+
+    @app.route("/leaders")
+    def leaders():
+        # القادة المستقبليون = أعلى 10 أسهم حسب Catalyst (بيانات الماسح نفسها، ترتيب مختلف)
+        records, latest = screener.load_records()
+        results = screener.filter_records(records)[:10]
+        return render_template("leaders.html", results=results, latest=latest, total=len(records))
+
+    @app.route("/signals")
+    def signals_page():
+        # كل الإشارات الأخيرة (بدل آخر 6 فقط في الرئيسية)
+        return render_template("signals.html", signals=screener.recent_signals(limit=50))
+
+    @app.route("/daily-report")
+    def daily_report():
+        records, latest = screener.load_records()
+        stats = {
+            "total": len(records),
+            "gems": sum(1 for r in records if r.get("piotroski") is not None and r["piotroski"] >= 8),
+            "strong": sum(1 for r in records if r.get("catalyst") is not None and r["catalyst"] >= 80),
+        }
+        return render_template(
+            "daily_report.html", stats=stats, latest=latest,
+            signals=screener.recent_signals(limit=15),
+        )
+
+    _SOON_PAGES = {
+        "portfolio": "المحفظة الذكية",
+        "news": "أخبار السوق",
+        "radar": "رادار المحفزات",
+        "audit": "التدقّق الذكي",
+        "performance": "اختيار الأداء",
+    }
+
+    @app.route("/soon/<slug>")
+    def soon(slug):
+        title = _SOON_PAGES.get(slug, "الميزة")
+        return render_template("soon.html", title=title)
+
     @app.route("/screener/refresh", methods=["POST"])
     def screener_refresh():
         # إعادة بناء كاش الماسح يدوياً (يستهلك استدعاءات API — لذلك يدوي).

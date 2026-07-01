@@ -173,6 +173,10 @@ a { color: inherit; text-decoration: none; }
 .lcard-tag { font-size: 10px; font-weight: 700; margin-top: 6px; }
 .lcard.up .lcard-tag { color: var(--green); }
 .lcard.down .lcard-tag { color: var(--red); }
+.lcard-spark { width: 100%; height: 32px; margin-top: 6px; display: block; }
+.lcard-spark.up { color: var(--green); }
+.lcard-spark.down { color: var(--red); }
+.lcard-spark-note { color: var(--muted); font-size: 9px; margin-top: 1px; }
 .perf-title { font-size: 14px; margin: 18px 0 10px; }
 
 /* ---------- شريط الماسح + حبّة الجواهر ---------- */

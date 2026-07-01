@@ -12,9 +12,9 @@ screener.py — فلترة الأسهم (Screener) مع تخزين مؤقت لح
 
 import json
 import time
-from datetime import datetime, timezone
+from datetime import datetime, timezone, date as date_cls
 
-from models import db, StockCache, Signal
+from models import db, StockCache, Signal, PricePoint
 from services import fmp_client
 from services import scoring
 from services import indicators
@@ -57,6 +57,7 @@ def _build_record(ticker):
     try:
         candles = fmp_client.get_historical_prices(ticker, limit=120)
         tech = indicators.build_indicators(candles)
+        _save_price_history(ticker, candles)  # نفس البيانات المجلوبة أصلاً — بلا استدعاء API إضافي
     except Exception:  # noqa: BLE001
         tech = []
 
@@ -88,6 +89,53 @@ def _record_signal(ticker, signal_type, price):
     if exists:
         return
     db.session.add(Signal(ticker=ticker, signal_type=signal_type, price_at_signal=price))
+
+
+def _save_price_history(ticker, candles, days=60):
+    """يحفظ إغلاقات آخر `days` يوماً في price_point — بيانات حقيقية من FMP مجلوبة أصلاً للمؤشرات.
+
+    upsert عبر db.session.merge (المفتاح مركّب ticker+date)؛ يبني مسار سعري حقيقي
+    يكبر كل يوم تحديث، ويُستخدم لاحقاً لرسم مصغّر (sparkline) بلا أي استدعاء API إضافي.
+    """
+    for c in (candles or [])[:days]:
+        raw_date = c.get("date")
+        close = c.get("close")
+        if not raw_date or close is None:
+            continue
+        try:
+            day = datetime.strptime(raw_date[:10], "%Y-%m-%d").date()
+        except ValueError:
+            continue
+        db.session.merge(PricePoint(ticker=ticker, date=day, price=close))
+
+
+def get_price_series(ticker, limit=60):
+    """يُرجع أسعار إغلاق السهم مرتّبة من الأقدم للأحدث (للرسم المصغّر)."""
+    rows = (
+        PricePoint.query
+        .filter_by(ticker=ticker)
+        .order_by(PricePoint.date.desc())
+        .limit(limit)
+        .all()
+    )
+    rows.reverse()
+    return [r.price for r in rows if r.price is not None]
+
+
+def _sparkline_points(prices, width=100, height=32, pad=3):
+    """يبني نقاط SVG polyline لمسار سعري (رسم مصغّر). يُرجع '' لو البيانات غير كافية."""
+    if not prices or len(prices) < 2:
+        return ""
+    lo, hi = min(prices), max(prices)
+    span = (hi - lo) or 1.0
+    n = len(prices)
+    step = (width - 2 * pad) / (n - 1)
+    points = []
+    for i, p in enumerate(prices):
+        x = pad + i * step
+        y = pad + (height - 2 * pad) * (1 - (p - lo) / span)
+        points.append(f"{x:.1f},{y:.1f}")
+    return " ".join(points)
 
 
 def refresh_cache(time_budget=20):
@@ -179,6 +227,7 @@ def launched_stocks(limit=6):
             triggered_at = triggered_at.replace(tzinfo=timezone.utc)
         days_elapsed = (now - triggered_at).days
         days_list.append(days_elapsed)
+        prices = get_price_series(s.ticker)
         rows.append({
             "ticker": s.ticker,
             "name": name_by_ticker.get(s.ticker),
@@ -188,6 +237,9 @@ def launched_stocks(limit=6):
             "return_pct": ret,
             "date": s.triggered_at,
             "days_elapsed": days_elapsed,
+            "spark_points": _sparkline_points(prices),
+            "spark_up": (prices[-1] >= prices[0]) if len(prices) >= 2 else None,
+            "spark_days": len(prices),
         })
         if len(rows) >= limit:
             break

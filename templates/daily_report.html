@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% set active = 'daily_report' %}
+{% block title %}التقرير اليومي — Algomatix{% endblock %}
+
+{% block content %}
+  <section class="panel">
+    <div class="panel-head">
+      <h2>📅 التقرير اليومي</h2>
+      <p class="panel-sub">ملخّص سريع لحالة الماسح اليوم — تعليمي، لا توصية.</p>
+    </div>
+
+    <div class="stat-row">
+      <div class="stat-box"><div class="label">👁 إجمالي الأسهم المفحوصة</div><div class="value">{{ stats.total }}</div></div>
+      <div class="stat-box gem-box"><div class="label">💎 الجواهر</div><div class="value">{{ stats.gems }}</div></div>
+      <div class="stat-box"><div class="label">⚡ إشارة قوية</div><div class="value">{{ stats.strong }}</div></div>
+    </div>
+
+    <div class="confidence" style="margin-bottom:18px">
+      {% if latest %}
+        آخر تحديث للماسح <span dir="ltr">{{ latest.strftime('%Y-%m-%d %H:%M') }} UTC</span>
+      {% else %}
+        لا توجد بيانات بعد — حدّث الماسح من الرئيسية أولاً.
+      {% endif %}
+    </div>
+
+    <h3 class="perf-title">⚡ آخر الإشارات</h3>
+    {% if signals %}
+      <table class="insider">
+        <thead>
+          <tr><th>السهم</th><th>نوع الإشارة</th><th>السعر وقت الإشارة</th><th>التاريخ</th></tr>
+        </thead>
+        <tbody>
+          {% for s in signals %}
+            <tr>
+              <td><a href="{{ url_for('stock_report', ticker=s.ticker) }}">{{ s.ticker }}</a></td>
+              <td>{{ 'جودة مالية قوية' if s.signal_type == 'piotroski_strong' else 'زخم قوي' if s.signal_type == 'catalyst_strong' else s.signal_type }}</td>
+              <td dir="ltr">{{ "%.2f $"|format(s.price_at_signal) if s.price_at_signal is not none else '—' }}</td>
+              <td dir="ltr">{{ s.triggered_at.strftime('%Y-%m-%d %H:%M') }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <div class="empty">لا توجد إشارات بعد.</div>
+    {% endif %}
+  </section>
+{% endblock %}

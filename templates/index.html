@@ -55,6 +55,12 @@
               <div class="lcard-ret">
                 {% if l.return_pct is not none %}{{ '+' if l.return_pct >= 0 else '' }}{{ "%.1f"|format(l.return_pct) }}%{% else %}—{% endif %}
               </div>
+              {% if l.spark_points %}
+                <svg class="lcard-spark {{ 'up' if l.spark_up else 'down' }}" viewBox="0 0 100 32" preserveAspectRatio="none">
+                  <polyline points="{{ l.spark_points }}" fill="none" stroke="currentColor" stroke-width="2"/>
+                </svg>
+                <div class="lcard-spark-note">مسار السعر — آخر {{ l.spark_days }} يوم تداول</div>
+              {% endif %}
               <div class="lcard-sub">منذ الإشارة · {{ l.date.strftime('%m-%d') }} · {{ l.days_elapsed }} يوم</div>
               {% if l.return_pct is not none %}
                 <div class="lcard-tag">{{ '✅ أداء إيجابي منذ الإشارة' if l.return_pct >= 0 else '📉 أداء سلبي منذ الإشارة' }}</div>
@@ -113,47 +119,7 @@
 
       {% if results %}
         <div class="screener-cards">
-          {% for r in results %}
-            {% set is_gem = r.piotroski is not none and r.piotroski >= 8 %}
-            <a class="scard {{ 'gem' if is_gem }}" href="{{ url_for('stock_report', ticker=r.ticker) }}">
-              <div class="scard-rank">{{ loop.index }}</div>
-
-              <div class="scard-info">
-                <div class="scard-top">
-                  {% if is_gem %}<span class="badge-gem">💎 جوهرة</span>{% endif %}
-                  <span class="scard-ticker">{{ r.ticker }}</span>
-                  <span class="scard-price" dir="ltr">{{ "%.2f $"|format(r.price) if r.price is not none else '—' }}</span>
-                </div>
-                <div class="scard-name">{{ r.name or '—' }}</div>
-                <div class="scard-scores">
-                  Piotroski <b>{{ r.piotroski if r.piotroski is not none else '—' }}</b>/9
-                  <span class="dot">·</span>
-                  Catalyst <b>{{ "%.0f"|format(r.catalyst) if r.catalyst is not none else '—' }}</b>
-                </div>
-              </div>
-
-              {# شارات فنية ثابتة (7) — الفعّالة تُضاء خضراء حسب المؤشرات المحسوبة #}
-              {% set ind = {} %}
-              {% for b in (r.indicators or []) %}{% set _ = ind.update({b.label: b.status}) %}{% endfor %}
-              <div class="scard-mid">
-                <div class="scard-badges">
-                  {% for cat, key in [('حجم','الحجم'), ('RS','RSI'), ('MACD','MACD'), ('EMA','EMA'), ('اختراق','اختراق'), ('ADX', none), ('قمة', none)] %}
-                    <span class="cat-pill {{ 'on' if key and ind.get(key) == 'bull' }}">{{ cat }}</span>
-                  {% endfor %}
-                </div>
-                {% if r.catalyst is not none and r.catalyst >= 80 %}
-                  <div class="scard-ready">🎯 انفجار قوي — جاهز للانطلاق</div>
-                {% endif %}
-              </div>
-
-              <div class="scard-score">
-                <div class="scard-big">{{ "%.0f"|format(r.catalyst) if r.catalyst is not none else '—' }}</div>
-                <div class="scard-status">
-                  {% if is_gem %}جودة عالية{% elif r.catalyst is not none and r.catalyst >= 80 %}زخم قوي{% else %}قيد الفحص{% endif %}
-                </div>
-              </div>
-            </a>
-          {% endfor %}
+          {% for r in results %}{% set rank = loop.index %}{% include "_scard.html" %}{% endfor %}
         </div>
       {% elif latest %}
         <div class="empty">لا توجد أسهم تطابق الفلاتر.</div>

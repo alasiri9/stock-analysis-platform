@@ -58,6 +58,24 @@ class StockCache(db.Model):
         return f"<StockCache {self.ticker} updated={self.updated_at}>"
 
 
+class PricePoint(db.Model):
+    """سعر إغلاق يومي لسهم — يُبنى تدريجياً لعرض مسار سعري حقيقي (رسم مصغّر) بلا استدعاء API إضافي.
+
+    الأعمدة حسب المواصفات: (ticker, date, price)
+    - المفتاح الأساسي مركّب (ticker, date): صف واحد لكل سهم في كل يوم تداول.
+    - يُملأ من نفس بيانات الأسعار التاريخية التي تُجلب أصلاً لحساب المؤشرات الفنية.
+    """
+
+    __tablename__ = "price_point"
+
+    ticker = db.Column(db.String(16), primary_key=True)
+    date = db.Column(db.Date, primary_key=True)
+    price = db.Column(db.Float, nullable=True)  # None = السعر لم يتوفّر لذلك اليوم
+
+    def __repr__(self):
+        return f"<PricePoint {self.ticker} {self.date}>"
+
+
 class Signal(db.Model):
     """إشارة محسوبة لسهم (مثلاً تجاوز Piotroski حدّ معيّن) — لأغراض تعليمية لا توصية.
 

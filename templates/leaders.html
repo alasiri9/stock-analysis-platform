@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% set active = 'leaders' %}
+{% block title %}القادة المستقبليون — Algomatix{% endblock %}
+
+{% block content %}
+  <section class="panel">
+    <div class="panel-head">
+      <h2>🚀 القادة المستقبليون</h2>
+      <p class="panel-sub">أعلى 10 أسهم حسب درجة Catalyst (الزخم) ضمن العيّنة المفحوصة — تعليمي، لا توصية.</p>
+    </div>
+
+    <div class="confidence" style="margin-bottom:14px">
+      {% if latest %}
+        أعلى <b>{{ results|length }}</b> من أصل <b>{{ total }}</b> سهم مفحوص · آخر تحديث <span dir="ltr">{{ latest.strftime('%Y-%m-%d %H:%M') }} UTC</span>
+      {% else %}
+        لا توجد بيانات بعد — حدّث الماسح من الرئيسية أولاً.
+      {% endif %}
+    </div>
+
+    {% if results %}
+      <div class="screener-cards">
+        {% for r in results %}{% set rank = loop.index %}{% include "_scard.html" %}{% endfor %}
+      </div>
+    {% else %}
+      <div class="empty">لا توجد بيانات كافية حالياً.</div>
+    {% endif %}
+  </section>
+{% endblock %}
