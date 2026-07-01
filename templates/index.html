@@ -82,10 +82,30 @@
 
         <h3 class="perf-title">📊 إحصائيات الأداء العام :</h3>
         <div class="stat-row">
-          <div class="stat-box"><div class="label">متوسط العائد</div><div class="value {{ 'pos' if perf.avg is not none and perf.avg >= 0 else 'neg' }}" dir="ltr">{{ ('%+.1f'|format(perf.avg)) ~ '%' if perf.avg is not none else '—' }}</div></div>
-          <div class="stat-box"><div class="label">نسبة النجاح</div><div class="value" dir="ltr">{{ ('%.0f'|format(perf.win_rate)) ~ '%' if perf.win_rate is not none else '—' }}</div></div>
-          <div class="stat-box"><div class="label">أعلى عائد</div><div class="value pos" dir="ltr">{{ ('%+.1f'|format(perf.best)) ~ '%' if perf.best is not none else '—' }}</div></div>
-          <div class="stat-box"><div class="label">متوسط أيام المتابعة</div><div class="value" dir="ltr">{{ ('%.0f'|format(perf.avg_days)) ~ ' يوم' if perf.avg_days is not none else '—' }}</div></div>
+          <div class="stat-box">
+            <div class="label">متوسط الربح</div>
+            <div class="value {{ 'pos' if perf.avg is not none and perf.avg >= 0 else 'neg' }}" dir="ltr">{{ ('%+.1f'|format(perf.avg)) ~ '%' if perf.avg is not none else '—' }}</div>
+            <div class="sub">من تاريخ الإشارة</div>
+          </div>
+          <div class="stat-box">
+            <div class="label">نسبة النجاح</div>
+            <div class="value" dir="ltr">{{ ('%.0f'|format(perf.win_rate)) ~ '%' if perf.win_rate is not none else '—' }}</div>
+            <div class="sub">{{ '(' ~ perf.win_count ~ ' من ' ~ perf.count ~ ' سهم)' if perf.count else '' }}</div>
+          </div>
+          <div class="stat-box">
+            <div class="label">أعلى ربح محقق</div>
+            <div class="value pos" dir="ltr">{{ ('%+.1f'|format(perf.best)) ~ '%' if perf.best is not none else '—' }}</div>
+            <div class="sub">{{ perf.best_ticker or '' }}</div>
+          </div>
+          <div class="stat-box">
+            <div class="label">متوسط فترة الانطلاق</div>
+            <div class="value" dir="ltr">{{ ('%.0f'|format(perf.avg_days)) ~ ' يوم' if perf.avg_days is not none else '—' }}</div>
+            <div class="sub">من الإشارة</div>
+          </div>
+          <div class="stat-box trophy-box">
+            <div class="trophy-icon">🏆</div>
+            <div class="trophy-text">المنصة تعمل على مؤشرات واستراتيجيات قوية ونسبة نجاحها عالية</div>
+          </div>
         </div>
         <div class="success-equation">
           <div class="success-equation-body">

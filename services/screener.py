@@ -257,7 +257,7 @@ def launched_stocks(limit=6):
         ret = None
         if current is not None and s.price_at_signal:
             ret = (current - s.price_at_signal) / s.price_at_signal * 100.0
-            returns.append(ret)
+            returns.append((s.ticker, ret))
         triggered_at = s.triggered_at
         if triggered_at.tzinfo is None:  # SQLite محلياً لا يحفظ tzinfo رغم DateTime(timezone=True)
             triggered_at = triggered_at.replace(tzinfo=timezone.utc)
@@ -281,11 +281,18 @@ def launched_stocks(limit=6):
             break
 
     # إحصائيات الأداء العام (من الإشارات القابلة للحساب فقط)
-    stats = {"avg": None, "win_rate": None, "best": None, "avg_days": None, "count": len(returns)}
+    stats = {
+        "avg": None, "win_rate": None, "best": None, "best_ticker": None,
+        "avg_days": None, "count": len(returns), "win_count": 0,
+    }
     if returns:
-        stats["avg"] = sum(returns) / len(returns)
-        stats["win_rate"] = sum(1 for r in returns if r > 0) / len(returns) * 100.0
-        stats["best"] = max(returns)
+        values = [r for _, r in returns]
+        stats["avg"] = sum(values) / len(values)
+        stats["win_count"] = sum(1 for r in values if r > 0)
+        stats["win_rate"] = stats["win_count"] / len(values) * 100.0
+        best_ticker, best_ret = max(returns, key=lambda x: x[1])
+        stats["best"] = best_ret
+        stats["best_ticker"] = best_ticker
     if days_list:
         stats["avg_days"] = sum(days_list) / len(days_list)
     return rows, stats

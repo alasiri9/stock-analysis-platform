@@ -117,6 +117,13 @@ a.stat-box:hover { filter: brightness(1.15); transform: translateY(-1px); }
 .stat-box.active-filter { border-color: var(--gold); box-shadow: 0 0 0 1px var(--gold); }
 .stat-box .label { color: var(--text); font-size: 15px; }
 .stat-box .value { font-size: 28px; font-weight: 900; margin-top: 4px; }
+.stat-box .sub { color: var(--muted); font-size: 12px; margin-top: 3px; }
+.stat-box.trophy-box {
+  display: flex; align-items: center; gap: 10px;
+  background: rgba(245,196,81,.12); border-color: rgba(245,196,81,.35);
+}
+.trophy-icon { font-size: 28px; flex-shrink: 0; }
+.trophy-text { color: var(--gold); font-weight: 700; font-size: 13px; line-height: 1.4; }
 
 /* ---------- البحث ---------- */
 .search {
