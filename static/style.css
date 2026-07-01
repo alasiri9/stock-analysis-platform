@@ -264,12 +264,10 @@ a.stat-box:hover { filter: brightness(1.15); transform: translateY(-1px); }
 
 .scard-score { text-align: center; flex-shrink: 0; min-width: 58px; }
 
-@media (max-width: 640px) {
-  .scard { flex-wrap: wrap; }
-  .scard-info { flex: 1 1 100%; order: 1; }
-  .scard-rank { order: 0; }
-  .scard-mid { width: 100%; order: 2; }
-  .scard-score { order: 3; margin-inline-start: auto; }
+@media (max-width: 900px) {
+  .scard { flex-direction: column; align-items: stretch; }
+  .scard-mid { width: 100%; }
+  .scard-score { width: 100%; }
 }
 .scard-big { font-size: 39px; font-weight: 900; line-height: 1; color: var(--green); text-shadow: 0 0 18px rgba(34,197,94,.25); }
 .scard-status { color: var(--green); opacity: .8; font-size: 13px; margin-top: 5px; }
