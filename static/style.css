@@ -203,12 +203,17 @@ a { color: inherit; text-decoration: none; }
 .scard-scores b { color: var(--text); font-size: 13px; }
 .scard-scores .dot { color: var(--border); }
 
-.scard-badges { display: flex; flex-wrap: wrap; gap: 5px; width: 196px; justify-content: flex-start; flex-shrink: 0; }
+.scard-mid { display: flex; flex-direction: column; gap: 7px; width: 196px; flex-shrink: 0; }
+.scard-badges { display: flex; flex-wrap: wrap; gap: 5px; justify-content: flex-start; }
 .cat-pill {
   font-size: 10px; padding: 3px 9px; border-radius: 20px;
   background: var(--card); border: 1px solid var(--border); color: var(--muted);
 }
 .cat-pill.on { border-color: rgba(34,197,94,.5); color: var(--green); background: rgba(34,197,94,.08); }
+.scard-ready {
+  font-size: 10px; font-weight: 700; text-align: center; padding: 4px 8px; border-radius: 8px;
+  color: var(--green); background: rgba(34,197,94,.1); border: 1px solid rgba(34,197,94,.4);
+}
 
 .scard-score { text-align: center; flex-shrink: 0; min-width: 58px; }
 .scard-big { font-size: 30px; font-weight: 800; line-height: 1; color: var(--green); text-shadow: 0 0 18px rgba(34,197,94,.25); }

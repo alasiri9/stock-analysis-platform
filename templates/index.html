@@ -127,10 +127,15 @@
               {# شارات فنية ثابتة (7) — الفعّالة تُضاء خضراء حسب المؤشرات المحسوبة #}
               {% set ind = {} %}
               {% for b in (r.indicators or []) %}{% set _ = ind.update({b.label: b.status}) %}{% endfor %}
-              <div class="scard-badges">
-                {% for cat, key in [('حجم','الحجم'), ('RS','RSI'), ('MACD','MACD'), ('EMA','EMA'), ('اختراق','اختراق'), ('ADX', none), ('قمة', none)] %}
-                  <span class="cat-pill {{ 'on' if key and ind.get(key) == 'bull' }}">{{ cat }}</span>
-                {% endfor %}
+              <div class="scard-mid">
+                <div class="scard-badges">
+                  {% for cat, key in [('حجم','الحجم'), ('RS','RSI'), ('MACD','MACD'), ('EMA','EMA'), ('اختراق','اختراق'), ('ADX', none), ('قمة', none)] %}
+                    <span class="cat-pill {{ 'on' if key and ind.get(key) == 'bull' }}">{{ cat }}</span>
+                  {% endfor %}
+                </div>
+                {% if r.catalyst is not none and r.catalyst >= 80 %}
+                  <div class="scard-ready">🎯 انفجار قوي — جاهز للانطلاق</div>
+                {% endif %}
               </div>
 
               <div class="scard-score">
