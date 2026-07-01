@@ -267,7 +267,9 @@ a.stat-box:hover { filter: brightness(1.15); transform: translateY(-1px); }
 
 @media (max-width: 900px) {
   .scard { flex-direction: column; align-items: stretch; }
-  .scard-mid { width: 100%; }
+  .scard-mid { display: block; width: 100%; }
+  .scard-badges { width: 100%; }
+  .scard-ready { display: table; margin: 10px auto 0; }
   .scard-score { width: 100%; }
 }
 .scard-big { font-size: 39px; font-weight: 900; line-height: 1; color: var(--green); text-shadow: 0 0 18px rgba(34,197,94,.25); }
