@@ -260,7 +260,7 @@ a.stat-box:hover { filter: brightness(1.15); transform: translateY(-1px); }
 .scard-ready {
   font-size: 13px; font-weight: 900; text-align: center; padding: 4px 8px; border-radius: 8px;
   color: var(--green); background: rgba(34,197,94,.1); border: 1px solid rgba(34,197,94,.4);
-  margin-left: 14px; margin-right: 14px;
+  width: calc(100% - 28px); margin: 0 auto;
 }
 
 .scard-score { text-align: center; flex-shrink: 0; min-width: 58px; }
