@@ -138,6 +138,42 @@ def _sparkline_points(prices, width=100, height=32, pad=3):
     return " ".join(points)
 
 
+def backfill_price_history(time_budget=20):
+    """يملأ price_point للأسهم المخزّنة مسبقاً بدون إعادة بناء سجلّها كاملاً.
+
+    استدعاء واحد فقط لكل سهم (historical-price-eod) بدل 5-6 استدعاءات (quote/profile/financials)
+    التي يحتاجها refresh_cache — يوفّر حصة الـ API عندما يكون الهدف فقط تعبئة الرسم البياني
+    لأسهم بياناتها الأساسية محدّثة أصلاً لكن رسمها لسا فاضٍ (مثلاً بعد إضافة الميزة حديثاً).
+    يتخطّى أي سهم له نقطة سعر مسجّلة اليوم بالفعل. يُرجع عدد الأسهم المحدّثة.
+    """
+    start = time.monotonic()
+    today = date_cls.today()
+    records, _ = load_records()
+    updated = 0
+    for r in records:
+        if time.monotonic() - start > time_budget:
+            break
+
+        ticker = r["ticker"]
+        has_today = PricePoint.query.filter_by(ticker=ticker, date=today).first()
+        if has_today:
+            continue
+
+        try:
+            candles = fmp_client.get_historical_prices(ticker, limit=120)
+            if not candles:
+                continue
+            _save_price_history(ticker, candles)
+            db.session.commit()
+            updated += 1
+        except Exception as e:  # noqa: BLE001
+            print(f"[screener] تعذّر تحديث تاريخ الأسعار لـ {ticker}: {e}")
+            db.session.rollback()
+            continue
+
+    return updated
+
+
 def refresh_cache(time_budget=20):
     """يحدّث كاش الماسح على دفعات ضمن حدّ زمني آمن، ويولّد إشارات للأسهم القوية.
 

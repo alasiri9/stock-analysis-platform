@@ -149,6 +149,15 @@ def create_app():
             print(f"[app] خطأ أثناء تحديث الماسح: {e}")
         return redirect(url_for("index"))
 
+    @app.route("/screener/backfill-history", methods=["POST"])
+    def screener_backfill_history():
+        # تعبئة الرسم البياني (price_point) للأسهم المخزّنة أصلاً — استدعاء واحد لكل سهم فقط.
+        try:
+            screener.backfill_price_history()
+        except Exception as e:  # noqa: BLE001
+            print(f"[app] خطأ أثناء تعبئة تاريخ الأسعار: {e}")
+        return redirect(url_for("index"))
+
     @app.route("/stock")
     def stock_search():
         # يستقبل البحث من نموذج الرئيسية ويحوّل لصفحة السهم

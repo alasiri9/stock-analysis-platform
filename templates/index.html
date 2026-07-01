@@ -115,7 +115,10 @@
       <div class="scanner-bar">
         <a class="gem-pill {{ 'active' if filters.piotroski_min == 8 }}" href="{{ url_for('index', piotroski_min=8) }}">💎 الجواهر فقط ({{ stats.gems }})</a>
         <a class="gem-pill ghost" href="{{ url_for('index') }}">عرض الكل</a>
-        <form action="{{ url_for('screener_refresh') }}" method="post" style="margin:0 auto 0 0">
+        <form action="{{ url_for('screener_backfill_history') }}" method="post" style="margin:0 auto 0 0">
+          <button class="btn-add" type="submit" title="يعبّئ الرسم البياني للأسهم المحدّثة أصلاً باستدعاء واحد فقط لكل سهم">📈 تحديث الرسم فقط</button>
+        </form>
+        <form action="{{ url_for('screener_refresh') }}" method="post">
           <button class="btn-add" type="submit">🔄 تحديث</button>
         </form>
       </div>
