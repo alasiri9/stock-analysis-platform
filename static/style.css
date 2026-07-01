@@ -219,7 +219,7 @@ a.stat-box:hover { filter: brightness(1.15); transform: translateY(-1px); }
 
 .success-equation {
   display: flex; align-items: center; justify-content: space-between; gap: 16px;
-  margin-top: auto; padding: 14px 20px;
+  margin-top: 16px; padding: 14px 20px;
   border: 1px solid rgba(245,196,81,.35); border-radius: var(--radius);
   background: linear-gradient(135deg, rgba(59,130,246,.12), rgba(245,196,81,.06));
 }
