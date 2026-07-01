@@ -154,7 +154,7 @@ a { color: inherit; text-decoration: none; }
 .panel-head h2 { font-size: 23px; font-weight: 900; margin: 0 0 4px; color: var(--green); text-shadow: 0 0 16px rgba(34,197,94,.2); }
 .panel-sub { color: var(--text); font-size: 15px; margin: 0 0 14px; }
 .stat-row.tight { gap: 10px; margin-bottom: 14px; }
-.stat-row.tight .stat-box .label { font-weight: 700; }
+.stat-row.tight .stat-box .label { font-weight: 900; letter-spacing: .4px; }
 .stat-box.gem-box { border-color: rgba(245,196,81,.3); background: rgba(245,196,81,.28); }
 .stat-box.gem-box .label { color: var(--gold); }
 .stat-box.strong-box { background: rgba(34,197,94,.12); border-color: rgba(34,197,94,.3); }
