@@ -50,20 +50,29 @@
         <div class="launched-grid">
           {% for l in launched %}
             <a class="lcard {{ 'up' if l.return_pct is not none and l.return_pct >= 0 else 'down' }}" href="{{ url_for('stock_report', ticker=l.ticker) }}">
-              <div class="lcard-ticker">{{ l.ticker }}</div>
-              <div class="lcard-name">{{ l.name or '' }}</div>
+              <div class="lcard-top">
+                <div class="lcard-ticker">{{ l.ticker }}</div>
+                <div class="lcard-name">{{ l.name or '' }}</div>
+              </div>
               <div class="lcard-ret">
                 {% if l.return_pct is not none %}{{ '+' if l.return_pct >= 0 else '' }}{{ "%.1f"|format(l.return_pct) }}%{% else %}—{% endif %}
               </div>
+              <div class="lcard-sub">منذ الإشارة · {{ l.days_elapsed }} يوم</div>
               {% if l.spark_points %}
                 <svg class="lcard-spark {{ 'up' if l.spark_up else 'down' }}" viewBox="0 0 100 32" preserveAspectRatio="none">
                   <polyline points="{{ l.spark_points }}" fill="none" stroke="currentColor" stroke-width="2"/>
                 </svg>
-                <div class="lcard-spark-note">مسار السعر — آخر {{ l.spark_days }} يوم تداول</div>
               {% endif %}
-              <div class="lcard-sub">منذ الإشارة · {{ l.date.strftime('%m-%d') }} · {{ l.days_elapsed }} يوم</div>
               {% if l.return_pct is not none %}
-                <div class="lcard-tag">{{ '✅ أداء إيجابي منذ الإشارة' if l.return_pct >= 0 else '📉 أداء سلبي منذ الإشارة' }}</div>
+                {% if l.return_pct >= 40 %}
+                  <div class="lcard-tag-pill up">🚀 انفجار قوي تحقق</div>
+                {% elif l.return_pct >= 15 %}
+                  <div class="lcard-tag-pill up">📈 بداية الانفجار تحقق</div>
+                {% elif l.return_pct >= 0 %}
+                  <div class="lcard-tag-pill up">✅ أداء إيجابي منذ الإشارة</div>
+                {% else %}
+                  <div class="lcard-tag-pill down">📉 أداء سلبي منذ الإشارة</div>
+                {% endif %}
               {% endif %}
             </a>
           {% endfor %}
@@ -75,6 +84,7 @@
           <div class="stat-box"><div class="label">نسبة النجاح</div><div class="value" dir="ltr">{{ ('%.0f'|format(perf.win_rate)) ~ '%' if perf.win_rate is not none else '—' }}</div></div>
           <div class="stat-box"><div class="label">أعلى عائد</div><div class="value pos" dir="ltr">{{ ('%+.1f'|format(perf.best)) ~ '%' if perf.best is not none else '—' }}</div></div>
           <div class="stat-box"><div class="label">متوسط أيام المتابعة</div><div class="value" dir="ltr">{{ ('%.0f'|format(perf.avg_days)) ~ ' يوم' if perf.avg_days is not none else '—' }}</div></div>
+          <div class="stat-box trophy-box">🏆<div class="trophy-text">كل الأرقام أعلاه من بيانات حقيقية — لا بيانات مصطنعة</div></div>
         </div>
         <div class="note">
           ℹ️ الإحصائيات أعلاه مبنية على عيّنة صغيرة وحديثة العهد، ولا تمثّل ضماناً لأداء مستقبلي.

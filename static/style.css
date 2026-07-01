@@ -156,27 +156,37 @@ a { color: inherit; text-decoration: none; }
 .stat-box .value.neg { color: var(--red); }
 
 /* ---------- اللوحة اليمنى: انطلقت ---------- */
-.launched-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+.launched-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+@media (max-width: 700px) { .launched-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 420px) { .launched-grid { grid-template-columns: 1fr; } }
 .lcard {
   background: var(--panel-2); border: 1px solid var(--border); border-radius: 12px;
-  padding: 12px 14px; color: var(--text); display: block;
+  padding: 12px 12px; color: var(--text); display: block;
 }
 .lcard.up { border-color: rgba(34,197,94,.3); background: linear-gradient(160deg, rgba(34,197,94,.06), var(--panel-2) 55%); }
 .lcard.down { border-color: rgba(239,68,68,.25); }
 .lcard:hover { filter: brightness(1.08); }
-.lcard-ticker { font-weight: 800; font-size: 15px; }
-.lcard-name { color: var(--muted); font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.lcard-ret { font-size: 22px; font-weight: 800; margin-top: 4px; }
+.lcard-top { margin-bottom: 2px; }
+.lcard-ticker { font-weight: 800; font-size: 14px; }
+.lcard-name { color: var(--muted); font-size: 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lcard-ret { font-size: 20px; font-weight: 800; margin-top: 4px; }
 .lcard.up .lcard-ret { color: var(--green); }
 .lcard.down .lcard-ret { color: var(--red); }
-.lcard-sub { color: var(--muted); font-size: 11px; margin-top: 2px; }
-.lcard-tag { font-size: 10px; font-weight: 700; margin-top: 6px; }
-.lcard.up .lcard-tag { color: var(--green); }
-.lcard.down .lcard-tag { color: var(--red); }
-.lcard-spark { width: 100%; height: 32px; margin-top: 6px; display: block; }
+.lcard-sub { color: var(--muted); font-size: 10px; margin-top: 2px; }
+.lcard-spark { width: 100%; height: 46px; margin-top: 8px; display: block; }
 .lcard-spark.up { color: var(--green); }
 .lcard-spark.down { color: var(--red); }
-.lcard-spark-note { color: var(--muted); font-size: 9px; margin-top: 1px; }
+.lcard-tag-pill {
+  font-size: 10px; font-weight: 700; margin-top: 8px; padding: 5px 8px;
+  border-radius: 8px; text-align: center;
+}
+.lcard-tag-pill.up { color: var(--green); background: rgba(34,197,94,.12); border: 1px solid rgba(34,197,94,.3); }
+.lcard-tag-pill.down { color: var(--red); background: rgba(239,68,68,.1); border: 1px solid rgba(239,68,68,.25); }
+.trophy-box {
+  display: flex; align-items: center; gap: 10px; font-size: 22px;
+  border-color: rgba(245,196,81,.35); background: rgba(245,196,81,.06);
+}
+.trophy-text { font-size: 11px; font-weight: 700; color: var(--gold); line-height: 1.4; }
 .perf-title { font-size: 14px; font-weight: 900; margin: 18px 0 10px; }
 
 /* ---------- شريط الماسح + حبّة الجواهر ---------- */
