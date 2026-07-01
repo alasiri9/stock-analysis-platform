@@ -133,10 +133,11 @@ a.stat-box:hover { filter: brightness(1.15); transform: translateY(-1px); }
 .btn:hover { filter: brightness(1.08); }
 
 /* ---------- لوحة الفلاتر ---------- */
+.filters-row { display: flex; align-items: flex-end; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
 .filters {
   display: flex; gap: 14px; align-items: flex-end; flex-wrap: wrap;
   background: var(--panel-2); border: 1px solid var(--border);
-  border-radius: var(--radius); padding: 16px 18px; margin-bottom: 16px;
+  border-radius: var(--radius); padding: 16px 18px;
 }
 .filter { display: flex; flex-direction: column; gap: 6px; }
 .filter label { color: var(--text); font-size: 15px; }

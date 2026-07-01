@@ -9,33 +9,41 @@
     <button class="btn" type="submit">تحليل</button>
   </form>
 
-  {# لوحة الفلاتر #}
-  <form class="filters" action="{{ url_for('index') }}" method="get">
-    <div class="filter">
-      <label>Piotroski (الأدنى)</label>
-      <input type="number" name="piotroski_min" min="0" max="9" step="1" value="{{ filters.piotroski_min|int if filters.piotroski_min is not none else '' }}">
-    </div>
-    <div class="filter">
-      <label>Catalyst (الأدنى)</label>
-      <input type="number" name="catalyst_min" min="0" max="100" step="1" value="{{ filters.catalyst_min|int if filters.catalyst_min is not none else '' }}">
-    </div>
-    <div class="filter">
-      <label>السعر الأقصى ($)</label>
-      <input type="number" name="price_max" min="0" step="1" value="{{ filters.price_max|int if filters.price_max is not none else '' }}">
-    </div>
-    <div class="filter">
-      <label>القيمة السوقية (مليار $)</label>
-      <input type="number" name="market_cap_min" min="0" step="1" value="{{ filters.market_cap_billions|int if filters.market_cap_billions is not none else '' }}">
-    </div>
-    <div class="filter">
-      <label>القطاع</label>
-      <select name="sector">
-        <option value="">الكل</option>
-        {% for s in sectors %}<option value="{{ s }}" {{ 'selected' if filters.sector == s else '' }}>{{ s }}</option>{% endfor %}
-      </select>
-    </div>
-    <button class="btn" type="submit">فلترة</button>
-  </form>
+  {# لوحة الفلاتر + زرّي تحديث الشارت/البيانات بنفس الصف، يسار زر فلترة #}
+  <div class="filters-row">
+    <form class="filters" action="{{ url_for('index') }}" method="get">
+      <div class="filter">
+        <label>Piotroski (الأدنى)</label>
+        <input type="number" name="piotroski_min" min="0" max="9" step="1" value="{{ filters.piotroski_min|int if filters.piotroski_min is not none else '' }}">
+      </div>
+      <div class="filter">
+        <label>Catalyst (الأدنى)</label>
+        <input type="number" name="catalyst_min" min="0" max="100" step="1" value="{{ filters.catalyst_min|int if filters.catalyst_min is not none else '' }}">
+      </div>
+      <div class="filter">
+        <label>السعر الأقصى ($)</label>
+        <input type="number" name="price_max" min="0" step="1" value="{{ filters.price_max|int if filters.price_max is not none else '' }}">
+      </div>
+      <div class="filter">
+        <label>القيمة السوقية (مليار $)</label>
+        <input type="number" name="market_cap_min" min="0" step="1" value="{{ filters.market_cap_billions|int if filters.market_cap_billions is not none else '' }}">
+      </div>
+      <div class="filter">
+        <label>القطاع</label>
+        <select name="sector">
+          <option value="">الكل</option>
+          {% for s in sectors %}<option value="{{ s }}" {{ 'selected' if filters.sector == s else '' }}>{{ s }}</option>{% endfor %}
+        </select>
+      </div>
+      <button class="btn" type="submit">فلترة</button>
+    </form>
+    <form action="{{ url_for('screener_backfill_history') }}" method="post">
+      <button class="btn-add" type="submit" title="يعبّئ الرسم البياني للأسهم المحدّثة أصلاً باستدعاء واحد فقط لكل سهم">📈 تحديث شارت الأسهم التي انطلقت</button>
+    </form>
+    <form action="{{ url_for('screener_refresh') }}" method="post">
+      <button class="btn-add" type="submit">🔄 تحديث البيانات</button>
+    </form>
+  </div>
 
   <div class="dashboard">
 
@@ -114,15 +122,6 @@
         <a class="stat-box total-box {{ 'active-filter' if filters.piotroski_min != 8 }}" href="{{ url_for('index') }}"><div class="label">👁 الجميع</div><div class="value">{{ stats.total }}</div></a>
       </div>
 
-      {# شريط: تحديث + آخر تحديث #}
-      <div class="scanner-bar">
-        <form action="{{ url_for('screener_backfill_history') }}" method="post" style="margin:0 auto 0 0">
-          <button class="btn-add" type="submit" title="يعبّئ الرسم البياني للأسهم المحدّثة أصلاً باستدعاء واحد فقط لكل سهم">📈 تحديث شارت الأسهم التي انطلقت</button>
-        </form>
-        <form action="{{ url_for('screener_refresh') }}" method="post">
-          <button class="btn-add" type="submit">🔄 تحديث البيانات</button>
-        </form>
-      </div>
       <div class="confidence" style="margin-bottom:12px">
         {% if latest %}
           المعروض <b>{{ results|length }}</b> / <b>{{ total }}</b> · آخر تحديث <span dir="ltr">{{ latest.strftime('%Y-%m-%d %H:%M') }} UTC</span>
