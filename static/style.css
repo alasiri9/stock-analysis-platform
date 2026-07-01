@@ -250,7 +250,7 @@ a.stat-box:hover { filter: brightness(1.15); transform: translateY(-1px); }
 .scard-scores b { color: var(--text); font-size: 17px; }
 .scard-scores .dot { color: var(--border); }
 
-.scard-mid { display: flex; flex-direction: column; gap: 7px; width: 196px; flex-shrink: 0; }
+.scard-mid { display: flex; flex-direction: column; gap: 7px; width: 196px; flex-shrink: 1; flex-basis: 196px; min-width: 150px; }
 .scard-badges { display: flex; flex-wrap: wrap; gap: 5px; justify-content: flex-start; }
 .cat-pill {
   font-size: 13px; padding: 3px 9px; border-radius: 20px;
@@ -269,7 +269,7 @@ a.stat-box:hover { filter: brightness(1.15); transform: translateY(-1px); }
   .scard { flex-direction: column; align-items: stretch; }
   .scard-mid { display: block; width: 100%; }
   .scard-badges { width: 100%; }
-  .scard-ready { display: table; margin: 10px auto 0; padding-left: 2px; }
+  .scard-ready { display: table; margin: 10px auto 0; }
   .scard-score { width: 100%; }
 }
 .scard-big { font-size: 39px; font-weight: 900; line-height: 1; color: var(--green); text-shadow: 0 0 18px rgba(34,197,94,.25); }
