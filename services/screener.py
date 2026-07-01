@@ -158,9 +158,12 @@ def launched_stocks(limit=6):
     sigs = Signal.query.order_by(Signal.triggered_at.desc()).limit(limit * 4).all()
     records, _ = load_records()
     price_by_ticker = {r["ticker"]: r.get("price") for r in records}
+    name_by_ticker = {r["ticker"]: r.get("name") for r in records}
 
+    now = datetime.now(timezone.utc)
     rows = []
     returns = []
+    days_list = []
     seen = set()
     for s in sigs:
         if s.ticker in seen:
@@ -171,23 +174,32 @@ def launched_stocks(limit=6):
         if current is not None and s.price_at_signal:
             ret = (current - s.price_at_signal) / s.price_at_signal * 100.0
             returns.append(ret)
+        triggered_at = s.triggered_at
+        if triggered_at.tzinfo is None:  # SQLite محلياً لا يحفظ tzinfo رغم DateTime(timezone=True)
+            triggered_at = triggered_at.replace(tzinfo=timezone.utc)
+        days_elapsed = (now - triggered_at).days
+        days_list.append(days_elapsed)
         rows.append({
             "ticker": s.ticker,
+            "name": name_by_ticker.get(s.ticker),
             "signal_type": s.signal_type,
             "price_at_signal": s.price_at_signal,
             "current": current,
             "return_pct": ret,
             "date": s.triggered_at,
+            "days_elapsed": days_elapsed,
         })
         if len(rows) >= limit:
             break
 
     # إحصائيات الأداء العام (من الإشارات القابلة للحساب فقط)
-    stats = {"avg": None, "win_rate": None, "best": None, "count": len(returns)}
+    stats = {"avg": None, "win_rate": None, "best": None, "avg_days": None, "count": len(returns)}
     if returns:
         stats["avg"] = sum(returns) / len(returns)
         stats["win_rate"] = sum(1 for r in returns if r > 0) / len(returns) * 100.0
         stats["best"] = max(returns)
+    if days_list:
+        stats["avg_days"] = sum(days_list) / len(days_list)
     return rows, stats
 
 

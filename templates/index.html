@@ -51,10 +51,14 @@
           {% for l in launched %}
             <a class="lcard {{ 'up' if l.return_pct is not none and l.return_pct >= 0 else 'down' }}" href="{{ url_for('stock_report', ticker=l.ticker) }}">
               <div class="lcard-ticker">{{ l.ticker }}</div>
+              <div class="lcard-name">{{ l.name or '' }}</div>
               <div class="lcard-ret">
                 {% if l.return_pct is not none %}{{ '+' if l.return_pct >= 0 else '' }}{{ "%.1f"|format(l.return_pct) }}%{% else %}—{% endif %}
               </div>
-              <div class="lcard-sub">منذ الإشارة · {{ l.date.strftime('%m-%d') }}</div>
+              <div class="lcard-sub">منذ الإشارة · {{ l.date.strftime('%m-%d') }} · {{ l.days_elapsed }} يوم</div>
+              {% if l.return_pct is not none %}
+                <div class="lcard-tag">{{ '✅ أداء إيجابي منذ الإشارة' if l.return_pct >= 0 else '📉 أداء سلبي منذ الإشارة' }}</div>
+              {% endif %}
             </a>
           {% endfor %}
         </div>
@@ -64,6 +68,10 @@
           <div class="stat-box"><div class="label">متوسط العائد</div><div class="value {{ 'pos' if perf.avg is not none and perf.avg >= 0 else 'neg' }}" dir="ltr">{{ ('%+.1f'|format(perf.avg)) ~ '%' if perf.avg is not none else '—' }}</div></div>
           <div class="stat-box"><div class="label">نسبة النجاح</div><div class="value" dir="ltr">{{ ('%.0f'|format(perf.win_rate)) ~ '%' if perf.win_rate is not none else '—' }}</div></div>
           <div class="stat-box"><div class="label">أعلى عائد</div><div class="value pos" dir="ltr">{{ ('%+.1f'|format(perf.best)) ~ '%' if perf.best is not none else '—' }}</div></div>
+          <div class="stat-box"><div class="label">متوسط أيام المتابعة</div><div class="value" dir="ltr">{{ ('%.0f'|format(perf.avg_days)) ~ ' يوم' if perf.avg_days is not none else '—' }}</div></div>
+        </div>
+        <div class="note">
+          ℹ️ الإحصائيات أعلاه مبنية على عيّنة صغيرة وحديثة العهد، ولا تمثّل ضماناً لأداء مستقبلي.
         </div>
       {% else %}
         <div class="soon">
