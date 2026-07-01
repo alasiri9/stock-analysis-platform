@@ -78,7 +78,7 @@
           {% endfor %}
         </div>
 
-        <h3 class="perf-title">📊 إحصائيات الأداء العام</h3>
+        <h3 class="perf-title">📊 إحصائيات الأداء العام :</h3>
         <div class="stat-row">
           <div class="stat-box"><div class="label">متوسط العائد</div><div class="value {{ 'pos' if perf.avg is not none and perf.avg >= 0 else 'neg' }}" dir="ltr">{{ ('%+.1f'|format(perf.avg)) ~ '%' if perf.avg is not none else '—' }}</div></div>
           <div class="stat-box"><div class="label">نسبة النجاح</div><div class="value" dir="ltr">{{ ('%.0f'|format(perf.win_rate)) ~ '%' if perf.win_rate is not none else '—' }}</div></div>
