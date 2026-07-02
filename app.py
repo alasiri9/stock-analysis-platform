@@ -48,6 +48,10 @@ def create_app():
     with app.app_context():
         db.create_all()  # ينشئ الجداول لو ما كانت موجودة
 
+    # التحديث التلقائي اليومي (01:00 UTC) — انظر services/scheduler.py
+    from services.scheduler import init_scheduler
+    init_scheduler(app)
+
     def _to_float(name):
         """يقرأ قيمة رقمية من باراميتر الطلب، أو None لو فارغة/غير صالحة."""
         raw = request.args.get(name, "").strip()
