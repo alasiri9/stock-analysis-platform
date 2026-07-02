@@ -18,6 +18,7 @@ from models import db, StockCache, Signal, PricePoint
 from services import fmp_client
 from services import scoring
 from services import indicators
+from services import telegram_client
 
 # عتبات توليد الإشارات (تعليمية، لا توصية)
 PIOTROSKI_SIGNAL_MIN = 8   # جودة مالية قوية
@@ -89,6 +90,8 @@ def _record_signal(ticker, signal_type, price):
     if exists:
         return
     db.session.add(Signal(ticker=ticker, signal_type=signal_type, price_at_signal=price))
+    # تنبيه تلغرام (اختياري — خامل بلا إعداد، وفشله لا يؤثر على التحديث)
+    telegram_client.notify_signal(ticker, signal_type, price)
 
 
 def _save_price_history(ticker, candles, days=60):
