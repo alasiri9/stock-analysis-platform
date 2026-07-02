@@ -16,6 +16,7 @@ from flask import Flask, render_template, request, redirect, url_for
 from models import db, Watchlist
 from services import analysis
 from services import fmp_client
+from services import radar
 from services import screener
 
 # مستخدم افتراضي وحيد (لا يوجد تسجيل دخول بعد)
@@ -130,10 +131,27 @@ def create_app():
             signals=screener.recent_signals(limit=15),
         )
 
+    @app.route("/radar")
+    def radar_page():
+        # رادار المحفزات: معاملات المطلعين من كاش EDGAR (بلا استدعاءات عند العرض)
+        transactions, open_buys, latest = radar.load_radar()
+        return render_template(
+            "radar.html",
+            transactions=transactions, open_buys=open_buys, latest=latest,
+        )
+
+    @app.route("/radar/refresh", methods=["POST"])
+    def radar_refresh():
+        # تحديث كاش الرادار على دفعات (EDGAR بطيء — قد يحتاج أكثر من ضغطة)
+        try:
+            radar.refresh_radar()
+        except Exception as e:  # noqa: BLE001
+            print(f"[app] خطأ أثناء تحديث الرادار: {e}")
+        return redirect(url_for("radar_page"))
+
     _SOON_PAGES = {
         "portfolio": "المحفظة الذكية",
         "news": "أخبار السوق",
-        "radar": "رادار المحفزات",
         "audit": "التدقّق الذكي",
         "performance": "اختيار الأداء",
     }

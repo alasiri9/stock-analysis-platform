@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% set active = 'radar' %}
+{% block title %}رادار المحفزات — Algomatix{% endblock %}
+
+{% block content %}
+  <section class="panel">
+    <div class="panel-head">
+      <h2>🎯 رادار المحفزات :</h2>
+      <p class="panel-sub">معاملات المطلعين (مدراء ومسؤولي الشركات) على أسهم شركاتهم — من سجلات SEC الرسمية.</p>
+    </div>
+
+    <form action="{{ url_for('radar_refresh') }}" method="post" style="margin-bottom:12px">
+      <button class="btn" type="submit">🔄 تحديث الرادار</button>
+    </form>
+    <div class="confidence" style="margin-bottom:14px">
+      {% if latest %}
+        آخر تحديث <span dir="ltr">{{ latest.strftime('%Y-%m-%d %H:%M') }} UTC</span>
+      {% else %}
+        لا توجد بيانات بعد — اضغط "تحديث الرادار" (قد يحتاج أكثر من ضغطة لتغطية كل الأسهم).
+      {% endif %}
+    </div>
+
+    {% if open_buys %}
+      <h3 class="perf-title">🔥 مشتريات المطلعين من السوق المفتوح :</h3>
+      <p class="panel-sub">أقوى إشارة بالرادار — المطلع يدفع من ماله الخاص لشراء سهم شركته.</p>
+      <table class="insider">
+        <thead>
+          <tr><th>السهم</th><th>المطلع</th><th>المنصب</th><th>الأسهم</th><th>السعر</th><th>التاريخ</th></tr>
+        </thead>
+        <tbody>
+          {% for t in open_buys %}
+            <tr>
+              <td><a href="{{ url_for('stock_report', ticker=t.ticker) }}"><b>{{ t.ticker }}</b></a></td>
+              <td>{{ t.owner or '—' }}</td>
+              <td>{{ t.title or '—' }}</td>
+              <td dir="ltr">{{ "{:,.0f}".format(t.shares) if t.shares is not none else '—' }}</td>
+              <td dir="ltr">{{ "%.2f $"|format(t.price) if t.price is not none else '—' }}</td>
+              <td dir="ltr">{{ t.date or '—' }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% elif latest %}
+      <div class="note" style="margin-bottom:14px">
+        لا توجد مشتريات سوق مفتوح حديثة ضمن أسهم الماسح — وهذا شائع؛ أغلب معاملات المطلعين منح وبيع مجدول.
+      </div>
+    {% endif %}
+
+    {% if transactions %}
+      <h3 class="perf-title">📋 كل المعاملات الأخيرة :</h3>
+      <table class="insider">
+        <thead>
+          <tr><th>السهم</th><th>المطلع</th><th>الاتجاه</th><th>النوع</th><th>الأسهم</th><th>السعر</th><th>التاريخ</th></tr>
+        </thead>
+        <tbody>
+          {% for t in transactions %}
+            <tr>
+              <td><a href="{{ url_for('stock_report', ticker=t.ticker) }}"><b>{{ t.ticker }}</b></a></td>
+              <td>{{ t.owner or '—' }}</td>
+              <td>
+                {% if t.direction == 'شراء' %}<span class="pill buy">شراء</span>
+                {% elif t.direction == 'بيع' %}<span class="pill sell">بيع</span>
+                {% else %}—{% endif %}
+              </td>
+              <td>{{ t.code_label or '—' }}</td>
+              <td dir="ltr">{{ "{:,.0f}".format(t.shares) if t.shares is not none else '—' }}</td>
+              <td dir="ltr">{{ "%.2f $"|format(t.price) if t.price is not none else '—' }}</td>
+              <td dir="ltr">{{ t.date or '—' }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% endif %}
+  </section>
+{% endblock %}

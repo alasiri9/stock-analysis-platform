@@ -16,6 +16,7 @@ from datetime import datetime, timezone
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.cron import CronTrigger
 
+from services import radar
 from services import screener
 
 # وقت التشغيل اليومي (UTC) — بعد تصفّر حد FMP بساعة أماناً
@@ -40,6 +41,20 @@ def _auto_refresh(app):
                 break  # لا جديد: إمّا اكتمل الكل أو توقّف التقدّم (حصة/أخطاء)
         print(f"[scheduler] انتهى التحديث التلقائي — إجمالي المحدَّث: {total_updated} "
               f"({datetime.now(timezone.utc):%Y-%m-%d %H:%M} UTC)")
+
+        # بعد بيانات السوق: رادار المحفزات (EDGAR بلا حصص لكنه بطيء — دفعات أيضاً)
+        radar_total = 0
+        for round_no in range(1, 7):
+            try:
+                updated = radar.refresh_radar(time_budget=90)
+            except Exception as e:  # noqa: BLE001
+                print(f"[scheduler] خطأ في دفعة الرادار {round_no}: {e}")
+                break
+            radar_total += updated
+            print(f"[scheduler] رادار — دفعة {round_no}: تحدّث {updated} سهماً")
+            if updated == 0:
+                break
+        print(f"[scheduler] انتهى تحديث الرادار — إجمالي: {radar_total}")
 
 
 def init_scheduler(app):
