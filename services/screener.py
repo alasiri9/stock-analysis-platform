@@ -28,8 +28,8 @@ CATALYST_SIGNAL_MIN = 80   # زخم نمو قوي
 UNIVERSE = [
     "AAPL", "MSFT", "NVDA", "GOOGL", "AMZN", "META",
     "TSLA", "AMD", "NFLX", "JPM", "V", "WMT",
-    "AVGO", "ORCL", "CRM", "ADBE", "COST", "HD",
-    "KO", "PEP", "DIS", "INTC", "QCOM", "PYPL",
+    "UNH", "JNJ", "XOM", "ADBE", "COST", "CVX",
+    "KO", "PEP", "DIS", "INTC", "BAC", "PYPL",
 ]
 
 # بادئة لتمييز سجلّات الماسح داخل stock_cache
