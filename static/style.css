@@ -267,7 +267,7 @@ a.stat-box:hover { filter: brightness(1.15); transform: translateY(-1px); }
   align-self: center;
 }
 
-.scard-score { text-align: center; flex-shrink: 0; min-width: 58px; }
+.scard-score { text-align: center; flex-shrink: 0; min-width: 58px; margin-inline-start: auto; }
 
 @media (max-width: 900px) {
   .scard { flex-direction: column; align-items: stretch; }
