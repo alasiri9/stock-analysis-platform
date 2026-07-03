@@ -398,3 +398,14 @@ a.stat-box:hover { filter: brightness(1.15); transform: translateY(-1px); }
 .news-summary { color: var(--muted); font-size: 14px; line-height: 1.5; text-align: left; }
 .news-meta { color: var(--muted); font-size: 12px; text-align: left; margin-top: auto; }
 .news-source { color: var(--green); font-weight: 700; }
+
+/* ---------- التدفق الذكي ---------- */
+.flow-tag {
+  font-size: 15px; font-weight: 900; text-align: center; padding: 8px 12px; border-radius: 8px;
+}
+.flow-tag.bull { color: var(--green); background: rgba(34,197,94,.1); border: 1px solid rgba(34,197,94,.4); }
+.flow-tag.bear { color: var(--red); background: rgba(239,68,68,.1); border: 1px solid rgba(239,68,68,.4); }
+.flow-tag.neutral { color: var(--muted); background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.15); }
+.scard-big.bear { color: var(--red); text-shadow: 0 0 18px rgba(239,68,68,.25); }
+.scard-big.neutral { color: var(--muted); text-shadow: none; }
+.scard.flow-bear:hover { border-color: rgba(239,68,68,.5); }

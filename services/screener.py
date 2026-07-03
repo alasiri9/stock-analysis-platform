@@ -61,9 +61,11 @@ def _build_record(ticker):
     try:
         candles = fmp_client.get_historical_prices(ticker, limit=120)
         tech = indicators.build_indicators(candles)
+        flow = indicators.money_flow(candles)  # تدفق السيولة — من نفس الشموع، بلا استدعاء إضافي
         _save_price_history(ticker, candles)  # نفس البيانات المجلوبة أصلاً — بلا استدعاء API إضافي
     except Exception:  # noqa: BLE001
         tech = []
+        flow = None
 
     return {
         "ticker": ticker,
@@ -74,6 +76,7 @@ def _build_record(ticker):
         "piotroski": scoring.piotroski_score(financials)["score"],
         "catalyst": catalyst["score"],
         "indicators": tech,
+        "money_flow": flow,
     }
 
 

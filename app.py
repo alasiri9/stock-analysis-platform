@@ -174,9 +174,20 @@ def create_app():
         items = news_client.get_market_news(limit=40)
         return render_template("news.html", items=items)
 
+    @app.route("/flow")
+    def flow_page():
+        # التدفق الذكي: ترتيب الأسهم حسب درجة تدفق السيولة (من كاش الماسح، بلا استدعاءات)
+        records, latest = screener.load_records()
+        with_flow = [r for r in records if r.get("money_flow")]
+        without_flow = [r for r in records if not r.get("money_flow")]
+        with_flow.sort(key=lambda r: r["money_flow"]["score"], reverse=True)
+        return render_template(
+            "flow.html",
+            rows=with_flow, pending=without_flow, latest=latest, total=len(records),
+        )
+
     _SOON_PAGES = {
         "portfolio": "المحفظة الذكية",
-        "audit": "التدقّق الذكي",
         "performance": "اختيار الأداء",
     }
 

@@ -154,6 +154,89 @@ def build_indicators(candles):
     return badges
 
 
+def money_flow(candles):
+    """درجة تدفق السيولة الذكية (0-100) من OBV + MFI + نسبة الحجم.
+
+    - OBV: هل الحجم يتراكم مع الصعود (تجميع) أم مع الهبوط (تصريف)؟
+    - MFI(14): مؤشر تدفق الأموال — RSI مرجّح بالحجم.
+    - نسبة الحجم: حجم آخر يوم إلى متوسط 20 يوماً.
+    يُرجع dict: {score, status, label, mfi, obv_trend, vol_ratio} أو None لو البيانات غير كافية.
+    None ≠ 0 : غياب الحجم أو قصر التاريخ ⇒ None وليس درجة صفرية ملفّقة.
+    """
+    rows = _clean(candles)
+    # نحتاج حجماً وأسعار قمة/قاع صالحة لـ21 يوماً على الأقل
+    rows = [r for r in rows if r["volume"] and r["high"] is not None and r["low"] is not None]
+    if len(rows) < 21:
+        return None
+
+    closes = [r["close"] for r in rows]
+    volumes = [r["volume"] for r in rows]
+
+    # --- OBV: سلسلة تراكمية، ونقارن آخر قيمة بقيمتها قبل 10 جلسات ---
+    obv = [0.0]
+    for i in range(1, len(rows)):
+        if closes[i] > closes[i - 1]:
+            obv.append(obv[-1] + volumes[i])
+        elif closes[i] < closes[i - 1]:
+            obv.append(obv[-1] - volumes[i])
+        else:
+            obv.append(obv[-1])
+    recent_span = abs(obv[-1] - obv[-11])
+    avg_vol20 = sum(volumes[-20:]) / 20
+    if obv[-1] > obv[-11] and recent_span > avg_vol20:
+        obv_trend, obv_pts = "up", 40
+    elif obv[-1] < obv[-11] and recent_span > avg_vol20:
+        obv_trend, obv_pts = "down", 0
+    else:
+        obv_trend, obv_pts = "flat", 20
+
+    # --- MFI(14) ---
+    period = 14
+    pos_flow = neg_flow = 0.0
+    for i in range(len(rows) - period, len(rows)):
+        tp = (rows[i]["high"] + rows[i]["low"] + rows[i]["close"]) / 3
+        tp_prev = (rows[i - 1]["high"] + rows[i - 1]["low"] + rows[i - 1]["close"]) / 3
+        raw = tp * volumes[i]
+        if tp > tp_prev:
+            pos_flow += raw
+        elif tp < tp_prev:
+            neg_flow += raw
+    if pos_flow + neg_flow == 0:
+        mfi = 50.0
+    elif neg_flow == 0:
+        mfi = 100.0
+    else:
+        mfi = 100 - 100 / (1 + pos_flow / neg_flow)
+
+    # --- نسبة الحجم ---
+    vol_ratio = volumes[-1] / avg_vol20 if avg_vol20 else None
+    if vol_ratio is None:
+        vol_pts = 0
+    elif vol_ratio >= 1.5:
+        vol_pts = 20
+    elif vol_ratio >= 1.0:
+        vol_pts = 10
+    else:
+        vol_pts = 0
+
+    score = obv_pts + (mfi / 100) * 40 + vol_pts
+    if score >= 65:
+        status, label = "bull", "تجميع"
+    elif score <= 35:
+        status, label = "bear", "تصريف"
+    else:
+        status, label = "neutral", "محايد"
+
+    return {
+        "score": round(score, 1),
+        "status": status,
+        "label": label,
+        "mfi": round(mfi, 1),
+        "obv_trend": obv_trend,
+        "vol_ratio": round(vol_ratio, 2) if vol_ratio is not None else None,
+    }
+
+
 if __name__ == "__main__":
     import os
     import sys

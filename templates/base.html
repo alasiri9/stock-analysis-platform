@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{% block title %}Algomatix — تحليل ذكي للأسهم الأمريكية{% endblock %}</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=20260703p">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=20260703q">
 </head>
 <body>
   <div class="layout">
@@ -20,7 +20,7 @@
         <a href="{{ url_for('leaders') }}" class="{{ 'active' if active=='leaders' else '' }}"><span class="ic">🚀</span> القادة المستقبليون</a>
         <a href="{{ url_for('gems') }}" class="{{ 'active' if active=='gems' else '' }}"><span class="ic">💎</span> الجواهر المخفية</a>
         <a href="{{ url_for('radar_page') }}" class="{{ 'active' if active=='radar' else '' }}"><span class="ic">🎯</span> رادار المحفزات</a>
-        <a href="{{ url_for('soon', slug='audit') }}"><span class="ic">📡</span> التدقّق الذكي</a>
+        <a href="{{ url_for('flow_page') }}" class="{{ 'active' if active=='flow' else '' }}"><span class="ic">📡</span> التدفق الذكي</a>
         <a href="{{ url_for('soon', slug='portfolio') }}"><span class="ic">🧠</span> المحفظة الذكية</a>
         <a href="{{ url_for('signals_page') }}" class="{{ 'active' if active=='signals' else '' }}"><span class="ic">⚡</span> إشارات التداول</a>
         <a href="{{ url_for('index') }}" class="{{ 'active' if active=='home' else '' }}"><span class="ic">🔍</span> ماسح الانطلاق</a>

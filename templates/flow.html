@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% set active = 'flow' %}
+{% block title %}التدفق الذكي — Algomatix{% endblock %}
+
+{% block content %}
+  <section class="panel">
+    <div class="panel-head">
+      <h2>📡 التدفق الذكي :</h2>
+      <p class="panel-sub">يرصد دخول السيولة للأسهم وخروجها (OBV + مؤشر تدفق الأموال MFI + نسبة الحجم) — الأعلى درجة = أقوى تجميع.</p>
+    </div>
+
+    <div class="confidence" style="margin-bottom:14px">
+      {% if latest %}
+        <b>{{ rows|length }}</b> سهماً برصد سيولة من أصل <b>{{ total }}</b> · آخر تحديث <span dir="ltr">{{ latest.strftime('%Y-%m-%d %H:%M') }} UTC</span>
+      {% else %}
+        لا توجد بيانات بعد — حدّث الماسح من الرئيسية أولاً.
+      {% endif %}
+    </div>
+
+    {% if rows %}
+      <div class="screener-cards">
+        {% for r in rows %}
+          {% set f = r.money_flow %}
+          <a class="scard flow-{{ f.status }}" href="{{ url_for('stock_report', ticker=r.ticker) }}">
+            <div class="scard-rank">{{ loop.index }}</div>
+            <div class="scard-info">
+              <div class="scard-top">
+                <span class="scard-ticker">{{ r.ticker }}</span>
+                <span class="scard-price" dir="ltr">{{ "%.2f $"|format(r.price) if r.price is not none else '—' }}</span>
+              </div>
+              <div class="scard-name">{{ r.name or '—' }}</div>
+              <div class="scard-scores">
+                MFI <b>{{ f.mfi }}</b>
+                <span class="dot">·</span>
+                OBV <b>{{ 'صاعد' if f.obv_trend == 'up' else ('هابط' if f.obv_trend == 'down' else 'مستقر') }}</b>
+                <span class="dot">·</span>
+                الحجم <b dir="ltr">{{ ('×' ~ f.vol_ratio) if f.vol_ratio is not none else '—' }}</b>
+              </div>
+            </div>
+            <div class="scard-mid">
+              <div class="flow-tag {{ f.status }}">
+                {{ '🟢 تجميع — سيولة داخلة' if f.status == 'bull' else ('🔴 تصريف — سيولة خارجة' if f.status == 'bear' else '⚪ محايد') }}
+              </div>
+            </div>
+            <div class="scard-score">
+              <div class="scard-big {{ f.status }}">{{ "%.0f"|format(f.score) }}</div>
+              <div class="scard-status">درجة التدفق</div>
+            </div>
+          </a>
+        {% endfor %}
+      </div>
+    {% elif latest %}
+      <div class="empty">
+        درجات التدفق تُحسب مع تحديث البيانات — ستكتمل تلقائياً مع التحديث الليلي القادم (01:00 UTC).
+      </div>
+    {% endif %}
+
+    {% if pending and rows %}
+      <div class="note" style="margin-top:14px">
+        ⏳ {{ pending|length }} سهماً بانتظار حساب درجته مع التحديث القادم.
+      </div>
+    {% endif %}
+  </section>
+{% endblock %}
