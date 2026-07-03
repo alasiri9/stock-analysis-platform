@@ -409,3 +409,22 @@ a.stat-box:hover { filter: brightness(1.15); transform: translateY(-1px); }
 .scard-big.bear { color: var(--red); text-shadow: 0 0 18px rgba(239,68,68,.25); }
 .scard-big.neutral { color: var(--muted); text-shadow: none; }
 .scard.flow-bear:hover { border-color: rgba(239,68,68,.5); }
+
+/* ---------- تسجيل الدخول ---------- */
+.login-wrap { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; }
+.login-box {
+  width: 100%; max-width: 420px; text-align: center;
+  background: rgba(6,10,26,.5); border: 1px solid rgba(255,255,255,.14);
+  border-radius: var(--radius); padding: 40px 32px;
+}
+.login-logo { width: 140px; margin: 0 auto 10px; display: block; mix-blend-mode: lighten; }
+.login-sub { color: var(--green); font-size: 16px; font-weight: 900; margin: 6px 0 26px; }
+.login-form { display: flex; flex-direction: column; gap: 12px; }
+.login-form input {
+  background: rgba(34,197,94,.12); border: 1px solid rgba(34,197,94,.3); color: var(--text);
+  padding: 13px 16px; border-radius: 10px; font-size: 18px; text-align: center;
+}
+.login-error {
+  margin-top: 16px; padding: 10px; border-radius: 10px; font-size: 15px; font-weight: 700;
+  color: var(--red); background: rgba(239,68,68,.1); border: 1px solid rgba(239,68,68,.35);
+}

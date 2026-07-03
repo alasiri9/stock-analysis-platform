@@ -11,7 +11,10 @@ app.py — تطبيق Flask الرئيسي: يربط قاعدة البيانات
 import os
 
 from dotenv import load_dotenv
-from flask import Flask, render_template, request, redirect, url_for
+import hashlib
+import secrets
+
+from flask import Flask, render_template, request, redirect, url_for, session
 
 from models import db, Watchlist, PortfolioHolding
 from services import analysis
@@ -45,6 +48,45 @@ def create_app():
     app = Flask(__name__)
     app.config["SQLALCHEMY_DATABASE_URI"] = _database_uri()
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+
+    # ===================== الحماية بكلمة مرور =====================
+    # APP_PASSWORD متغير بيئة واحد يفعّل كل شيء:
+    # - مضبوط  ⇒ كل الصفحات تتطلب تسجيل دخول، وزر "خروج" يعمل فعلياً.
+    # - غير مضبوط ⇒ المنصة مفتوحة كما كانت (آمن للنشر التدريجي وللتطوير المحلي).
+    app_password = os.getenv("APP_PASSWORD")
+    if app_password:
+        # مفتاح توقيع الجلسات مشتق من كلمة المرور (ثابت عبر إعادة التشغيل) — متغير واحد يكفي أحمد
+        app.secret_key = hashlib.sha256(f"algomatix-session-{app_password}".encode()).hexdigest()
+    else:
+        app.secret_key = secrets.token_hex(32)
+        print("[app] تنبيه: APP_PASSWORD غير مضبوط — المنصة مفتوحة بلا تسجيل دخول")
+
+    @app.before_request
+    def _require_login():
+        if not app_password:
+            return None  # الحماية غير مفعّلة
+        # مسموح بلا جلسة: صفحة الدخول نفسها + الملفات الثابتة
+        if request.endpoint in ("login", "static"):
+            return None
+        if session.get("authed"):
+            return None
+        return redirect(url_for("login"))
+
+    @app.route("/login", methods=["GET", "POST"])
+    def login():
+        error = None
+        if request.method == "POST":
+            if app_password and secrets.compare_digest(request.form.get("password", ""), app_password):
+                session["authed"] = True
+                session.permanent = True
+                return redirect(url_for("index"))
+            error = "كلمة المرور غير صحيحة"
+        return render_template("login.html", error=error)
+
+    @app.route("/logout")
+    def logout():
+        session.clear()
+        return redirect(url_for("login") if app_password else url_for("index"))
 
     db.init_app(app)
     with app.app_context():

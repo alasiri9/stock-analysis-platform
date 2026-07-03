@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{% block title %}Algomatix — تحليل ذكي للأسهم الأمريكية{% endblock %}</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=20260703q">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=20260704a">
 </head>
 <body>
   <div class="layout">
@@ -30,7 +30,7 @@
         <a href="{{ url_for('performance') }}" class="{{ 'active' if active=='performance' else '' }}"><span class="ic">📈</span> اختيار الأداء</a>
         <a href="{{ url_for('watchlist') }}" class="{{ 'active' if active=='watchlist' else '' }}"><span class="ic">👁</span> قائمة المراقبة</a>
       </nav>
-      <a href="#" class="nav-logout"><span class="ic">🚪</span> خروج</a>
+      <a href="{{ url_for('logout') }}" class="nav-logout"><span class="ic">🚪</span> خروج</a>
       <div class="sidebar-foot">
         <small>Algomatix © 2026</small>
       </div>

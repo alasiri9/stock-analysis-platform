@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>تسجيل الدخول — Algomatix</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=20260704a">
+</head>
+<body>
+  <div class="login-wrap">
+    <div class="login-box">
+      <img src="{{ url_for('static', filename='logo_icon.png') }}?v=1" alt="Algomatix" class="login-logo">
+      <div class="brand-name">Algomatix</div>
+      <div class="login-sub">تحليل ذكي للأسهم الأمريكية</div>
+
+      <form method="post" class="login-form">
+        <input type="password" name="password" placeholder="كلمة المرور" autofocus required>
+        <button class="btn" type="submit">🔓 دخول</button>
+      </form>
+
+      {% if error %}
+        <div class="login-error">⚠️ {{ error }}</div>
+      {% endif %}
+    </div>
+  </div>
+</body>
+</html>
