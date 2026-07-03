@@ -13,7 +13,7 @@ import os
 from dotenv import load_dotenv
 from flask import Flask, render_template, request, redirect, url_for
 
-from models import db, Watchlist
+from models import db, Watchlist, PortfolioHolding
 from services import analysis
 from services import fmp_client
 from services import radar
@@ -187,7 +187,6 @@ def create_app():
         )
 
     _SOON_PAGES = {
-        "portfolio": "المحفظة الذكية",
         "performance": "اختيار الأداء",
     }
 
@@ -291,6 +290,82 @@ def create_app():
             db.session.delete(item)
             db.session.commit()
         return redirect(url_for("watchlist"))
+
+    # ===================== المحفظة الذكية =====================
+
+    def _current_price(ticker, cache_prices):
+        """السعر الحالي: من كاش الماسح أولاً (بلا API)، وإلا quote حي من FMP."""
+        if ticker in cache_prices and cache_prices[ticker] is not None:
+            return cache_prices[ticker]
+        quote = fmp_client.get_quote(ticker)
+        return quote.get("price") if quote else None
+
+    @app.route("/portfolio")
+    def portfolio():
+        items = (
+            PortfolioHolding.query.filter_by(user_id=GUEST_USER)
+            .order_by(PortfolioHolding.added_at.desc()).all()
+        )
+        records, _ = screener.load_records()
+        cache_prices = {r["ticker"]: r.get("price") for r in records}
+
+        rows = []
+        total_cost = total_value = 0.0
+        priced_all = True
+        for item in items:
+            current = _current_price(item.ticker, cache_prices)
+            cost = item.shares * item.buy_price
+            value = item.shares * current if current is not None else None
+            pnl = value - cost if value is not None else None
+            pnl_pct = (pnl / cost * 100.0) if pnl is not None and cost else None
+            total_cost += cost
+            if value is not None:
+                total_value += value
+            else:
+                priced_all = False
+            rows.append({
+                "id": item.id, "ticker": item.ticker, "shares": item.shares,
+                "buy_price": item.buy_price, "current": current,
+                "cost": cost, "value": value, "pnl": pnl, "pnl_pct": pnl_pct,
+            })
+
+        # الملخص: None ≠ 0 — لو سهم بلا سعر حالي لا نعرض إجمالياً مضلّلاً
+        summary = {
+            "count": len(rows),
+            "total_cost": total_cost if rows else None,
+            "total_value": total_value if rows and priced_all else None,
+        }
+        if summary["total_value"] is not None and total_cost:
+            summary["total_pnl"] = summary["total_value"] - total_cost
+            summary["total_pnl_pct"] = summary["total_pnl"] / total_cost * 100.0
+        else:
+            summary["total_pnl"] = None
+            summary["total_pnl_pct"] = None
+        return render_template("portfolio.html", rows=rows, summary=summary)
+
+    @app.route("/portfolio/add", methods=["POST"])
+    def portfolio_add():
+        ticker = request.form.get("ticker", "").strip().upper()
+        try:
+            shares = float(request.form.get("shares", ""))
+            buy_price = float(request.form.get("buy_price", ""))
+        except ValueError:
+            shares = buy_price = 0
+        if ticker and shares > 0 and buy_price > 0:
+            db.session.add(PortfolioHolding(
+                ticker=ticker, shares=shares, buy_price=buy_price, user_id=GUEST_USER,
+            ))
+            db.session.commit()
+        return redirect(url_for("portfolio"))
+
+    @app.route("/portfolio/remove", methods=["POST"])
+    def portfolio_remove():
+        item_id = request.form.get("id")
+        item = PortfolioHolding.query.filter_by(id=item_id, user_id=GUEST_USER).first()
+        if item:
+            db.session.delete(item)
+            db.session.commit()
+        return redirect(url_for("portfolio"))
 
     return app
 

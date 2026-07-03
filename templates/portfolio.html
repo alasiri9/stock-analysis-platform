@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+{% set active = 'portfolio' %}
+{% block title %}المحفظة الذكية — Algomatix{% endblock %}
+
+{% block content %}
+  <section class="panel">
+    <div class="panel-head">
+      <h2>🧠 المحفظة الذكية :</h2>
+      <p class="panel-sub">سجّل مشترياتك (افتراضياً أو فعلياً) وتابع قيمتها وأرباحك لحظة بلحظة.</p>
+    </div>
+
+    {# ملخص المحفظة #}
+    {% if summary.count %}
+      <div class="stat-row">
+        <div class="stat-box">
+          <div class="label">عدد المقتنيات</div>
+          <div class="value">{{ summary.count }}</div>
+        </div>
+        <div class="stat-box">
+          <div class="label">إجمالي التكلفة</div>
+          <div class="value" dir="ltr">{{ "%.2f $"|format(summary.total_cost) if summary.total_cost is not none else '—' }}</div>
+        </div>
+        <div class="stat-box">
+          <div class="label">القيمة الحالية</div>
+          <div class="value" dir="ltr">{{ "%.2f $"|format(summary.total_value) if summary.total_value is not none else '—' }}</div>
+        </div>
+        <div class="stat-box">
+          <div class="label">الربح / الخسارة</div>
+          <div class="value {{ 'pos' if summary.total_pnl is not none and summary.total_pnl >= 0 else 'neg' }}" dir="ltr">
+            {% if summary.total_pnl is not none %}
+              {{ "%+.2f $"|format(summary.total_pnl) }} ({{ "%+.1f"|format(summary.total_pnl_pct) }}%)
+            {% else %}—{% endif %}
+          </div>
+        </div>
+      </div>
+    {% endif %}
+
+    {# نموذج إضافة عملية شراء #}
+    <form class="filters" action="{{ url_for('portfolio_add') }}" method="post">
+      <div class="filter">
+        <label>رمز السهم</label>
+        <input type="text" name="ticker" placeholder="AAPL" required style="text-transform: uppercase;">
+      </div>
+      <div class="filter">
+        <label>عدد الأسهم</label>
+        <input type="number" name="shares" min="0.01" step="0.01" placeholder="10" required>
+      </div>
+      <div class="filter">
+        <label>سعر الشراء ($)</label>
+        <input type="number" name="buy_price" min="0.01" step="0.01" placeholder="150.00" required>
+      </div>
+      <button class="btn" type="submit">➕ إضافة للمحفظة</button>
+    </form>
+
+    {% if rows %}
+      <table class="insider">
+        <thead>
+          <tr>
+            <th>السهم</th>
+            <th>الكمية</th>
+            <th>سعر الشراء</th>
+            <th>السعر الحالي</th>
+            <th>التكلفة</th>
+            <th>القيمة الحالية</th>
+            <th>الربح / الخسارة</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in rows %}
+            <tr>
+              <td><a href="{{ url_for('stock_report', ticker=r.ticker) }}"><b>{{ r.ticker }}</b></a></td>
+              <td dir="ltr">{{ r.shares }}</td>
+              <td dir="ltr">{{ "%.2f $"|format(r.buy_price) }}</td>
+              <td dir="ltr">{{ "%.2f $"|format(r.current) if r.current is not none else '—' }}</td>
+              <td dir="ltr">{{ "%.2f $"|format(r.cost) }}</td>
+              <td dir="ltr">{{ "%.2f $"|format(r.value) if r.value is not none else '—' }}</td>
+              <td dir="ltr">
+                {% if r.pnl is not none %}
+                  <span class="pill {{ 'buy' if r.pnl >= 0 else 'sell' }}">{{ "%+.2f $"|format(r.pnl) }} ({{ "%+.1f"|format(r.pnl_pct) }}%)</span>
+                {% else %}—{% endif %}
+              </td>
+              <td>
+                <form action="{{ url_for('portfolio_remove') }}" method="post" style="margin:0">
+                  <input type="hidden" name="id" value="{{ r.id }}">
+                  <button class="btn-del" type="submit">حذف</button>
+                </form>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <div class="empty">
+        محفظتك فارغة — أضف أول عملية شراء من النموذج أعلاه وتابع أداءها هنا.
+      </div>
+    {% endif %}
+  </section>
+{% endblock %}

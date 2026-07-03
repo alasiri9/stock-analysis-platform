@@ -20,6 +20,27 @@ def _utcnow():
     return datetime.now(timezone.utc)
 
 
+class PortfolioHolding(db.Model):
+    """مقتنى في المحفظة الافتراضية — كل صف = عملية شراء سجّلها المستخدم.
+
+    الأعمدة: (id, ticker, shares, buy_price, user_id, added_at)
+    - shares: عدد الأسهم المشتراة (يقبل كسوراً مثل 0.5 سهم).
+    - buy_price: سعر الشراء الذي أدخله المستخدم (إلزامي — أساس حساب الربح/الخسارة).
+    """
+
+    __tablename__ = "portfolio_holding"
+
+    id = db.Column(db.Integer, primary_key=True)
+    ticker = db.Column(db.String(16), nullable=False, index=True)
+    shares = db.Column(db.Float, nullable=False)
+    buy_price = db.Column(db.Float, nullable=False)
+    user_id = db.Column(db.String(64), nullable=False, index=True)
+    added_at = db.Column(db.DateTime(timezone=True), nullable=False, default=_utcnow)
+
+    def __repr__(self):
+        return f"<PortfolioHolding {self.ticker} x{self.shares}>"
+
+
 class Watchlist(db.Model):
     """قائمة المتابعة — كل صف = سهم أضافه المستخدم.
 
