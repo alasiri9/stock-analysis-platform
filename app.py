@@ -49,6 +49,11 @@ def create_app():
     db.init_app(app)
     with app.app_context():
         db.create_all()  # ينشئ الجداول لو ما كانت موجودة
+        # تنظيف الإشارات المكررة (آمن ورخيص — يصحح ما خلّفته نسخة قديمة كانت تكرر يومياً)
+        try:
+            screener.dedupe_signals()
+        except Exception as e:  # noqa: BLE001
+            print(f"[app] تعذّر تنظيف الإشارات المكررة: {e}")
 
     # التحديث التلقائي اليومي (01:00 UTC) — انظر services/scheduler.py
     from services.scheduler import init_scheduler

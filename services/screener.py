@@ -12,7 +12,7 @@ screener.py — فلترة الأسهم (Screener) مع تخزين مؤقت لح
 
 import json
 import time
-from datetime import datetime, timezone, date as date_cls
+from datetime import datetime, timezone, timedelta, date as date_cls
 
 from models import db, StockCache, Signal, PricePoint
 from services import fmp_client
@@ -80,17 +80,21 @@ def _build_record(ticker):
     }
 
 
+# نافذة منع تكرار الإشارة: لا تُسجَّل إشارة جديدة لنفس (السهم، النوع) خلال هذه المدة.
+# الإشارة الأولى تبقى المرجع الذي يُقاس منه العائد — لو تكرّرت يومياً لعلِق العائد على 0%.
+SIGNAL_COOLDOWN_DAYS = 30
+
+
 def _record_signal(ticker, signal_type, price):
-    """يسجّل إشارة في جدول signals مرة واحدة كل يوم لكل (سهم، نوع).
+    """يسجّل إشارة لأول تأهّل فقط — لا تتجدد إلا بعد غياب SIGNAL_COOLDOWN_DAYS.
 
     None ≠ 0 : price قد يكون None (سعر غير متوفّر) ويُخزّن كذلك دون تلفيق.
-    نستخدم مقارنة بداية اليوم (UTC) بدل دوال SQL خاصة بقاعدة بيانات معيّنة.
     """
-    start_of_day = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
+    cutoff = datetime.now(timezone.utc) - timedelta(days=SIGNAL_COOLDOWN_DAYS)
     exists = (
         Signal.query
         .filter(Signal.ticker == ticker, Signal.signal_type == signal_type,
-                Signal.triggered_at >= start_of_day)
+                Signal.triggered_at >= cutoff)
         .first()
     )
     if exists:
@@ -98,6 +102,29 @@ def _record_signal(ticker, signal_type, price):
     db.session.add(Signal(ticker=ticker, signal_type=signal_type, price_at_signal=price))
     # تنبيه تلغرام (اختياري — خامل بلا إعداد، وفشله لا يؤثر على التحديث)
     telegram_client.notify_signal(ticker, signal_type, price)
+
+
+def dedupe_signals():
+    """تنظيف الإشارات المكررة: يُبقي الأقدم لكل (سهم، نوع) ويحذف الأحدث المكررة.
+
+    آمنة الاستدعاء دائماً (idempotent) — تُشغَّل عند بدء التطبيق لتصحيح المكررات
+    التي خلّفتها النسخة القديمة (كانت تسجّل إشارة كل يوم لنفس السهم).
+    يُرجع عدد الصفوف المحذوفة.
+    """
+    sigs = Signal.query.order_by(Signal.triggered_at.asc()).all()
+    seen = set()
+    removed = 0
+    for s in sigs:
+        key = (s.ticker, s.signal_type)
+        if key in seen:
+            db.session.delete(s)
+            removed += 1
+        else:
+            seen.add(key)
+    if removed:
+        db.session.commit()
+        print(f"[screener] حُذفت {removed} إشارة مكررة (أُبقي الأقدم لكل سهم/نوع)")
+    return removed
 
 
 def _save_price_history(ticker, candles, days=60):
