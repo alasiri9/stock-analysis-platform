@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{% set active = 'performance' %}
+{% block title %}اختيار الأداء — Algomatix{% endblock %}
+
+{% block content %}
+  <section class="panel">
+    <div class="panel-head">
+      <h2>📈 اختيار الأداء :</h2>
+      <p class="panel-sub">سجل كامل لكل إشارات المنصة منذ البداية وأداء كل واحدة منذ صدورها.</p>
+    </div>
+
+    {% if overall %}
+      <div class="stat-row">
+        <div class="stat-box">
+          <div class="label">إجمالي الإشارات</div>
+          <div class="value">{{ overall.count }}</div>
+        </div>
+        <div class="stat-box">
+          <div class="label">متوسط العائد</div>
+          <div class="value {{ 'pos' if overall.avg >= 0 else 'neg' }}" dir="ltr">{{ "%+.1f"|format(overall.avg) }}%</div>
+        </div>
+        <div class="stat-box">
+          <div class="label">نسبة النجاح</div>
+          <div class="value" dir="ltr">{{ "%.0f"|format(overall.win_rate) }}%</div>
+          <div class="sub">({{ overall.win_count }} من {{ overall.count }})</div>
+        </div>
+        <div class="stat-box">
+          <div class="label">أفضل إشارة</div>
+          <div class="value pos" dir="ltr">{{ "%+.1f"|format(overall.best) }}%</div>
+        </div>
+        <div class="stat-box">
+          <div class="label">أسوأ إشارة</div>
+          <div class="value {{ 'neg' if overall.worst < 0 else 'pos' }}" dir="ltr">{{ "%+.1f"|format(overall.worst) }}%</div>
+        </div>
+      </div>
+
+      {# مقارنة أنواع الإشارات #}
+      {% if type_stats %}
+        <h3 class="perf-title">⚖️ أي نوع إشارة أدق؟</h3>
+        <div class="stat-row">
+          {% for t, st in type_stats.items() %}
+            {% if st %}
+              <div class="stat-box">
+                <div class="label">{{ '💎 جودة مالية (Piotroski)' if t == 'piotroski_strong' else ('⚡ زخم قوي (Catalyst)' if t == 'catalyst_strong' else t) }}</div>
+                <div class="value {{ 'pos' if st.avg >= 0 else 'neg' }}" dir="ltr">{{ "%+.1f"|format(st.avg) }}%</div>
+                <div class="sub">نجاح {{ "%.0f"|format(st.win_rate) }}% · {{ st.count }} إشارة</div>
+              </div>
+            {% endif %}
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endif %}
+
+    {% if rows %}
+      <table class="insider">
+        <thead>
+          <tr>
+            <th>السهم</th>
+            <th>نوع الإشارة</th>
+            <th>التاريخ</th>
+            <th>الأيام</th>
+            <th>سعر الإشارة</th>
+            <th>السعر الحالي</th>
+            <th>العائد</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in rows %}
+            <tr>
+              <td><a href="{{ url_for('stock_report', ticker=r.ticker) }}"><b>{{ r.ticker }}</b></a></td>
+              <td>{{ 'جودة مالية' if r.signal_type == 'piotroski_strong' else ('زخم قوي' if r.signal_type == 'catalyst_strong' else r.signal_type) }}</td>
+              <td dir="ltr">{{ r.date.strftime('%Y-%m-%d') }}</td>
+              <td dir="ltr">{{ r.days }}</td>
+              <td dir="ltr">{{ "%.2f $"|format(r.price_at_signal) if r.price_at_signal is not none else '—' }}</td>
+              <td dir="ltr">{{ "%.2f $"|format(r.current) if r.current is not none else '—' }}</td>
+              <td dir="ltr">
+                {% if r.return_pct is not none %}
+                  <span class="pill {{ 'buy' if r.return_pct >= 0 else 'sell' }}">{{ "%+.1f"|format(r.return_pct) }}%</span>
+                {% else %}—{% endif %}
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      <div class="note" style="margin-top:14px">
+        ℹ️ السجل يكبر تلقائياً كل يوم مع التحديث الليلي — كلما طال الوقت صارت الإحصائيات أدق وأكثر دلالة.
+      </div>
+    {% else %}
+      <div class="empty">لا توجد إشارات مسجّلة بعد — ستظهر هنا تلقائياً مع تحديثات البيانات.</div>
+    {% endif %}
+  </section>
+{% endblock %}

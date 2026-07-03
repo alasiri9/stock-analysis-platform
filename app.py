@@ -186,14 +186,13 @@ def create_app():
             rows=with_flow, pending=without_flow, latest=latest, total=len(records),
         )
 
-    _SOON_PAGES = {
-        "performance": "اختيار الأداء",
-    }
-
-    @app.route("/soon/<slug>")
-    def soon(slug):
-        title = _SOON_PAGES.get(slug, "الميزة")
-        return render_template("soon.html", title=title)
+    @app.route("/performance")
+    def performance():
+        # اختيار الأداء: سجل كل الإشارات التاريخية وأداؤها منذ صدورها (من الكاش، بلا API)
+        rows, overall, type_stats = screener.signals_performance()
+        return render_template(
+            "performance.html", rows=rows, overall=overall, type_stats=type_stats,
+        )
 
     @app.route("/screener/refresh", methods=["POST"])
     def screener_refresh():

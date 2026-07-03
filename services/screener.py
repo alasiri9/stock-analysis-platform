@@ -239,6 +239,61 @@ def recent_signals(limit=12):
     return Signal.query.order_by(Signal.triggered_at.desc()).limit(limit).all()
 
 
+def signals_performance():
+    """سجل الأداء الكامل: كل إشارة تاريخية + عائدها منذ صدورها حتى الآن.
+
+    يُرجع (قائمة الصفوف، إحصائيات إجمالية، إحصائيات لكل نوع إشارة).
+    العائد يُحسب فقط لو توفّر السعران (None ≠ 0). لا استدعاءات API (أسعار من الكاش).
+    """
+    sigs = Signal.query.order_by(Signal.triggered_at.desc()).all()
+    records, _ = load_records()
+    price_by_ticker = {r["ticker"]: r.get("price") for r in records}
+    name_by_ticker = {r["ticker"]: r.get("name") for r in records}
+
+    now = datetime.now(timezone.utc)
+    rows = []
+    all_returns = []
+    by_type = {}  # signal_type -> list of returns
+    for s in sigs:
+        current = price_by_ticker.get(s.ticker)
+        ret = None
+        if current is not None and s.price_at_signal:
+            ret = (current - s.price_at_signal) / s.price_at_signal * 100.0
+            all_returns.append(ret)
+            by_type.setdefault(s.signal_type, []).append(ret)
+        triggered_at = s.triggered_at
+        if triggered_at.tzinfo is None:  # SQLite محلياً بلا tzinfo
+            triggered_at = triggered_at.replace(tzinfo=timezone.utc)
+        rows.append({
+            "ticker": s.ticker,
+            "name": name_by_ticker.get(s.ticker),
+            "signal_type": s.signal_type,
+            "date": s.triggered_at,
+            "days": (now - triggered_at).days,
+            "price_at_signal": s.price_at_signal,
+            "current": current,
+            "return_pct": ret,
+        })
+
+    def _stats(returns):
+        """إحصائيات لمجموعة عوائد — None لو لا عوائد قابلة للحساب."""
+        if not returns:
+            return None
+        wins = sum(1 for r in returns if r > 0)
+        return {
+            "count": len(returns),
+            "avg": sum(returns) / len(returns),
+            "win_count": wins,
+            "win_rate": wins / len(returns) * 100.0,
+            "best": max(returns),
+            "worst": min(returns),
+        }
+
+    overall = _stats(all_returns)
+    type_stats = {t: _stats(rs) for t, rs in by_type.items()}
+    return rows, overall, type_stats
+
+
 def launched_stocks(limit=6):
     """الأسهم التي صدرت لها إشارة + عائدها منذ الإشارة (لوحة "انطلقت بالفعل").
 
