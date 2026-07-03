@@ -17,6 +17,7 @@ from models import db, Watchlist
 from services import analysis
 from services import fmp_client
 from services import radar
+from services import news_client
 from services import screener
 
 # مستخدم افتراضي وحيد (لا يوجد تسجيل دخول بعد)
@@ -52,6 +53,24 @@ def create_app():
     # التحديث التلقائي اليومي (01:00 UTC) — انظر services/scheduler.py
     from services.scheduler import init_scheduler
     init_scheduler(app)
+
+    @app.template_filter("ts_ago")
+    def ts_ago(unix_ts):
+        """يحوّل طابع unix الزمني لصيغة نسبية عربية (قبل ساعتين...). None ≠ 0."""
+        if not unix_ts:
+            return ""
+        from datetime import datetime, timezone as tz
+        delta = datetime.now(tz.utc) - datetime.fromtimestamp(unix_ts, tz.utc)
+        minutes = int(delta.total_seconds() // 60)
+        if minutes < 1:
+            return "الآن"
+        if minutes < 60:
+            return f"قبل {minutes} دقيقة"
+        hours = minutes // 60
+        if hours < 24:
+            return f"قبل {hours} ساعة"
+        days = hours // 24
+        return f"قبل {days} يوم"
 
     def _to_float(name):
         """يقرأ قيمة رقمية من باراميتر الطلب، أو None لو فارغة/غير صالحة."""
@@ -149,9 +168,14 @@ def create_app():
             print(f"[app] خطأ أثناء تحديث الرادار: {e}")
         return redirect(url_for("radar_page"))
 
+    @app.route("/news")
+    def news_page():
+        # أخبار السوق العامة من Finnhub (كاش بالذاكرة 10 دقائق داخل news_client)
+        items = news_client.get_market_news(limit=40)
+        return render_template("news.html", items=items)
+
     _SOON_PAGES = {
         "portfolio": "المحفظة الذكية",
-        "news": "أخبار السوق",
         "audit": "التدقّق الذكي",
         "performance": "اختيار الأداء",
     }

@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{% block title %}Algomatix — تحليل ذكي للأسهم الأمريكية{% endblock %}</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=20260703o">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=20260703p">
 </head>
 <body>
   <div class="layout">
@@ -26,7 +26,7 @@
         <a href="{{ url_for('index') }}" class="{{ 'active' if active=='home' else '' }}"><span class="ic">🔍</span> ماسح الانطلاق</a>
         <a href="{{ url_for('daily_report') }}" class="{{ 'active' if active=='daily_report' else '' }}"><span class="ic">📅</span> التقرير اليومي</a>
         <a href="{{ url_for('compare') }}" class="{{ 'active' if active=='compare' else '' }}"><span class="ic">⚖️</span> مقارنة أسهم</a>
-        <a href="{{ url_for('soon', slug='news') }}"><span class="ic">📰</span> أخبار السوق</a>
+        <a href="{{ url_for('news_page') }}" class="{{ 'active' if active=='news' else '' }}"><span class="ic">📰</span> أخبار السوق</a>
         <a href="{{ url_for('soon', slug='performance') }}"><span class="ic">📈</span> اختيار الأداء</a>
         <a href="{{ url_for('watchlist') }}" class="{{ 'active' if active=='watchlist' else '' }}"><span class="ic">👁</span> قائمة المراقبة</a>
       </nav>

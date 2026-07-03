@@ -382,3 +382,19 @@ a.stat-box:hover { filter: brightness(1.15); transform: translateY(-1px); }
 .confidence { color: var(--text); font-size: 15px; }
 .confidence b { color: var(--text); }
 .empty { background: var(--panel-2); border: 1px solid var(--border); border-radius: var(--radius); padding: 30px; text-align: center; color: var(--muted); }
+
+/* ---------- أخبار السوق ---------- */
+.news-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 14px; }
+.news-card {
+  display: flex; flex-direction: column; overflow: hidden;
+  background: rgba(6,10,26,.4); border: 1px solid rgba(255,255,255,.12);
+  border-radius: 12px; color: var(--text);
+  transition: border-color .15s, transform .05s;
+}
+.news-card:hover { border-color: rgba(34,197,94,.45); transform: translateY(-2px); }
+.news-img { width: 100%; height: 160px; object-fit: cover; background: var(--panel-2); }
+.news-body { padding: 14px 16px; display: flex; flex-direction: column; gap: 8px; }
+.news-headline { font-size: 17px; font-weight: 900; line-height: 1.45; text-align: left; }
+.news-summary { color: var(--muted); font-size: 14px; line-height: 1.5; text-align: left; }
+.news-meta { color: var(--muted); font-size: 12px; text-align: left; margin-top: auto; }
+.news-source { color: var(--green); font-weight: 700; }

@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% set active = 'news' %}
+{% block title %}أخبار السوق — Algomatix{% endblock %}
+
+{% block content %}
+  <section class="panel">
+    <div class="panel-head">
+      <h2>📰 أخبار السوق :</h2>
+      <p class="panel-sub">آخر أخبار السوق الأمريكي لحظة بلحظة (المصدر: Finnhub — الأخبار بالإنجليزية).</p>
+    </div>
+
+    {% if items %}
+      <div class="news-grid">
+        {% for n in items %}
+          <a class="news-card" href="{{ n.url }}" target="_blank" rel="noopener">
+            {% if n.image %}
+              <img class="news-img" src="{{ n.image }}" alt="" loading="lazy" onerror="this.style.display='none'">
+            {% endif %}
+            <div class="news-body">
+              <div class="news-headline" dir="ltr">{{ n.headline }}</div>
+              {% if n.summary %}
+                <div class="news-summary" dir="ltr">{{ n.summary[:180] }}{{ '…' if n.summary|length > 180 }}</div>
+              {% endif %}
+              <div class="news-meta" dir="ltr">
+                <span class="news-source">{{ n.source }}</span>
+                {% if n.datetime %}
+                  · <span>{{ n.datetime | ts_ago }}</span>
+                {% endif %}
+              </div>
+            </div>
+          </a>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="empty">تعذّر جلب الأخبار حالياً — جرّب تحديث الصفحة بعد قليل.</div>
+    {% endif %}
+  </section>
+{% endblock %}
