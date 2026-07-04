@@ -228,6 +228,29 @@ def backfill_price_history(time_budget=20):
     return updated
 
 
+# رمز مؤشر السوق للمقارنة المعيارية (متاح بباقة FMP المجانية — مُختبر)
+MARKET_BENCHMARK = "SPY"
+
+
+def _refresh_spy_history(today):
+    """يحفظ أسعار مؤشر السوق (SPY) اليومية في price_point — لمقارنة أداء الإشارات بالسوق.
+
+    طلب FMP واحد يومياً فقط (يتخطى لو تحدّث اليوم). فشله لا يؤثر على تحديث الأسهم.
+    """
+    try:
+        has_today = PricePoint.query.filter_by(ticker=MARKET_BENCHMARK, date=today).first()
+        if has_today:
+            return
+        candles = fmp_client.get_historical_prices(MARKET_BENCHMARK, limit=120)
+        if candles:
+            _save_price_history(MARKET_BENCHMARK, candles, days=120)
+            db.session.commit()
+            print(f"[screener] حُدّث تاريخ مؤشر السوق ({MARKET_BENCHMARK})")
+    except Exception as e:  # noqa: BLE001
+        print(f"[screener] تعذّر تحديث مؤشر السوق: {e}")
+        db.session.rollback()
+
+
 def refresh_cache(time_budget=20):
     """يحدّث كاش الماسح على دفعات ضمن حدّ زمني آمن، ويولّد إشارات للأسهم القوية.
 
@@ -239,6 +262,7 @@ def refresh_cache(time_budget=20):
     start = time.monotonic()
     today = datetime.now(timezone.utc).date()
     updated = 0
+    _refresh_spy_history(today)  # مؤشر السوق للمقارنة (طلب واحد يومياً، يتخطى لو محدث)
     for ticker in UNIVERSE:
         if time.monotonic() - start > time_budget:
             break  # انتهى الحدّ الزمني — نرجع، وضغطة أخرى تُكمل الباقي
@@ -298,9 +322,23 @@ def signals_performance():
     price_by_ticker = {r["ticker"]: r.get("price") for r in records}
     name_by_ticker = {r["ticker"]: r.get("name") for r in records}
 
+    # أسعار مؤشر السوق (SPY) من الكاش — لمقارنة كل إشارة بأداء السوق عن نفس الفترة
+    spy_rows = PricePoint.query.filter_by(ticker=MARKET_BENCHMARK).all()
+    spy_by_date = {p.date: p.price for p in spy_rows if p.price is not None}
+    spy_last = spy_by_date[max(spy_by_date)] if spy_by_date else None
+
+    def _spy_on(day):
+        """سعر المؤشر في يومٍ ما (أو أقرب يوم تداول سابق خلال أسبوع). None لو غير متوفر."""
+        for back in range(8):
+            p = spy_by_date.get(day - timedelta(days=back))
+            if p is not None:
+                return p
+        return None
+
     now = datetime.now(timezone.utc)
     rows = []
     all_returns = []
+    alphas = []
     by_type = {}  # signal_type -> list of returns
     for s in sigs:
         current = price_by_ticker.get(s.ticker)
@@ -312,6 +350,16 @@ def signals_performance():
         triggered_at = s.triggered_at
         if triggered_at.tzinfo is None:  # SQLite محلياً بلا tzinfo
             triggered_at = triggered_at.replace(tzinfo=timezone.utc)
+
+        # عائد السوق عن نفس الفترة + الألفا (تفوق الإشارة على السوق)
+        spy_ret = alpha = None
+        if ret is not None and spy_last is not None:
+            spy_start = _spy_on(triggered_at.date())
+            if spy_start:
+                spy_ret = (spy_last - spy_start) / spy_start * 100.0
+                alpha = ret - spy_ret
+                alphas.append(alpha)
+
         rows.append({
             "ticker": s.ticker,
             "name": name_by_ticker.get(s.ticker),
@@ -321,6 +369,8 @@ def signals_performance():
             "price_at_signal": s.price_at_signal,
             "current": current,
             "return_pct": ret,
+            "spy_return_pct": spy_ret,
+            "alpha": alpha,
         })
 
     def _stats(returns):
@@ -338,6 +388,10 @@ def signals_performance():
         }
 
     overall = _stats(all_returns)
+    if overall and alphas:
+        overall["avg_alpha"] = sum(alphas) / len(alphas)
+        overall["beat_market"] = sum(1 for a in alphas if a > 0)
+        overall["alpha_count"] = len(alphas)
     type_stats = {t: _stats(rs) for t, rs in by_type.items()}
     return rows, overall, type_stats
 

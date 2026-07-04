@@ -456,3 +456,6 @@ a.stat-box:hover { filter: brightness(1.15); transform: translateY(-1px); }
   border: 1px solid rgba(245,196,81,.8); box-shadow: 0 0 14px rgba(245,196,81,.35);
   align-self: center;
 }
+
+/* ---------- مقابل السوق (SPY benchmark) ---------- */
+.stat-box.beat-box { border-color: rgba(245,196,81,.45); background: rgba(245,196,81,.08); }

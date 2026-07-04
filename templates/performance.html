@@ -32,6 +32,13 @@
           <div class="label">أسوأ إشارة</div>
           <div class="value {{ 'neg' if overall.worst < 0 else 'pos' }}" dir="ltr">{{ "%+.1f"|format(overall.worst) }}%</div>
         </div>
+        {% if overall.avg_alpha is defined and overall.avg_alpha is not none %}
+          <div class="stat-box {{ 'beat-box' if overall.avg_alpha >= 0 }}">
+            <div class="label">⚔️ مقابل السوق (SPY)</div>
+            <div class="value {{ 'pos' if overall.avg_alpha >= 0 else 'neg' }}" dir="ltr">{{ "%+.1f"|format(overall.avg_alpha) }}%</div>
+            <div class="sub">تفوقت {{ overall.beat_market }} من {{ overall.alpha_count }} إشارة على السوق</div>
+          </div>
+        {% endif %}
       </div>
 
       {# مقارنة أنواع الإشارات #}
@@ -62,6 +69,7 @@
             <th>سعر الإشارة</th>
             <th>السعر الحالي</th>
             <th>العائد</th>
+            <th>مقابل السوق</th>
           </tr>
         </thead>
         <tbody>
@@ -76,6 +84,13 @@
               <td dir="ltr">
                 {% if r.return_pct is not none %}
                   <span class="pill {{ 'buy' if r.return_pct >= 0 else 'sell' }}">{{ "%+.1f"|format(r.return_pct) }}%</span>
+                {% else %}—{% endif %}
+              </td>
+              <td dir="ltr">
+                {% if r.alpha is not none %}
+                  <span class="{{ 'chg-up' if r.alpha >= 0 else 'chg-down' }}" title="السوق (SPY) بنفس الفترة: {{ '%+.1f'|format(r.spy_return_pct) }}%">
+                    {{ '⬆' if r.alpha >= 0 else '⬇' }} {{ "%+.1f"|format(r.alpha) }}%
+                  </span>
                 {% else %}—{% endif %}
               </td>
             </tr>
