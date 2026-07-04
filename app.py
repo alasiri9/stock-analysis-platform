@@ -9,6 +9,11 @@ app.py — تطبيق Flask الرئيسي: يربط قاعدة البيانات
 """
 
 import os
+import sys
+
+# طباعة النصوص العربية بأمان بأي بيئة (كونسول ويندوز الافتراضي cp1252 ينهار بدونها)
+if sys.stdout and hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
 from dotenv import load_dotenv
 import hashlib
