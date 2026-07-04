@@ -88,16 +88,14 @@ def create_app():
         session.clear()
         return redirect(url_for("login") if app_password else url_for("index"))
 
-    @app.route("/debug-home")
-    def debug_home():
-        # تشخيص مؤقت: يعيد رسم الرئيسية ويكشف الخطأ الفعلي نصاً (يُحذف بعد الإصلاح)
-        import traceback
-        try:
-            return index()
-        except Exception:  # noqa: BLE001
-            return "<pre>" + traceback.format_exc() + "</pre>", 500
-
     db.init_app(app)
+
+    @app.teardown_request
+    def _cleanup_db_session(exc):
+        # حماية من الجلسات الفاسدة: أي طلب انتهى بخطأ يُرجَع تراجعه فوراً،
+        # فلا تعلق حالة PendingRollback وتكسر الطلبات اللاحقة (حدثت فعلياً 2026-07-04).
+        if exc is not None:
+            db.session.rollback()
     with app.app_context():
         db.create_all()  # ينشئ الجداول لو ما كانت موجودة
         # تنظيف الإشارات المكررة (آمن ورخيص — يصحح ما خلّفته نسخة قديمة كانت تكرر يومياً)
