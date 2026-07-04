@@ -88,6 +88,15 @@ def create_app():
         session.clear()
         return redirect(url_for("login") if app_password else url_for("index"))
 
+    @app.route("/debug-home")
+    def debug_home():
+        # تشخيص مؤقت: يعيد رسم الرئيسية ويكشف الخطأ الفعلي نصاً (يُحذف بعد الإصلاح)
+        import traceback
+        try:
+            return index()
+        except Exception:  # noqa: BLE001
+            return "<pre>" + traceback.format_exc() + "</pre>", 500
+
     db.init_app(app)
     with app.app_context():
         db.create_all()  # ينشئ الجداول لو ما كانت موجودة
@@ -100,6 +109,9 @@ def create_app():
     # التحديث التلقائي اليومي (01:00 UTC) — انظر services/scheduler.py
     from services.scheduler import init_scheduler
     init_scheduler(app)
+
+    # دالة الإشارة الذهبية متاحة للقوالب (وسم 🥇 على كروت الماسح)
+    app.jinja_env.globals["is_golden"] = screener.is_golden
 
     @app.template_filter("ts_ago")
     def ts_ago(unix_ts):
