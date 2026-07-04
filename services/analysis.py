@@ -30,6 +30,54 @@ def _pct(fraction):
     return None if fraction is None else fraction * 100.0
 
 
+def price_chart(candles, days=90, width=900, height=280, pad=10):
+    """يبني بيانات شارت كبير لمسار السعر (SVG polyline + تسميات) من شموع FMP.
+
+    يُرجع dict: {points, area_points, width, height, high, low, first_date, last_date,
+    first_price, last_price, change_pct, up, days} أو None لو البيانات غير كافية.
+    None ≠ 0 : أقل من 5 أيام صالحة ⇒ لا شارت (بدل خط مضلّل).
+    """
+    rows = []
+    for r in reversed(candles or []):  # FMP يُرجع الأحدث أولاً
+        if r.get("close") is not None and r.get("date"):
+            rows.append({"close": r["close"], "date": r["date"][:10]})
+    rows = rows[-days:]
+    if len(rows) < 5:
+        return None
+
+    closes = [r["close"] for r in rows]
+    lo, hi = min(closes), max(closes)
+    span = (hi - lo) or 1.0
+    n = len(closes)
+    step = (width - 2 * pad) / (n - 1)
+
+    pts = []
+    for i, p in enumerate(closes):
+        x = pad + i * step
+        y = pad + (height - 2 * pad) * (1 - (p - lo) / span)
+        pts.append(f"{x:.1f},{y:.1f}")
+    points = " ".join(pts)
+    # مضلّع مغلق لتعبئة المساحة تحت الخط (تدرّج خفيف)
+    area_points = f"{pad:.1f},{height - pad} " + points + f" {pad + (n - 1) * step:.1f},{height - pad}"
+
+    change_pct = (closes[-1] - closes[0]) / closes[0] * 100.0 if closes[0] else None
+    return {
+        "points": points,
+        "area_points": area_points,
+        "width": width,
+        "height": height,
+        "high": hi,
+        "low": lo,
+        "first_date": rows[0]["date"],
+        "last_date": rows[-1]["date"],
+        "first_price": closes[0],
+        "last_price": closes[-1],
+        "change_pct": change_pct,
+        "up": closes[-1] >= closes[0],
+        "days": n,
+    }
+
+
 def build_quick_summary(ticker):
     """ملخّص خفيف وسريع للمقارنة: سعر + مقاييس + Piotroski + Catalyst.
 
@@ -128,15 +176,17 @@ def build_stock_report(ticker):
     if finnhub_price is not None:
         price_sources += 1
 
-    # --- خطة ATR + المؤشرات الفنية من أسعار FMP التاريخية (جلب واحد) ---
+    # --- خطة ATR + المؤشرات الفنية + الشارت من أسعار FMP التاريخية (جلب واحد) ---
     try:
         candles = fmp_client.get_historical_prices(ticker, limit=120)
         atr_plan = scoring.atr_trade_plan(price, candles)
         tech_indicators = indicators.build_indicators(candles)
+        chart = price_chart(candles)  # نفس الشموع المجلوبة — بلا استدعاء إضافي
     except Exception as e:  # noqa: BLE001
         print(f"[analysis] تعذّر حساب ATR/المؤشرات لـ {ticker}: {e}")
         atr_plan = None
         tech_indicators = []
+        chart = None
 
     # --- معاملات المطلعين من SEC EDGAR (لا تكسر الصفحة لو فشلت) ---
     try:
@@ -171,4 +221,5 @@ def build_stock_report(ticker):
         "finnhub_price": finnhub_price,    # سعر تأكيد ثانٍ (أو None)
         "atr_plan": atr_plan,              # خطة ATR التعليمية (أو None)
         "indicators": tech_indicators,     # مؤشرات فنية (قد تكون قائمة فارغة)
+        "chart": chart,                    # بيانات شارت مسار السعر (أو None)
     }

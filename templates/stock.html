@@ -44,6 +44,37 @@
     {%- if report.finnhub_price is not none %} (FMP + Finnhub){% else %} (FMP){% endif %}.
     {% if report.finnhub_price is not none %}<span class="muted">سعر Finnhub: {{ "%.2f $"|format(report.finnhub_price) }}</span>{% endif %}</div>
 
+  {# ===== شارت مسار السعر ===== #}
+  {% if report.chart %}
+    {% set ch = report.chart %}
+    <div class="section">
+      <h2>📊 مسار السعر — آخر {{ ch.days }} يوم تداول</h2>
+      <div class="big-chart {{ 'up' if ch.up else 'down' }}">
+        <div class="big-chart-meta">
+          <span>أعلى سعر: <b dir="ltr">{{ "%.2f $"|format(ch.high) }}</b></span>
+          <span>أدنى سعر: <b dir="ltr">{{ "%.2f $"|format(ch.low) }}</b></span>
+          <span>التغيّر بالفترة:
+            <b dir="ltr" class="{{ 'chg-up' if ch.up else 'chg-down' }}">{{ "%+.1f"|format(ch.change_pct) }}%</b>
+          </span>
+        </div>
+        <svg viewBox="0 0 {{ ch.width }} {{ ch.height }}" preserveAspectRatio="none" class="big-chart-svg">
+          <defs>
+            <linearGradient id="chartFill" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="currentColor" stop-opacity="0.25"/>
+              <stop offset="100%" stop-color="currentColor" stop-opacity="0"/>
+            </linearGradient>
+          </defs>
+          <polygon points="{{ ch.area_points }}" fill="url(#chartFill)"/>
+          <polyline points="{{ ch.points }}" fill="none" stroke="currentColor" stroke-width="2.5"/>
+        </svg>
+        <div class="big-chart-dates" dir="ltr">
+          <span>{{ ch.first_date }}</span>
+          <span>{{ ch.last_date }}</span>
+        </div>
+      </div>
+    </div>
+  {% endif %}
+
   {# ===== الدرجتان الكبيرتان ===== #}
   <div class="section">
     <div class="score-cards">
