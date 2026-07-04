@@ -448,3 +448,11 @@ a.stat-box:hover { filter: brightness(1.15); transform: translateY(-1px); }
   display: flex; justify-content: space-between; margin-top: 8px;
   color: var(--muted); font-size: 13px;
 }
+
+/* ---------- الاشارة الذهبية ---------- */
+.scard-golden {
+  font-size: 13px; font-weight: 900; text-align: center; padding: 5px 8px; border-radius: 8px;
+  color: #2a2103; background: linear-gradient(135deg, #f5c451, #e8a820);
+  border: 1px solid rgba(245,196,81,.8); box-shadow: 0 0 14px rgba(245,196,81,.35);
+  align-self: center;
+}

@@ -41,7 +41,7 @@
           {% for t, st in type_stats.items() %}
             {% if st %}
               <div class="stat-box">
-                <div class="label">{{ '💎 جودة مالية (Piotroski)' if t == 'piotroski_strong' else ('⚡ زخم قوي (Catalyst)' if t == 'catalyst_strong' else t) }}</div>
+                <div class="label">{{ '💎 جودة مالية (Piotroski)' if t == 'piotroski_strong' else ('⚡ زخم قوي (Catalyst)' if t == 'catalyst_strong' else ('🥇 إشارة ذهبية' if t == 'golden' else t)) }}</div>
                 <div class="value {{ 'pos' if st.avg >= 0 else 'neg' }}" dir="ltr">{{ "%+.1f"|format(st.avg) }}%</div>
                 <div class="sub">نجاح {{ "%.0f"|format(st.win_rate) }}% · {{ st.count }} إشارة</div>
               </div>
@@ -68,7 +68,7 @@
           {% for r in rows %}
             <tr>
               <td><a href="{{ url_for('stock_report', ticker=r.ticker) }}"><b>{{ r.ticker }}</b></a></td>
-              <td>{{ 'جودة مالية' if r.signal_type == 'piotroski_strong' else ('زخم قوي' if r.signal_type == 'catalyst_strong' else r.signal_type) }}</td>
+              <td>{{ 'جودة مالية' if r.signal_type == 'piotroski_strong' else ('زخم قوي' if r.signal_type == 'catalyst_strong' else ('🥇 ذهبية' if r.signal_type == 'golden' else r.signal_type)) }}</td>
               <td dir="ltr">{{ r.date.strftime('%Y-%m-%d') }}</td>
               <td dir="ltr">{{ r.days }}</td>
               <td dir="ltr">{{ "%.2f $"|format(r.price_at_signal) if r.price_at_signal is not none else '—' }}</td>

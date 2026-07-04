@@ -23,7 +23,7 @@
           {% for s in signals %}
             <tr>
               <td><a href="{{ url_for('stock_report', ticker=s.ticker) }}">{{ s.ticker }}</a></td>
-              <td>{{ 'جودة مالية قوية (Piotroski)' if s.signal_type == 'piotroski_strong' else 'زخم قوي (Catalyst)' if s.signal_type == 'catalyst_strong' else s.signal_type }}</td>
+              <td>{{ 'جودة مالية قوية (Piotroski)' if s.signal_type == 'piotroski_strong' else '🥇 إشارة ذهبية (3 عوامل)' if s.signal_type == 'golden' else 'زخم قوي (Catalyst)' if s.signal_type == 'catalyst_strong' else s.signal_type }}</td>
               <td dir="ltr">{{ "%.2f $"|format(s.price_at_signal) if s.price_at_signal is not none else '—' }}</td>
               <td dir="ltr">{{ s.triggered_at.strftime('%Y-%m-%d %H:%M') }}</td>
             </tr>

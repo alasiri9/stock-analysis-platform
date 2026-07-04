@@ -113,7 +113,8 @@ def _send_daily_report():
         lines.append("")
         lines.append(f"⚡ <b>إشارات جديدة ({len(new_sigs)}):</b>")
         for s in new_sigs[:5]:
-            kind = "💎 جودة" if s.signal_type == "piotroski_strong" else "⚡ زخم"
+            kind = {"piotroski_strong": "💎 جودة", "catalyst_strong": "⚡ زخم",
+                    "golden": "🥇 ذهبية"}.get(s.signal_type, s.signal_type)
             lines.append(f"• {s.ticker} ({kind})")
 
     # ملخص المحفظة (لو فيها مقتنيات)

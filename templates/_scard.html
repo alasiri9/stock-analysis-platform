@@ -26,7 +26,9 @@
         <span class="cat-pill {{ 'on' if key and ind.get(key) == 'bull' }}">{{ cat }}</span>
       {% endfor %}
     </div>
-    {% if r.catalyst is not none and r.catalyst >= 80 %}
+    {% if is_golden(r) %}
+      <div class="scard-golden">🥇 إشارة ذهبية — 3 عوامل مجتمعة</div>
+    {% elif r.catalyst is not none and r.catalyst >= 80 %}
       <div class="scard-ready">🎯 انفجار قوي — جاهز للانطلاق</div>
     {% endif %}
   </div>

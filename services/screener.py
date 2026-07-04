@@ -85,6 +85,24 @@ def _build_record(ticker):
 SIGNAL_COOLDOWN_DAYS = 30
 
 
+def is_golden(record):
+    """🥇 هل يستوفي السجل شروط الإشارة الذهبية الثلاثة مجتمعة؟
+
+    1. جودة مالية عالية: Piotroski >= 8
+    2. سيولة داخلة: تدفق الأموال بحالة "تجميع"
+    3. اختراق فني: إغلاق فوق أعلى 20 يوماً (شارة "اختراق" الصاعدة)
+    اجتماعها نادر — لذلك تُعد أقوى إشارات المنصة.
+    """
+    quality_ok = record.get("piotroski") is not None and record["piotroski"] >= PIOTROSKI_SIGNAL_MIN
+    flow = record.get("money_flow")
+    flow_ok = bool(flow and flow.get("status") == "bull")
+    breakout_ok = any(
+        b.get("label") == "اختراق" and b.get("status") == "bull"
+        for b in (record.get("indicators") or [])
+    )
+    return quality_ok and flow_ok and breakout_ok
+
+
 def _record_signal(ticker, signal_type, price):
     """يسجّل إشارة لأول تأهّل فقط — لا تتجدد إلا بعد غياب SIGNAL_COOLDOWN_DAYS.
 
@@ -250,6 +268,9 @@ def refresh_cache(time_budget=20):
                 _record_signal(ticker, "piotroski_strong", record.get("price"))
             if record.get("catalyst") is not None and record["catalyst"] >= CATALYST_SIGNAL_MIN:
                 _record_signal(ticker, "catalyst_strong", record.get("price"))
+            # 🥇 الإشارة الذهبية: 3 عوامل مجتمعة (نادرة) — جودة عالية + سيولة داخلة + اختراق فني
+            if is_golden(record):
+                _record_signal(ticker, "golden", record.get("price"))
 
             db.session.commit()  # حفظ هذا السهم مباشرة
             updated += 1
