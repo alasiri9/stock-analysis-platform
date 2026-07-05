@@ -160,6 +160,20 @@ def get_earnings_calendar(from_date, to_date):
     return data
 
 
+def get_shares_float_all():
+    """الأسهم الحرة (Free Float) لكل الأسهم — طلب FMP واحد فقط (bulk).
+
+    endpoint: /stable/shares-float-all
+    كل عنصر فيه: symbol, floatShares (عدد الأسهم الحرة), freeFloat (نسبة مئوية),
+    outstandingShares (إجمالي الأسهم). يُرجع قائمة أو None عند الفشل.
+    الأسهم الحرة = المتاحة فعلاً للتداول (تُستبعد حصص المؤسسين/الإدارة المحجوزة).
+    """
+    data = _get("shares-float-all")
+    if not isinstance(data, list) or not data:
+        return None
+    return data
+
+
 def get_financials(ticker, years=2):
     """يجمع القوائم الثلاث في قاموس واحد جاهز لحساب Piotroski.
 

@@ -20,6 +20,11 @@
           {{ '↑' if rs >= 0 else '↓' }} vs السوق {{ "%+.0f"|format(rs) }}%
         </span>
       {% endif %}
+      {% set fl = r.get('float_shares') %}
+      {% if fl is not none %}
+        <span class="dot">·</span>
+        <span title="عدد الأسهم الحرة المتاحة للتداول — كلما قلّت كان السهم أسرع حركة">🔓 {{ "%.2f"|format(fl / 1e9) }} مليار حرة</span>
+      {% endif %}
     </div>
   </div>
 

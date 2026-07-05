@@ -137,6 +137,30 @@ def early_launch_candidates(records=None, min_strategies=3):
 EARNINGS_LOOKAHEAD_DAYS = 21
 
 
+def _shares_float_map():
+    """خريطة {رمز: {float_shares, free_float_pct}} لأسهم UNIVERSE — طلب FMP واحد (bulk).
+
+    يُرجع {} عند أي فشل (الميزة كماليّة ولا يجوز أن تُسقط التحديث).
+    """
+    try:
+        data = fmp_client.get_shares_float_all()
+    except Exception:  # noqa: BLE001
+        return {}
+    if not data:
+        return {}
+    universe = set(UNIVERSE)
+    out = {}
+    for row in data:
+        sym = row.get("symbol")
+        if sym not in universe:
+            continue
+        out[sym] = {
+            "float_shares": row.get("floatShares"),
+            "free_float_pct": row.get("freeFloat"),
+        }
+    return out
+
+
 def _upcoming_earnings():
     """خريطة {رمز: تاريخ أقرب إعلان أرباح قادم} لأسهم UNIVERSE — طلب FMP واحد فقط.
 
@@ -444,6 +468,7 @@ def refresh_cache(time_budget=20):
     _refresh_spy_history(today)  # مؤشر السوق للمقارنة (طلب واحد يومياً، يتخطى لو محدث)
     spy_mom = _benchmark_return(MOMENTUM_SESSIONS)  # زخم السوق لنفس الفترة (يُحسب مرة واحدة)
     earnings_map = _upcoming_earnings()  # مواعيد الأرباح القادمة (طلب FMP واحد لكل الأسهم)
+    float_map = _shares_float_map()  # الأسهم الحرة (طلب FMP واحد لكل الأسهم)
     for ticker in UNIVERSE:
         if time.monotonic() - start > time_budget:
             break  # انتهى الحدّ الزمني — نرجع، وضغطة أخرى تُكمل الباقي
@@ -468,6 +493,12 @@ def refresh_cache(time_budget=20):
             if ed:
                 record["earnings_date"] = ed.isoformat()
                 record["days_to_earnings"] = (ed - today).days
+
+            # الأسهم الحرة (float) — كلما قلّت زاد احتمال الحركة السريعة
+            fl = float_map.get(ticker)
+            if fl:
+                record["float_shares"] = fl.get("float_shares")
+                record["free_float_pct"] = fl.get("free_float_pct")
 
             row = existing
             payload = json.dumps(record, ensure_ascii=False)
@@ -753,7 +784,7 @@ def market_mood(records=None):
 
 def filter_records(records, piotroski_min=None, catalyst_min=None,
                    price_max=None, market_cap_min=None, sector=None,
-                   recent_gain_max=None):
+                   recent_gain_max=None, float_max=None):
     """يطبّق الفلاتر على السجلّات المخزّنة.
 
     None ≠ 0 : السجلّ الذي تكون قيمته المطلوبة None لا يجتاز فلتراً يحدّ تلك القيمة
@@ -761,6 +792,8 @@ def filter_records(records, piotroski_min=None, catalyst_min=None,
     market_cap_min بالدولار (خام)، يُحوّل من المليارات في طبقة الـ route.
     recent_gain_max: "لسا ما صعد" — يستبعد ما قفز أكثر من هذا خلال آخر أسبوعين
     (recent_gain=None يُبقى: العائد غير محسوب بعد، لا نستبعد بلا يقين).
+    float_max: أعلى عدد أسهم حرة (خام) — يعرض الأسهم قليلة الحرة (الأسرع حركة)؛
+    float_shares=None يُستبعد لأن العتبة صريحة (لا حكم بلا بيانات float).
     """
     out = []
     for r in records:
@@ -782,6 +815,10 @@ def filter_records(records, piotroski_min=None, catalyst_min=None,
         if recent_gain_max is not None:
             rg = r.get("recent_gain")
             if rg is not None and rg > recent_gain_max:
+                continue
+        if float_max is not None:
+            fs = r.get("float_shares")
+            if fs is None or fs > float_max:
                 continue
         out.append(r)
     # ترتيب تنازلي حسب Catalyst ثم Piotroski (None في الأسفل)

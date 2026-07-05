@@ -162,9 +162,9 @@ def create_app():
         records, latest = screener.load_records()
         sectors = sorted({r["sector"] for r in records if r.get("sector")})
 
-        # القيمة السوقية تُدخل بالمليارات في الواجهة وتُحوّل لدولار خام
-        market_cap_billions = _to_float("market_cap_min")
-        market_cap_min = market_cap_billions * 1e9 if market_cap_billions is not None else None
+        # الأسهم الحرة تُدخل بالملايين في الواجهة وتُحوّل لعدد خام (لعرض قليلة الحرة = الأسرع)
+        float_max_millions = _to_float("float_max")
+        float_max = float_max_millions * 1e6 if float_max_millions is not None else None
 
         # "لسا ما صعد": يستبعد ما قفز أكثر من الحدّ خلال آخر أسبوعين (اصطياد مبكر)
         not_risen = request.args.get("not_risen") in ("1", "on", "true")
@@ -172,13 +172,13 @@ def create_app():
             "piotroski_min": _to_float("piotroski_min"),
             "catalyst_min": _to_float("catalyst_min"),
             "price_max": _to_float("price_max"),
-            "market_cap_min": market_cap_min,
             "sector": request.args.get("sector", "").strip() or None,
             "recent_gain_max": screener.EARLY_MAX_RECENT_GAIN if not_risen else None,
+            "float_max": float_max,
         }
         results = screener.filter_records(records, **filters)
-        # نمرّر قيمة المليارات وحالة الشيك بوكس للواجهة (لإبقائها بالخانة)
-        filters["market_cap_billions"] = market_cap_billions
+        # نمرّر قيمة الملايين وحالة الشيك بوكس للواجهة (لإبقائها بالخانة)
+        filters["float_max_millions"] = float_max_millions
         filters["not_risen"] = not_risen
 
         # إحصائيات علوية (من كامل العيّنة، لا المُفلتر)
