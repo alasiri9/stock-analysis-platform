@@ -147,6 +147,19 @@ def get_historical_prices(ticker, limit=60):
     return data[:limit]
 
 
+def get_earnings_calendar(from_date, to_date):
+    """تقويم الأرباح القادمة لكل الأسهم ضمن نطاق تواريخ — طلب FMP واحد فقط.
+
+    endpoint: /stable/earnings-calendar?from=YYYY-MM-DD&to=YYYY-MM-DD
+    يُرجع قائمة عناصر فيها symbol و date (نص YYYY-MM-DD)، أو None عند الفشل.
+    نستعمله لتنبيه المستخدم قبل موعد إعلان الأرباح (أعلى أوقات التذبذب خطراً).
+    """
+    data = _get("earnings-calendar", {"from": from_date, "to": to_date})
+    if not isinstance(data, list) or not data:
+        return None
+    return data
+
+
 def get_financials(ticker, years=2):
     """يجمع القوائم الثلاث في قاموس واحد جاهز لحساب Piotroski.
 

@@ -211,6 +211,11 @@ def build_indicators(candles):
             val, status = f"{k:.0f} هابط", "bear"
         badges.append({"label": "ستوكاستيك", "value": val, "status": status})
 
+    # --- OBV (تراكم الحجم): تجميع مقابل تصريف عبر آخر 20 جلسة ---
+    obv = _obv_trend(rows)
+    if obv is not None:
+        badges.append({"label": "تراكم", "value": obv["value"], "status": obv["status"]})
+
     return badges
 
 
@@ -462,6 +467,34 @@ def _stochastic(rows, period=14, smooth=3):
         return None
     d = sum(ks[-smooth:]) / smooth
     return ks[-1], d
+
+
+def _obv_trend(rows, lookback=20):
+    """اتجاه OBV (On-Balance Volume — تراكم الحجم): تجميع/تصريف/محايد.
+
+    OBV تراكمي: يُضاف حجم اليوم لو أغلق أعلى من أمس، ويُطرح لو أغلق أدنى.
+    صعود OBV = سيولة تتجمّع (تجميع، إشارة قوة)، هبوطه = تصريف.
+    نقارن OBV الآن بقيمته قبل `lookback` جلسة. يُرجع dict {value, status} أو None.
+    """
+    valid = [r for r in rows if r.get("volume")]
+    if len(valid) < lookback + 5:
+        return None
+    obv = 0.0
+    series = [0.0]
+    for i in range(1, len(valid)):
+        if valid[i]["close"] > valid[i - 1]["close"]:
+            obv += valid[i]["volume"]
+        elif valid[i]["close"] < valid[i - 1]["close"]:
+            obv -= valid[i]["volume"]
+        series.append(obv)
+    change = series[-1] - series[-lookback - 1]
+    # عتبة بسيطة لتفادي الضجيج: نعتبره محايداً لو التغيّر ضئيل مقابل متوسط الحجم
+    avg_vol = sum(r["volume"] for r in valid[-lookback:]) / lookback
+    if avg_vol <= 0 or abs(change) < avg_vol:
+        return {"value": "محايد", "status": "neutral"}
+    if change > 0:
+        return {"value": "تجميع", "status": "bull"}
+    return {"value": "تصريف", "status": "bear"}
 
 
 def supertrend(rows, period=10, mult=3.0):

@@ -14,6 +14,12 @@
       Piotroski <b>{{ r.piotroski if r.piotroski is not none else '—' }}</b>/9
       <span class="dot">·</span>
       Catalyst <b>{{ "%.0f"|format(r.catalyst) if r.catalyst is not none else '—' }}</b>
+      {% set rs = r.get('rel_strength') %}
+      {% if rs is not none %}
+        <span class="rs-pill {{ 'pos' if rs >= 0 else 'neg' }}" title="تفوّق السهم على مؤشر السوق (SPY) خلال آخر 3 أشهر">
+          {{ '↑' if rs >= 0 else '↓' }} vs السوق {{ "%+.0f"|format(rs) }}%
+        </span>
+      {% endif %}
     </div>
   </div>
 
@@ -30,6 +36,10 @@
       <div class="scard-golden">🥇 إشارة ذهبية — 3 عوامل مجتمعة</div>
     {% elif r.catalyst is not none and r.catalyst >= 80 %}
       <div class="scard-ready">🎯 انفجار قوي — جاهز للانطلاق</div>
+    {% endif %}
+    {% set dte = r.get('days_to_earnings') %}
+    {% if dte is not none %}
+      <div class="scard-earn {{ 'soon' if dte <= 7 }}">📅 أرباح {{ 'اليوم' if dte == 0 else ('بعد يوم' if dte == 1 else 'بعد ' ~ dte ~ ' يوم') }}</div>
     {% endif %}
   </div>
 

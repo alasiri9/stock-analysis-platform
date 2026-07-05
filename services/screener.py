@@ -39,6 +39,57 @@ UNIVERSE = [
 # بادئة لتمييز سجلّات الماسح داخل stock_cache
 _PREFIX = "screen:"
 
+# عدد جلسات التداول لقياس الزخم/القوة النسبية (~3 أشهر)
+MOMENTUM_SESSIONS = 63
+
+# ننبّه المستخدم لو موعد إعلان أرباح السهم خلال هذه المدة (أعلى أوقات التذبذب خطراً)
+EARNINGS_LOOKAHEAD_DAYS = 21
+
+
+def _upcoming_earnings():
+    """خريطة {رمز: تاريخ أقرب إعلان أرباح قادم} لأسهم UNIVERSE — طلب FMP واحد فقط.
+
+    يُرجع {} عند أي فشل (التنبيه كماليّ ولا يجوز أن يُسقط التحديث).
+    """
+    today = datetime.now(timezone.utc).date()
+    to = today + timedelta(days=EARNINGS_LOOKAHEAD_DAYS)
+    try:
+        data = fmp_client.get_earnings_calendar(today.isoformat(), to.isoformat())
+    except Exception:  # noqa: BLE001
+        return {}
+    if not data:
+        return {}
+    universe = set(UNIVERSE)
+    out = {}
+    for row in data:
+        sym = row.get("symbol")
+        raw = row.get("date")
+        if sym not in universe or not raw:
+            continue
+        try:
+            d = datetime.strptime(raw[:10], "%Y-%m-%d").date()
+        except (ValueError, TypeError):
+            continue
+        if d < today:
+            continue  # تجاهل المواعيد الماضية
+        if sym not in out or d < out[sym]:
+            out[sym] = d  # نُبقي الأقرب قادماً
+    return out
+
+
+def _period_return(closes_old_to_new, sessions):
+    """عائد السهم عبر آخر `sessions` جلسة (%). closes مرتّبة من الأقدم للأحدث.
+
+    يُرجع None لو البيانات غير كافية أو السعر القديم صفر (None ≠ 0).
+    """
+    if not closes_old_to_new or len(closes_old_to_new) < sessions + 1:
+        return None
+    old = closes_old_to_new[-(sessions + 1)]
+    new = closes_old_to_new[-1]
+    if not old:
+        return None
+    return (new - old) / old * 100.0
+
 
 def _build_record(ticker):
     """يبني سجلّ ماسح لسهم: اسم، قطاع، سعر، قيمة سوقية، Piotroski، Catalyst.
@@ -68,6 +119,7 @@ def _build_record(ticker):
         gc = indicators.golden_cross(closes)  # التقاطع الذهبي SMA50/SMA200
         pullback = indicators.trend_pullback(candles)  # ارتداد الترند (شراء الانخفاض)
         atr_val = indicators.atr(candles)  # تذبذب السهم — لمستويات الدخول/الوقف/الهدف بالتنبيهات
+        mom_63d = _period_return(closes, MOMENTUM_SESSIONS)  # زخم ~3 أشهر (للقوة النسبية مقابل السوق)
         _save_price_history(ticker, candles)  # نفس البيانات المجلوبة أصلاً — بلا استدعاء API إضافي
     except Exception:  # noqa: BLE001
         tech = []
@@ -76,6 +128,7 @@ def _build_record(ticker):
         gc = None
         pullback = False
         atr_val = None
+        mom_63d = None
 
     return {
         "ticker": ticker,
@@ -91,6 +144,7 @@ def _build_record(ticker):
         "golden_cross": (gc or {}).get("cross"),
         "trend_pullback": pullback,
         "atr": atr_val,
+        "mom_63d": mom_63d,
     }
 
 
@@ -117,11 +171,12 @@ def is_golden(record):
     return quality_ok and flow_ok and breakout_ok
 
 
-def _record_signal(ticker, signal_type, price, atr=None):
+def _record_signal(ticker, signal_type, price, atr=None, earnings_days=None):
     """يسجّل إشارة لأول تأهّل فقط — لا تتجدد إلا بعد غياب SIGNAL_COOLDOWN_DAYS.
 
     None ≠ 0 : price قد يكون None (سعر غير متوفّر) ويُخزّن كذلك دون تلفيق.
     atr (اختياري): تذبذب السهم — يُمرَّر للتنبيه لحساب مستويات الدخول/الوقف/الهدف.
+    earnings_days (اختياري): أيام لموعد الأرباح — لإضافة تحذير تذبذب في التنبيه.
     """
     cutoff = datetime.now(timezone.utc) - timedelta(days=SIGNAL_COOLDOWN_DAYS)
     exists = (
@@ -133,8 +188,8 @@ def _record_signal(ticker, signal_type, price, atr=None):
     if exists:
         return
     db.session.add(Signal(ticker=ticker, signal_type=signal_type, price_at_signal=price))
-    # تنبيه تلغرام (اختياري — خامل بلا إعداد، وفشله لا يؤثر على التحديث)
-    telegram_client.notify_signal(ticker, signal_type, price, atr=atr)
+    # تنبيه تلغرام (اختياري — خامل بلا إعداد, وفشله لا يؤثر على التحديث)
+    telegram_client.notify_signal(ticker, signal_type, price, atr=atr, earnings_days=earnings_days)
 
 
 def dedupe_signals():
@@ -247,6 +302,21 @@ def backfill_price_history(time_budget=20):
 MARKET_BENCHMARK = "SPY"
 
 
+def _benchmark_return(sessions):
+    """عائد مؤشر السوق (SPY) عبر آخر `sessions` جلسة (%) من price_point.
+
+    يُرجع None لو تاريخ المؤشر غير كافٍ (لا نقارن بلا مرجع موثوق).
+    """
+    rows = (
+        PricePoint.query
+        .filter_by(ticker=MARKET_BENCHMARK)
+        .order_by(PricePoint.date.asc())
+        .all()
+    )
+    prices = [r.price for r in rows if r.price is not None]
+    return _period_return(prices, sessions)
+
+
 def _refresh_spy_history(today):
     """يحفظ أسعار مؤشر السوق (SPY) اليومية في price_point — لمقارنة أداء الإشارات بالسوق.
 
@@ -278,6 +348,8 @@ def refresh_cache(time_budget=20):
     today = datetime.now(timezone.utc).date()
     updated = 0
     _refresh_spy_history(today)  # مؤشر السوق للمقارنة (طلب واحد يومياً، يتخطى لو محدث)
+    spy_mom = _benchmark_return(MOMENTUM_SESSIONS)  # زخم السوق لنفس الفترة (يُحسب مرة واحدة)
+    earnings_map = _upcoming_earnings()  # مواعيد الأرباح القادمة (طلب FMP واحد لكل الأسهم)
     for ticker in UNIVERSE:
         if time.monotonic() - start > time_budget:
             break  # انتهى الحدّ الزمني — نرجع، وضغطة أخرى تُكمل الباقي
@@ -293,6 +365,16 @@ def refresh_cache(time_budget=20):
             if not record:
                 continue
 
+            # القوة النسبية = تفوّق زخم السهم على زخم السوق عن نفس الفترة (None ≠ 0)
+            if record.get("mom_63d") is not None and spy_mom is not None:
+                record["rel_strength"] = record["mom_63d"] - spy_mom
+
+            # موعد الأرباح القادم (لو ضمن نافذة التنبيه) — تحذير من التذبذب المرتفع
+            ed = earnings_map.get(ticker)
+            if ed:
+                record["earnings_date"] = ed.isoformat()
+                record["days_to_earnings"] = (ed - today).days
+
             row = existing
             payload = json.dumps(record, ensure_ascii=False)
             now = datetime.now(timezone.utc)
@@ -304,22 +386,23 @@ def refresh_cache(time_budget=20):
 
             # توليد إشارات تعليمية عند تجاوز العتبات
             sig_price, sig_atr = record.get("price"), record.get("atr")
+            sig_earn = record.get("days_to_earnings")
             if record.get("piotroski") is not None and record["piotroski"] >= PIOTROSKI_SIGNAL_MIN:
-                _record_signal(ticker, "piotroski_strong", sig_price, atr=sig_atr)
+                _record_signal(ticker, "piotroski_strong", sig_price, atr=sig_atr, earnings_days=sig_earn)
             if record.get("catalyst") is not None and record["catalyst"] >= CATALYST_SIGNAL_MIN:
-                _record_signal(ticker, "catalyst_strong", sig_price, atr=sig_atr)
+                _record_signal(ticker, "catalyst_strong", sig_price, atr=sig_atr, earnings_days=sig_earn)
             # 🥇 الإشارة الذهبية: 3 عوامل مجتمعة (نادرة) — جودة عالية + سيولة داخلة + اختراق فني
             if is_golden(record):
-                _record_signal(ticker, "golden", sig_price, atr=sig_atr)
+                _record_signal(ticker, "golden", sig_price, atr=sig_atr, earnings_days=sig_earn)
             # 💣 الانفجار الوشيك: انضغاط بولينجر + اختراق + حجم مرتفع
             if record.get("squeeze_breakout"):
-                _record_signal(ticker, "squeeze_breakout", sig_price, atr=sig_atr)
+                _record_signal(ticker, "squeeze_breakout", sig_price, atr=sig_atr, earnings_days=sig_earn)
             # 🌟 التقاطع الذهبي: SMA50 قطع SMA200 صعوداً (اتجاه صاعد طويل المدى)
             if record.get("golden_cross") == "golden":
-                _record_signal(ticker, "golden_cross", sig_price, atr=sig_atr)
+                _record_signal(ticker, "golden_cross", sig_price, atr=sig_atr, earnings_days=sig_earn)
             # 🎯 ارتداد الترند: ترند صاعد + تراجع لمس EMA20 + بدء ارتداد (شراء الانخفاض)
             if record.get("trend_pullback"):
-                _record_signal(ticker, "trend_pullback", sig_price, atr=sig_atr)
+                _record_signal(ticker, "trend_pullback", sig_price, atr=sig_atr, earnings_days=sig_earn)
 
             db.session.commit()  # حفظ هذا السهم مباشرة
             updated += 1

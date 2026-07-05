@@ -44,11 +44,12 @@ def send_message(text):
         return False
 
 
-def notify_signal(ticker, signal_type, price, atr=None):
+def notify_signal(ticker, signal_type, price, atr=None, earnings_days=None):
     """يبني نص تنبيه إشارة ويرسله (لو الميزة مفعّلة).
 
     atr (اختياري): تذبذب السهم — عند توفره مع السعر تُضاف مستويات تعليمية:
     دخول = السعر الحالي، وقف = السعر − 1.5×ATR، هدف = السعر + 3×ATR (عائد/مخاطرة 1:2).
+    earnings_days (اختياري): أيام لموعد الأرباح — يُضاف تحذير لو ≤7 أيام (تذبذب مرتفع).
     """
     kind = {
         "piotroski_strong": "💎 جودة مالية قوية (Piotroski)",
@@ -74,12 +75,18 @@ def notify_signal(ticker, signal_type, price, atr=None):
             f"⚖️ العائد مقابل المخاطرة: 2 : 1\n"
         )
 
+    earn = ""
+    if earnings_days is not None and earnings_days <= 7:
+        when = "اليوم" if earnings_days == 0 else ("غداً" if earnings_days == 1 else f"بعد {earnings_days} أيام")
+        earn = f"\n⚠️ <b>تنبيه:</b> إعلان الأرباح {when} — تذبذب مرتفع متوقّع، توخَّ الحذر.\n"
+
     text = (
         f"🚨 <b>إشارة جديدة من Algomatix</b>\n\n"
         f"السهم: <b>{ticker}</b>\n"
         f"النوع: {kind}\n"
         f"السعر وقت الإشارة: {price_txt}\n"
-        f"{levels}\n"
+        f"{levels}"
+        f"{earn}\n"
         f"https://algomatix-production.up.railway.app/stock/{ticker}"
     )
     return send_message(text)
