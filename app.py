@@ -310,10 +310,12 @@ def create_app():
     @app.route("/watchlist")
     def watchlist():
         items = Watchlist.query.filter_by(user_id=GUEST_USER).order_by(Watchlist.added_at.desc()).all()
+        # السعر الحالي من كاش الماسح أولاً (فوري وبلا استهلاك حصة) — نفس نهج المحفظة
+        records, _ = screener.load_records()
+        cache_prices = {r["ticker"]: r.get("price") for r in records}
         rows = []
         for item in items:
-            quote = fmp_client.get_quote(item.ticker)
-            current = quote.get("price") if quote else None
+            current = _current_price(item.ticker, cache_prices)
             # العائد منذ الإضافة — None ≠ 0 : يُحسب فقط لو توفّر السعران
             if current is not None and item.added_price:
                 ret_pct = (current - item.added_price) / item.added_price * 100.0
