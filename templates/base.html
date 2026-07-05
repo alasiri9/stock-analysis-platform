@@ -8,7 +8,7 @@
   <link rel="apple-touch-icon" href="{{ url_for('static', filename='icon-192.png') }}">
   <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
   <meta name="theme-color" content="#0d1830">
-  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=20260705f">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=20260705g">
 </head>
 <body>
   <div class="layout">
@@ -22,6 +22,7 @@
       <nav class="nav">
         <a href="{{ url_for('index') }}" class="{{ 'active' if active=='home' else '' }}"><span class="ic">📊</span> الرئيسية</a>
         <a href="{{ url_for('leaders') }}" class="{{ 'active' if active=='leaders' else '' }}"><span class="ic">🚀</span> القادة المستقبليون</a>
+        <a href="{{ url_for('prelaunch') }}" class="{{ 'active' if active=='prelaunch' else '' }}"><span class="ic">🔎</span> قبل الانطلاق</a>
         <a href="{{ url_for('gems') }}" class="{{ 'active' if active=='gems' else '' }}"><span class="ic">💎</span> الجواهر المخفية</a>
         <a href="{{ url_for('radar_page') }}" class="{{ 'active' if active=='radar' else '' }}"><span class="ic">🎯</span> رادار المحفزات</a>
         <a href="{{ url_for('flow_page') }}" class="{{ 'active' if active=='flow' else '' }}"><span class="ic">📡</span> التدفق الذكي</a>

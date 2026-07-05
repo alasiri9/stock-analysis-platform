@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% set active = 'prelaunch' %}
+{% block title %}قبل الانطلاق — Algomatix{% endblock %}
+
+{% block content %}
+  <section class="panel">
+    <div class="panel-head">
+      <h2>🔎 قبل الانطلاق :</h2>
+      <p class="panel-sub">أسهم في مرحلة مبكرة ولم تصعد بعد — مرتّبة حسب عدد الاستراتيجيات المتحققة (الأقوى تأكيداً أولاً). الهدف: الدخول في البداية لا بعد الصعود.</p>
+    </div>
+
+    {% if candidates %}
+      <div class="prelaunch-grid">
+        {% for c in candidates %}
+          <a class="pl-card {{ c.stage_key }}" href="{{ url_for('stock_report', ticker=c.ticker) }}">
+            <div class="pl-top">
+              <span class="pl-stage">{{ c.stage }}</span>
+              <span class="pl-strength" title="عدد الاستراتيجيات الصاعدة المتحققة">✅ {{ c.strength }} استراتيجية</span>
+            </div>
+            <div class="pl-head">
+              <span class="pl-ticker">{{ c.ticker }}</span>
+              <span class="pl-price" dir="ltr">{{ "%.2f $"|format(c.price) if c.price is not none else '—' }}</span>
+            </div>
+            <div class="pl-name">{{ c.name or '—' }}</div>
+            <div class="pl-meta">
+              {% if c.recent_gain is not none %}
+                <span class="pl-gain {{ 'up' if c.recent_gain >= 0 else 'down' }}" dir="ltr">صعود أسبوعين {{ "%+.1f"|format(c.recent_gain) }}%</span>
+              {% endif %}
+              {% if c.piotroski is not none %}<span class="dot">·</span> Piotroski <b>{{ c.piotroski }}</b>/9{% endif %}
+            </div>
+            <div class="pl-strats">
+              {% for s in c.strategies %}<span class="pl-pill">{{ s }}</span>{% endfor %}
+            </div>
+          </a>
+        {% endfor %}
+      </div>
+      <div class="note" style="margin-top:14px">
+        ℹ️ <b>قيد الشحن</b> = تذبذب ضيّق (انضغاط) يسبق الحركة غالباً — أبكر مرحلة. <b>بداية الاختراق</b> = الحركة للتو بدأت.
+        كلما زاد عدد الاستراتيجيات المتحققة زاد تضافر الأدلة. تعليمي لا توصية — الاصطياد المبكر يحمل فرصاً أكثر ومخاطر أعلى.
+      </div>
+    {% else %}
+      <div class="empty">
+        لا يوجد مرشّحون مبكّرون الآن — إما لا سهم في مرحلة انضغاط/اختراق مبكّر باستراتيجيات كافية،
+        أو أن البيانات ستكتمل مع أول تحديث ليلي (حقل "الصعود الأخير" يُحسب حينها).
+      </div>
+    {% endif %}
+  </section>
+{% endblock %}

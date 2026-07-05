@@ -42,6 +42,97 @@ _PREFIX = "screen:"
 # عدد جلسات التداول لقياس الزخم/القوة النسبية (~3 أشهر)
 MOMENTUM_SESSIONS = 63
 
+# نافذة "الصعود الأخير" (~أسبوعان) — أساس فلتر "لسا ما صعد"
+RECENT_SESSIONS = 10
+# لسا ما صعد: نستبعد من قائمة "قبل الانطلاق" ما قفز أكثر من هذا خلال النافذة الأخيرة
+EARLY_MAX_RECENT_GAIN = 12.0
+
+
+def _bullish_strategies(record):
+    """يُرجع قائمة أسماء الاستراتيجيات/المؤشرات الصاعدة المتحققة للسهم (تأكيد متعدد).
+
+    كلما طال هذا العدد، زاد تضافر الأدلة على أن السهم مرشّح قوي للانطلاق.
+    """
+    inds = {b.get("label"): b for b in (record.get("indicators") or [])}
+
+    def is_bull(label):
+        b = inds.get(label)
+        return bool(b and b.get("status") == "bull")
+
+    checks = {
+        "الاتجاه صاعد (EMA)": is_bull("EMA"),
+        "زخم إيجابي (MACD)": is_bull("MACD"),
+        "قوة نسبية صحية (RSI)": is_bull("RSI"),
+        "اتجاه قوي (ADX)": is_bull("ADX"),
+        "اختراق قمة": is_bull("اختراق"),
+        "حجم مرتفع": is_bull("الحجم"),
+        "سوبرترند صاعد": is_bull("سوبرترند"),
+        "تقاطع صاعد": is_bull("تقاطع"),
+        "تراكم حجم (OBV)": is_bull("تراكم"),
+        "سيولة داخلة": (record.get("money_flow") or {}).get("status") == "bull",
+        "جودة مالية (Piotroski)": record.get("piotroski") is not None and record["piotroski"] >= 7,
+        "أقوى من السوق": record.get("rel_strength") is not None and record["rel_strength"] > 0,
+    }
+    return [name for name, ok in checks.items() if ok]
+
+
+def early_launch_candidates(records=None, min_strategies=3):
+    """مرشّحو "قبل الانطلاق": أسهم في مرحلة مبكرة ولم تصعد بعد، مرتّبة بقوة التأكيد.
+
+    المرحلة المبكرة = أحدها:
+    - قيد الشحن: انضغاط بولينجر قائم (تذبذب ضيّق يسبق الحركة) دون اختراق بعد.
+    - بداية الاختراق: أول اختراق قمة 20 يوماً (الحركة للتو بدأت).
+    الفلتر "لسا ما صعد": يُستبعد ما قفز أكثر من EARLY_MAX_RECENT_GAIN خلال آخر أسبوعين
+    (None = العائد غير محسوب بعد، فلا نستبعد — سيُحسب مع أول تحديث ليلي).
+    الترتيب حسب عدد الاستراتيجيات الصاعدة المتحققة (min_strategies حدّ أدنى).
+    يُرجع قائمة مرتّبة تنازلياً (بلا استدعاء API — من الكاش).
+    """
+    if records is None:
+        records, _ = load_records()
+    out = []
+    for r in records:
+        badges = r.get("indicators") or []
+        squeezed = any(b.get("label") == "انضغاط" and b.get("value") == "نعم" for b in badges)
+        breakout = any(b.get("label") == "اختراق" and b.get("status") == "bull" for b in badges)
+        if not (squeezed or breakout):
+            continue  # ليس في مرحلة مبكرة
+
+        rg = r.get("recent_gain")
+        if rg is not None and rg > EARLY_MAX_RECENT_GAIN:
+            continue  # صعد كثيراً بالفعل — فات وقت الدخول المبكر
+
+        strategies = _bullish_strategies(r)
+        if len(strategies) < min_strategies:
+            continue  # تأكيد ضعيف
+
+        # المرحلة: قيد الشحن (انضغاط بلا اختراق) أقدم من بداية الاختراق
+        if squeezed and not breakout:
+            stage, stage_key = "🔋 قيد الشحن", "coiling"
+        elif breakout:
+            stage, stage_key = "🚀 بداية الاختراق", "breakout"
+        else:
+            stage, stage_key = "🔋 قيد الشحن", "coiling"
+
+        out.append({
+            "ticker": r.get("ticker"),
+            "name": r.get("name"),
+            "price": r.get("price"),
+            "catalyst": r.get("catalyst"),
+            "piotroski": r.get("piotroski"),
+            "recent_gain": rg,
+            "stage": stage,
+            "stage_key": stage_key,
+            "strategies": strategies,
+            "strength": len(strategies),
+        })
+    # الأقوى تأكيداً أولاً، ثم الأقل صعوداً (الأطزج)، ثم قيد الشحن قبل الاختراق
+    out.sort(key=lambda x: (
+        -x["strength"],
+        x["recent_gain"] if x["recent_gain"] is not None else 0,
+        0 if x["stage_key"] == "coiling" else 1,
+    ))
+    return out
+
 # ننبّه المستخدم لو موعد إعلان أرباح السهم خلال هذه المدة (أعلى أوقات التذبذب خطراً)
 EARNINGS_LOOKAHEAD_DAYS = 21
 
@@ -120,6 +211,7 @@ def _build_record(ticker):
         pullback = indicators.trend_pullback(candles)  # ارتداد الترند (شراء الانخفاض)
         atr_val = indicators.atr(candles)  # تذبذب السهم — لمستويات الدخول/الوقف/الهدف بالتنبيهات
         mom_63d = _period_return(closes, MOMENTUM_SESSIONS)  # زخم ~3 أشهر (للقوة النسبية مقابل السوق)
+        recent_gain = _period_return(closes, RECENT_SESSIONS)  # صعود آخر أسبوعين (لفلتر "لسا ما صعد")
         _save_price_history(ticker, candles)  # نفس البيانات المجلوبة أصلاً — بلا استدعاء API إضافي
     except Exception:  # noqa: BLE001
         tech = []
@@ -129,6 +221,7 @@ def _build_record(ticker):
         pullback = False
         atr_val = None
         mom_63d = None
+        recent_gain = None
 
     return {
         "ticker": ticker,
@@ -145,6 +238,7 @@ def _build_record(ticker):
         "trend_pullback": pullback,
         "atr": atr_val,
         "mom_63d": mom_63d,
+        "recent_gain": recent_gain,
     }
 
 
@@ -658,12 +752,15 @@ def market_mood(records=None):
 
 
 def filter_records(records, piotroski_min=None, catalyst_min=None,
-                   price_max=None, market_cap_min=None, sector=None):
+                   price_max=None, market_cap_min=None, sector=None,
+                   recent_gain_max=None):
     """يطبّق الفلاتر على السجلّات المخزّنة.
 
     None ≠ 0 : السجلّ الذي تكون قيمته المطلوبة None لا يجتاز فلتراً يحدّ تلك القيمة
     (لا نعامله كصفر).
     market_cap_min بالدولار (خام)، يُحوّل من المليارات في طبقة الـ route.
+    recent_gain_max: "لسا ما صعد" — يستبعد ما قفز أكثر من هذا خلال آخر أسبوعين
+    (recent_gain=None يُبقى: العائد غير محسوب بعد، لا نستبعد بلا يقين).
     """
     out = []
     for r in records:
@@ -681,6 +778,10 @@ def filter_records(records, piotroski_min=None, catalyst_min=None,
                 continue
         if sector:
             if r.get("sector") != sector:
+                continue
+        if recent_gain_max is not None:
+            rg = r.get("recent_gain")
+            if rg is not None and rg > recent_gain_max:
                 continue
         out.append(r)
     # ترتيب تنازلي حسب Catalyst ثم Piotroski (None في الأسفل)

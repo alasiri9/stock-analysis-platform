@@ -68,6 +68,12 @@
         {% for s in sectors %}<option value="{{ s }}" {{ 'selected' if filters.sector == s else '' }}>{{ s }}</option>{% endfor %}
       </select>
     </div>
+    <div class="filter filter-check">
+      <label class="check-label" title="يخفي الأسهم التي قفزت أكثر من 12% خلال آخر أسبوعين — للاصطياد المبكر">
+        <input type="checkbox" name="not_risen" value="1" {{ 'checked' if filters.not_risen else '' }}>
+        لسا ما صعد
+      </label>
+    </div>
     <button class="btn" type="submit">فلترة</button>
     <button class="btn" type="submit" formaction="{{ url_for('screener_backfill_history') }}" formmethod="post" title="يعبّئ الرسم البياني للأسهم المحدّثة أصلاً باستدعاء واحد فقط لكل سهم">📈 تحديث شارت الأسهم التي انطلقت</button>
     <button class="btn" type="submit" formaction="{{ url_for('screener_refresh') }}" formmethod="post">🔄 تحديث البيانات</button>

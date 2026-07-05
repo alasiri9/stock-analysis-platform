@@ -166,6 +166,31 @@ a.stat-box:hover { filter: brightness(1.15); transform: translateY(-1px); }
 .market-dir { margin-bottom: 12px; }
 .mkt-sub { color: var(--muted); font-size: 14px; font-weight: 400; }
 
+/* ---------- قبل الانطلاق (المرشحون المبكرون) ---------- */
+.prelaunch-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 14px; }
+.pl-card {
+  display: block; background: var(--card); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 14px 16px; text-decoration: none; color: var(--text);
+  transition: border-color .15s ease, transform .15s ease;
+}
+.pl-card:hover { transform: translateY(-2px); }
+.pl-card.coiling { border-inline-start: 4px solid var(--gold); }
+.pl-card.breakout { border-inline-start: 4px solid var(--green); }
+.pl-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
+.pl-stage { font-size: 14px; font-weight: 800; }
+.pl-card.coiling .pl-stage { color: var(--gold); }
+.pl-card.breakout .pl-stage { color: var(--green); }
+.pl-strength { font-size: 13px; font-weight: 800; color: var(--green); background: var(--green-dim); padding: 3px 9px; border-radius: 999px; }
+.pl-head { display: flex; align-items: baseline; gap: 10px; }
+.pl-ticker { font-size: 22px; font-weight: 900; }
+.pl-price { color: var(--muted); font-size: 15px; }
+.pl-name { color: var(--muted); font-size: 14px; margin: 2px 0 8px; }
+.pl-meta { font-size: 14px; color: var(--muted); display: flex; align-items: center; gap: 7px; flex-wrap: wrap; margin-bottom: 10px; }
+.pl-meta b { color: var(--text); }
+.pl-gain.up { color: var(--green); } .pl-gain.down { color: var(--red); }
+.pl-strats { display: flex; flex-wrap: wrap; gap: 6px; }
+.pl-pill { font-size: 12px; font-weight: 700; color: var(--text); background: rgba(34,197,94,.12); border: 1px solid rgba(34,197,94,.3); padding: 2px 8px; border-radius: 8px; }
+
 /* ---------- لوحة الفلاتر ---------- */
 .filters {
   display: flex; gap: 14px; align-items: flex-end; flex-wrap: wrap;
@@ -179,6 +204,9 @@ a.stat-box:hover { filter: brightness(1.15); transform: translateY(-1px); }
   padding: 9px 12px; border-radius: 8px; font-size: 18px; min-width: 130px;
 }
 .filter select option { background: var(--panel-2); color: var(--text); }
+.filter-check { justify-content: flex-end; }
+.check-label { display: flex; align-items: center; gap: 8px; color: var(--text); font-size: 16px; font-weight: 700; cursor: pointer; }
+.check-label input { width: 18px; height: 18px; accent-color: var(--green); cursor: pointer; }
 .screener-bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; flex-wrap: wrap; }
 .screener td, .screener th { text-align: right; }
 
