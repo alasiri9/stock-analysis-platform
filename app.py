@@ -304,6 +304,13 @@ def create_app():
             return render_template("stock.html", report=None, ticker=ticker.upper())
         return render_template("stock.html", report=report, ticker=report["ticker"])
 
+    # ===================== حاسبة حجم الصفقة =====================
+
+    @app.route("/calculator")
+    def calculator():
+        # أداة تعليمية فورية (حساب في المتصفح) — بلا استدعاء API ولا بيانات خادم
+        return render_template("calculator.html")
+
     # ===================== المقارنة =====================
 
     @app.route("/compare")
