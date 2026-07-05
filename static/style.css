@@ -162,6 +162,8 @@ a.stat-box:hover { filter: brightness(1.15); transform: translateY(-1px); }
 .mood-seg.neutral { background: var(--muted); }
 .mood-seg.bear { background: var(--red); }
 .mood-legend { display: flex; gap: 18px; flex-wrap: wrap; color: var(--muted); font-size: 14px; }
+.market-dir { margin-bottom: 12px; }
+.mkt-sub { color: var(--muted); font-size: 14px; font-weight: 400; }
 
 /* ---------- لوحة الفلاتر ---------- */
 .filters {

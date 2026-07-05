@@ -587,6 +587,37 @@ def load_records():
     return records, latest
 
 
+def market_direction():
+    """اتجاه السوق الأمريكي من مؤشر S&P 500 (SPY) — من price_point، بلا استدعاء API.
+
+    يقارن سعر المؤشر بمتوسطيه المتحركين 20 و50 يوماً:
+    - صاعد: السعر فوق متوسط 20 وهو فوق متوسط 50 (ترند صاعد واضح).
+    - هابط: السعر تحت متوسط 20 وهو تحت متوسط 50 (ترند هابط).
+    - عرضي: ما عدا ذلك (تذبذب بلا اتجاه حاسم).
+    يُرجع dict {label, emoji, cls, change_20} أو None لو تاريخ المؤشر غير كافٍ.
+    """
+    rows = (
+        PricePoint.query
+        .filter_by(ticker=MARKET_BENCHMARK)
+        .order_by(PricePoint.date.asc())
+        .all()
+    )
+    prices = [r.price for r in rows if r.price is not None]
+    if len(prices) < 55:
+        return None
+    price = prices[-1]
+    sma20 = sum(prices[-20:]) / 20
+    sma50 = sum(prices[-50:]) / 50
+    change_20 = (prices[-1] - prices[-21]) / prices[-21] * 100.0 if prices[-21] else None
+    if price > sma20 > sma50:
+        label, emoji, cls = "صاعد", "🟢", "bull"
+    elif price < sma20 < sma50:
+        label, emoji, cls = "هابط", "🔴", "bear"
+    else:
+        label, emoji, cls = "عرضي", "⚪", "neutral"
+    return {"label": label, "emoji": emoji, "cls": cls, "change_20": change_20}
+
+
 def market_mood(records=None):
     """مزاج السوق العام: كم سهم صاعد/هابط/محايد من كامل العيّنة (من الكاش، بلا API).
 

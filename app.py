@@ -184,13 +184,14 @@ def create_app():
             "strong": sum(1 for r in records if r.get("catalyst") is not None and r["catalyst"] >= 80),
         }
         launched, perf = screener.launched_stocks()
-        mood = screener.market_mood(records)  # مزاج السوق (نفس السجلّات — بلا قراءة مكررة)
+        mood = screener.market_mood(records)  # مزاج أسهم المنصة (نفس السجلّات — بلا قراءة مكررة)
+        market_dir = screener.market_direction()  # اتجاه السوق الأمريكي (S&P 500)
         return render_template(
             "index.html",
             results=results, sectors=sectors, latest=latest,
             filters=filters, total=len(records), stats=stats,
             signals=screener.recent_signals(),
-            launched=launched, perf=perf, mood=mood,
+            launched=launched, perf=perf, mood=mood, market_dir=market_dir,
         )
 
     @app.route("/gems")

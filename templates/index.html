@@ -3,12 +3,25 @@
 {% block title %}الرئيسية — Screener{% endblock %}
 
 {% block content %}
-  {# مزاج السوق: نظرة سريعة على اتجاه الـ32 سهماً (من مؤشرات الكاش، بلا استدعاء API) #}
+  {# اتجاه السوق الأمريكي: من مؤشر S&P 500 (بيانات SPY بالكاش، بلا استدعاء API) #}
+  {% if market_dir %}
+    <div class="mood-banner mood-{{ market_dir.cls }} market-dir">
+      <div class="mood-head">
+        <span class="mood-emoji">{{ market_dir.emoji }}</span>
+        <span class="mood-label">اتجاه السوق الأمريكي <span class="mkt-sub">(مؤشر S&amp;P 500)</span>: <b>{{ market_dir.label }}</b></span>
+        {% if market_dir.change_20 is not none %}
+          <span class="mood-pct" dir="ltr">{{ "%+.1f"|format(market_dir.change_20) }}% خلال شهر</span>
+        {% endif %}
+      </div>
+    </div>
+  {% endif %}
+
+  {# مزاج أسهم المنصة: كم سهم صاعد/هابط من الـ32 (من مؤشرات الكاش، بلا استدعاء API) #}
   {% if mood %}
     <div class="mood-banner mood-{{ mood.cls }}">
       <div class="mood-head">
         <span class="mood-emoji">{{ mood.emoji }}</span>
-        <span class="mood-label">مزاج السوق اليوم: <b>{{ mood.label }}</b></span>
+        <span class="mood-label">مزاج أسهم المنصة: <b>{{ mood.label }}</b></span>
         <span class="mood-pct" dir="ltr">{{ "%.0f"|format(mood.bull_pct) }}% صاعد</span>
       </div>
       <div class="mood-bar" title="نسبة الأسهم الصاعدة/المحايدة/الهابطة">
