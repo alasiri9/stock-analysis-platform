@@ -404,7 +404,9 @@ def create_app():
         else:
             summary["total_pnl"] = None
             summary["total_pnl_pct"] = None
-        return render_template("portfolio.html", rows=rows, summary=summary)
+        from services import portfolio as portfolio_svc
+        chart = portfolio_svc.performance_chart()
+        return render_template("portfolio.html", rows=rows, summary=summary, chart=chart)
 
     @app.route("/portfolio/add", methods=["POST"])
     def portfolio_add():

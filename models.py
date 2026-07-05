@@ -20,6 +20,23 @@ def _utcnow():
     return datetime.now(timezone.utc)
 
 
+class PortfolioSnapshot(db.Model):
+    """لقطة يومية لقيمة المحفظة — يسجّلها المجدول الليلي لرسم منحنى الأداء.
+
+    الأعمدة: (date [مفتاح أساسي — لقطة واحدة لكل يوم], total_cost, total_value)
+    تُسجَّل فقط عندما تتوفر أسعار حالية لكل المقتنيات (None ≠ 0: لا لقطة ناقصة مضللة).
+    """
+
+    __tablename__ = "portfolio_snapshot"
+
+    date = db.Column(db.Date, primary_key=True)
+    total_cost = db.Column(db.Float, nullable=False)
+    total_value = db.Column(db.Float, nullable=False)
+
+    def __repr__(self):
+        return f"<PortfolioSnapshot {self.date} value={self.total_value}>"
+
+
 class PortfolioHolding(db.Model):
     """مقتنى في المحفظة الافتراضية — كل صف = عملية شراء سجّلها المستخدم.
 

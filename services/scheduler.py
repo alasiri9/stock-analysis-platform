@@ -57,6 +57,13 @@ def _auto_refresh(app):
                 break
         print(f"[scheduler] انتهى تحديث الرادار — إجمالي: {radar_total}")
 
+        # لقطة يومية لقيمة المحفظة (بعد تحديث الأسعار — لمنحنى الأداء)
+        try:
+            from services import portfolio
+            portfolio.record_snapshot()
+        except Exception as e:  # noqa: BLE001
+            print(f"[scheduler] تعذّر تسجيل لقطة المحفظة: {e}")
+
         # ختاماً: التقرير الصباحي المجمّع بتلغرام (خامل بلا إعداد، وفشله لا يؤثر)
         try:
             _send_daily_report()

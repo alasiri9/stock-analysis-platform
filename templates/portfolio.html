@@ -35,6 +35,38 @@
       </div>
     {% endif %}
 
+    {# منحنى أداء المحفظة عبر الأيام (يظهر بعد تراكم لقطتين يوميتين على الأقل) #}
+    {% if chart %}
+      <h3 class="perf-title">📈 أداء محفظتك عبر الأيام :</h3>
+      <div class="big-chart {{ 'up' if chart.up else 'down' }}" style="margin-bottom:18px">
+        <div class="big-chart-meta">
+          <span>القيمة الآن: <b dir="ltr">{{ "%.2f $"|format(chart.last_value) }}</b></span>
+          <span>التغيّر بالفترة:
+            <b dir="ltr" class="{{ 'chg-up' if chart.up else 'chg-down' }}">{{ "%+.1f"|format(chart.change_pct) }}%</b>
+          </span>
+          <span>{{ chart.days }} يوم مسجّل</span>
+        </div>
+        <svg viewBox="0 0 {{ chart.width }} {{ chart.height }}" preserveAspectRatio="none" class="big-chart-svg" style="height:200px">
+          <defs>
+            <linearGradient id="pfFill" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="currentColor" stop-opacity="0.25"/>
+              <stop offset="100%" stop-color="currentColor" stop-opacity="0"/>
+            </linearGradient>
+          </defs>
+          <polygon points="{{ chart.area_points }}" fill="url(#pfFill)"/>
+          <polyline points="{{ chart.points }}" fill="none" stroke="currentColor" stroke-width="2.5"/>
+        </svg>
+        <div class="big-chart-dates" dir="ltr">
+          <span>{{ chart.first_date }}</span>
+          <span>{{ chart.last_date }}</span>
+        </div>
+      </div>
+    {% elif summary.count %}
+      <div class="note" style="margin-bottom:18px">
+        📈 منحنى أداء محفظتك سيظهر هنا تلقائياً بعد ليلتين من التسجيل اليومي (المجدول يسجّل قيمة محفظتك كل ليلة).
+      </div>
+    {% endif %}
+
     {# نموذج إضافة عملية شراء #}
     <form class="filters" action="{{ url_for('portfolio_add') }}" method="post">
       <div class="filter">
