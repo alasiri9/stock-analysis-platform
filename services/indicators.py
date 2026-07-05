@@ -151,7 +151,121 @@ def build_indicators(candles):
                     status, val = "neutral", "عادي"
                 badges.append({"label": "الحجم", "value": val, "status": status})
 
+    # --- ADX: قوة الاتجاه (كانت شارة شكلية — الآن محسوبة فعلياً) ---
+    adx = _adx(rows)
+    if adx is not None:
+        status = "bull" if adx >= 25 else "neutral"
+        badges.append({"label": "ADX", "value": f"{adx:.0f}", "status": status})
+
+    # --- قرب القمة: السعر ضمن 5% من أعلى قمة بالفترة المتاحة ---
+    highs = [r["high"] for r in rows if r["high"] is not None]
+    if highs:
+        peak = max(highs)
+        if peak > 0:
+            status = "bull" if price >= peak * 0.95 else "neutral"
+            badges.append({"label": "قمة", "value": f"{price / peak * 100:.0f}%", "status": status})
+
+    # --- انضغاط بولينجر: تضيّق شديد للنطاق يسبق الانفجارات السعرية غالباً ---
+    sq = _bollinger_squeeze(closes)
+    if sq is not None:
+        badges.append({
+            "label": "انضغاط",
+            "value": "نعم" if sq["squeezed"] else "لا",
+            "status": "bull" if sq["squeezed"] else "neutral",
+        })
+
     return badges
+
+
+def _adx(rows, period=14):
+    """ADX (متوسط مؤشر الاتجاه) بتمهيد Wilder. يُرجع القيمة أو None لو البيانات غير كافية."""
+    rows = [r for r in rows if r["high"] is not None and r["low"] is not None]
+    if len(rows) < period * 3:
+        return None
+    trs, pdms, ndms = [], [], []
+    for i in range(1, len(rows)):
+        h, l, prev = rows[i]["high"], rows[i]["low"], rows[i - 1]
+        tr = max(h - l, abs(h - prev["close"]), abs(l - prev["close"]))
+        up_move = h - prev["high"]
+        down_move = prev["low"] - l
+        pdms.append(up_move if (up_move > down_move and up_move > 0) else 0.0)
+        ndms.append(down_move if (down_move > up_move and down_move > 0) else 0.0)
+        trs.append(tr)
+    atr = sum(trs[:period])
+    pdm_s = sum(pdms[:period])
+    ndm_s = sum(ndms[:period])
+    dxs = []
+    for i in range(period, len(trs)):
+        atr = atr - atr / period + trs[i]
+        pdm_s = pdm_s - pdm_s / period + pdms[i]
+        ndm_s = ndm_s - ndm_s / period + ndms[i]
+        if atr == 0:
+            continue
+        pdi = 100 * pdm_s / atr
+        ndi = 100 * ndm_s / atr
+        if pdi + ndi == 0:
+            continue
+        dxs.append(100 * abs(pdi - ndi) / (pdi + ndi))
+    if len(dxs) < period:
+        return None
+    adx = sum(dxs[:period]) / period
+    for d in dxs[period:]:
+        adx = (adx * (period - 1) + d) / period
+    return adx
+
+
+def _bollinger_squeeze(closes, period=20, lookback=90):
+    """انضغاط بولينجر: هل عرض النطاق الحالي ضمن أدنى 20% من قيمه بفترة المراجعة؟
+
+    عرض النطاق = (الحد الأعلى − الأدنى) / الوسط = 4×الانحراف المعياري / المتوسط.
+    يُرجع {squeezed, width, threshold} أو None لو البيانات غير كافية.
+    """
+    if len(closes) < period + 10:
+        return None
+    widths = []
+    for i in range(period - 1, len(closes)):
+        win = closes[i - period + 1:i + 1]
+        mean = sum(win) / period
+        if not mean:
+            continue
+        sd = (sum((x - mean) ** 2 for x in win) / period) ** 0.5
+        widths.append(4 * sd / mean)
+    if len(widths) < 10:
+        return None
+    recent = widths[-lookback:]
+    ordered = sorted(recent)
+    threshold = ordered[max(0, int(len(ordered) * 0.2) - 1)]
+    current = widths[-1]
+    return {"squeezed": current <= threshold, "width": current, "threshold": threshold}
+
+
+def squeeze_breakout(candles):
+    """استراتيجية "الانفجار الوشيك": انضغاط بولينجر حديث + اختراق قمة 20 يوماً + حجم مرتفع.
+
+    يُرجع True فقط عند اجتماع الشروط الثلاثة (None ≠ 0: بيانات ناقصة ⇒ False).
+    """
+    rows = _clean(candles)
+    closes = [r["close"] for r in rows]
+    if len(closes) < 40:
+        return False
+
+    # 1) انضغاط قائم أو انفكّ للتو (خلال آخر 10 جلسات) — الانفجار يلي الانضغاط
+    sq_now = _bollinger_squeeze(closes)
+    sq_before = _bollinger_squeeze(closes[:-5]) if len(closes) > 45 else None
+    squeezed_recently = bool((sq_now and sq_now["squeezed"]) or (sq_before and sq_before["squeezed"]))
+    if not squeezed_recently:
+        return False
+
+    # 2) اختراق: إغلاق اليوم فوق أعلى قمة الـ20 يوماً السابقة
+    prior_high = max(r["high"] for r in rows[-21:-1] if r["high"] is not None)
+    if closes[-1] <= prior_high:
+        return False
+
+    # 3) حجم اليوم أعلى من متوسط 20 يوماً بوضوح
+    vols = [r["volume"] for r in rows[-21:-1] if r["volume"]]
+    if not vols or not rows[-1]["volume"]:
+        return False
+    return rows[-1]["volume"] >= (sum(vols) / len(vols)) * 1.2
 
 
 def money_flow(candles):

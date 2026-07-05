@@ -134,6 +134,16 @@ def create_app():
         days = hours // 24
         return f"قبل {days} يوم"
 
+    @app.template_filter("signal_name")
+    def signal_name(signal_type):
+        """اسم عربي موحّد لنوع الإشارة (بدل تكراره بكل قالب)."""
+        return {
+            "piotroski_strong": "💎 جودة مالية قوية",
+            "catalyst_strong": "⚡ زخم قوي",
+            "golden": "🥇 إشارة ذهبية (3 عوامل)",
+            "squeeze_breakout": "💣 انفجار وشيك (انضغاط + اختراق)",
+        }.get(signal_type, signal_type)
+
     def _to_float(name):
         """يقرأ قيمة رقمية من باراميتر الطلب، أو None لو فارغة/غير صالحة."""
         raw = request.args.get(name, "").strip()

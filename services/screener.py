@@ -58,14 +58,17 @@ def _build_record(ticker):
     catalyst = scoring.catalyst_score(financials)
 
     # مؤشرات فنية للكرت (جلب تاريخي إضافي؛ لا يكسر السجلّ لو فشل)
+    # 250 يوماً: يكفي ADX الموثوق وقمة قريبة من قمة 52 أسبوعاً (نفس طلب FMP الواحد)
     try:
-        candles = fmp_client.get_historical_prices(ticker, limit=120)
+        candles = fmp_client.get_historical_prices(ticker, limit=250)
         tech = indicators.build_indicators(candles)
         flow = indicators.money_flow(candles)  # تدفق السيولة — من نفس الشموع، بلا استدعاء إضافي
+        squeeze_bo = indicators.squeeze_breakout(candles)  # استراتيجية الانفجار الوشيك
         _save_price_history(ticker, candles)  # نفس البيانات المجلوبة أصلاً — بلا استدعاء API إضافي
     except Exception:  # noqa: BLE001
         tech = []
         flow = None
+        squeeze_bo = False
 
     return {
         "ticker": ticker,
@@ -77,6 +80,7 @@ def _build_record(ticker):
         "catalyst": catalyst["score"],
         "indicators": tech,
         "money_flow": flow,
+        "squeeze_breakout": squeeze_bo,
     }
 
 
@@ -295,6 +299,9 @@ def refresh_cache(time_budget=20):
             # 🥇 الإشارة الذهبية: 3 عوامل مجتمعة (نادرة) — جودة عالية + سيولة داخلة + اختراق فني
             if is_golden(record):
                 _record_signal(ticker, "golden", record.get("price"))
+            # 💣 الانفجار الوشيك: انضغاط بولينجر + اختراق + حجم مرتفع
+            if record.get("squeeze_breakout"):
+                _record_signal(ticker, "squeeze_breakout", record.get("price"))
 
             db.session.commit()  # حفظ هذا السهم مباشرة
             updated += 1

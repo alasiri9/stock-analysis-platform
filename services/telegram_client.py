@@ -50,6 +50,7 @@ def notify_signal(ticker, signal_type, price):
         "piotroski_strong": "💎 جودة مالية قوية (Piotroski)",
         "catalyst_strong": "⚡ زخم قوي (Catalyst)",
         "golden": "🥇 إشارة ذهبية — 3 عوامل مجتمعة (جودة + سيولة + اختراق)",
+        "squeeze_breakout": "💣 انفجار وشيك — انضغاط بولينجر + اختراق بحجم مرتفع",
     }.get(signal_type, signal_type)
     price_txt = f"{price:.2f}$" if price is not None else "غير متوفر"
     text = (
