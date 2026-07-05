@@ -52,6 +52,7 @@ def notify_signal(ticker, signal_type, price):
         "golden": "🥇 إشارة ذهبية — 3 عوامل مجتمعة (جودة + سيولة + اختراق)",
         "squeeze_breakout": "💣 انفجار وشيك — انضغاط بولينجر + اختراق بحجم مرتفع",
         "golden_cross": "🌟 تقاطع ذهبي — SMA50 قطع SMA200 صعوداً (اتجاه طويل المدى)",
+        "trend_pullback": "🎯 ارتداد الترند — تراجع مؤقت بترند صاعد بدأ يرتد (شراء الانخفاض)",
     }.get(signal_type, signal_type)
     price_txt = f"{price:.2f}$" if price is not None else "غير متوفر"
     text = (

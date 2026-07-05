@@ -188,6 +188,29 @@ def build_indicators(candles):
                 "status": "bull" if gc["above"] else "bear",
             })
 
+    # --- SuperTrend: حكم اتجاه صريح + مستوى وقف متحرك (ATR-based) ---
+    st = supertrend(rows)
+    if st is not None:
+        badges.append({
+            "label": "سوبرترند",
+            "value": f"صاعد ({st['level']:.0f}$)" if st["trend"] == "up" else f"هابط ({st['level']:.0f}$)",
+            "status": "bull" if st["trend"] == "up" else "bear",
+        })
+
+    # --- Stochastic (14,3): زخم قصير المدى وتشبّع ---
+    stoch = _stochastic(rows)
+    if stoch is not None:
+        k, d = stoch
+        if k >= 80:
+            val, status = f"{k:.0f} تشبّع شرائي", "neutral"
+        elif k <= 20:
+            val, status = f"{k:.0f} تشبّع بيعي", "neutral"
+        elif k > d:
+            val, status = f"{k:.0f} صاعد", "bull"
+        else:
+            val, status = f"{k:.0f} هابط", "bear"
+        badges.append({"label": "ستوكاستيك", "value": val, "status": status})
+
     return badges
 
 
@@ -417,3 +440,103 @@ if __name__ == "__main__":
     print("مؤشرات AAPL:")
     for b in build_indicators(candles):
         print(f"  {b['label']}: {b['value']} [{b['status']}]")
+
+
+def _stochastic(rows, period=14, smooth=3):
+    """Stochastic (%K المُنعَّم، %D) — يُرجع (k, d) أو None لو البيانات غير كافية."""
+    valid = [r for r in rows if r["high"] is not None and r["low"] is not None]
+    if len(valid) < period + smooth * 2:
+        return None
+    raw_ks = []
+    for i in range(period - 1, len(valid)):
+        win = valid[i - period + 1:i + 1]
+        hh = max(r["high"] for r in win)
+        ll = min(r["low"] for r in win)
+        c = valid[i]["close"]
+        raw_ks.append(50.0 if hh == ll else (c - ll) / (hh - ll) * 100.0)
+    if len(raw_ks) < smooth * 2:
+        return None
+    # %K المنعم = SMA3 للخام، و%D = SMA3 للمنعم
+    ks = [sum(raw_ks[i - smooth + 1:i + 1]) / smooth for i in range(smooth - 1, len(raw_ks))]
+    if len(ks) < smooth:
+        return None
+    d = sum(ks[-smooth:]) / smooth
+    return ks[-1], d
+
+
+def supertrend(rows, period=10, mult=3.0):
+    """SuperTrend — اتجاه صريح (up/down) مع مستوى الوقف المتحرك الحالي.
+
+    يُرجع {"trend": "up"|"down", "level": float} أو None لو البيانات غير كافية.
+    """
+    valid = [r for r in rows if r["high"] is not None and r["low"] is not None]
+    if len(valid) < period * 2:
+        return None
+
+    # ATR بتمهيد Wilder
+    trs = []
+    for i in range(1, len(valid)):
+        h, l, pc = valid[i]["high"], valid[i]["low"], valid[i - 1]["close"]
+        trs.append(max(h - l, abs(h - pc), abs(l - pc)))
+    atr = sum(trs[:period]) / period
+    atrs = [atr]
+    for tr in trs[period:]:
+        atr = (atr * (period - 1) + tr) / period
+        atrs.append(atr)
+
+    # النطاقات النهائية + الاتجاه (المنطق القياسي للتتبع)
+    closes_v = [r["close"] for r in valid]
+    start = period  # أول شمعة لها ATR
+    fub = flb = None  # final upper/lower band
+    trend = "up"
+    for i in range(start, len(valid)):
+        mid = (valid[i]["high"] + valid[i]["low"]) / 2
+        a = atrs[i - start]
+        bub = mid + mult * a
+        blb = mid - mult * a
+        prev_close = closes_v[i - 1]
+        fub = bub if (fub is None or bub < fub or prev_close > fub) else fub
+        flb = blb if (flb is None or blb > flb or prev_close < flb) else flb
+        if closes_v[i] > fub:
+            trend = "up"
+        elif closes_v[i] < flb:
+            trend = "down"
+    return {"trend": trend, "level": flb if trend == "up" else fub}
+
+
+def trend_pullback(candles):
+    """استراتيجية "ارتداد الترند": ترند صاعد + تراجع لمس EMA20 + بدء ارتداد.
+
+    الشروط: EMA20 > EMA50 (ترند صاعد) + قاع إحدى آخر 3 جلسات لامس EMA20
+    (ضمن 1%) + RSI بين 35 و60 (تنفّس لا انهيار) + إغلاق اليوم أعلى من الأمس.
+    يُرجع True/False (False أيضاً عند نقص البيانات — لا إشارة بلا يقين).
+    """
+    rows = _clean(candles)
+    closes = [r["close"] for r in rows]
+    if len(closes) < 55:
+        return False
+
+    ema20_s = _ema_series(closes, 20)
+    ema50_s = _ema_series(closes, 50)
+    if not ema20_s or not ema50_s:
+        return False
+    if ema20_s[-1] <= ema50_s[-1]:
+        return False  # لا ترند صاعد
+
+    # لمس EMA20 بإحدى آخر 3 جلسات (قاع الجلسة نزل لحدود المتوسط)
+    touched = False
+    for back in range(1, 4):
+        row = rows[-back]
+        low = row["low"] if row["low"] is not None else row["close"]
+        ema_then = ema20_s[-back]
+        if low <= ema_then * 1.01:
+            touched = True
+            break
+    if not touched:
+        return False
+
+    rsi = _rsi(closes)
+    if rsi is None or not (35 <= rsi <= 60):
+        return False
+
+    return closes[-1] > closes[-2]  # بدأ يرتد فعلاً

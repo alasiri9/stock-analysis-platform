@@ -66,12 +66,14 @@ def _build_record(ticker):
         squeeze_bo = indicators.squeeze_breakout(candles)  # استراتيجية الانفجار الوشيك
         closes = [c["close"] for c in reversed(candles or []) if c.get("close") is not None]
         gc = indicators.golden_cross(closes)  # التقاطع الذهبي SMA50/SMA200
+        pullback = indicators.trend_pullback(candles)  # ارتداد الترند (شراء الانخفاض)
         _save_price_history(ticker, candles)  # نفس البيانات المجلوبة أصلاً — بلا استدعاء API إضافي
     except Exception:  # noqa: BLE001
         tech = []
         flow = None
         squeeze_bo = False
         gc = None
+        pullback = False
 
     return {
         "ticker": ticker,
@@ -85,6 +87,7 @@ def _build_record(ticker):
         "money_flow": flow,
         "squeeze_breakout": squeeze_bo,
         "golden_cross": (gc or {}).get("cross"),
+        "trend_pullback": pullback,
     }
 
 
@@ -309,6 +312,9 @@ def refresh_cache(time_budget=20):
             # 🌟 التقاطع الذهبي: SMA50 قطع SMA200 صعوداً (اتجاه صاعد طويل المدى)
             if record.get("golden_cross") == "golden":
                 _record_signal(ticker, "golden_cross", record.get("price"))
+            # 🎯 ارتداد الترند: ترند صاعد + تراجع لمس EMA20 + بدء ارتداد (شراء الانخفاض)
+            if record.get("trend_pullback"):
+                _record_signal(ticker, "trend_pullback", record.get("price"))
 
             db.session.commit()  # حفظ هذا السهم مباشرة
             updated += 1
