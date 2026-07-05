@@ -67,6 +67,7 @@ def _build_record(ticker):
         closes = [c["close"] for c in reversed(candles or []) if c.get("close") is not None]
         gc = indicators.golden_cross(closes)  # التقاطع الذهبي SMA50/SMA200
         pullback = indicators.trend_pullback(candles)  # ارتداد الترند (شراء الانخفاض)
+        atr_val = indicators.atr(candles)  # تذبذب السهم — لمستويات الدخول/الوقف/الهدف بالتنبيهات
         _save_price_history(ticker, candles)  # نفس البيانات المجلوبة أصلاً — بلا استدعاء API إضافي
     except Exception:  # noqa: BLE001
         tech = []
@@ -74,6 +75,7 @@ def _build_record(ticker):
         squeeze_bo = False
         gc = None
         pullback = False
+        atr_val = None
 
     return {
         "ticker": ticker,
@@ -88,6 +90,7 @@ def _build_record(ticker):
         "squeeze_breakout": squeeze_bo,
         "golden_cross": (gc or {}).get("cross"),
         "trend_pullback": pullback,
+        "atr": atr_val,
     }
 
 
@@ -114,10 +117,11 @@ def is_golden(record):
     return quality_ok and flow_ok and breakout_ok
 
 
-def _record_signal(ticker, signal_type, price):
+def _record_signal(ticker, signal_type, price, atr=None):
     """يسجّل إشارة لأول تأهّل فقط — لا تتجدد إلا بعد غياب SIGNAL_COOLDOWN_DAYS.
 
     None ≠ 0 : price قد يكون None (سعر غير متوفّر) ويُخزّن كذلك دون تلفيق.
+    atr (اختياري): تذبذب السهم — يُمرَّر للتنبيه لحساب مستويات الدخول/الوقف/الهدف.
     """
     cutoff = datetime.now(timezone.utc) - timedelta(days=SIGNAL_COOLDOWN_DAYS)
     exists = (
@@ -130,7 +134,7 @@ def _record_signal(ticker, signal_type, price):
         return
     db.session.add(Signal(ticker=ticker, signal_type=signal_type, price_at_signal=price))
     # تنبيه تلغرام (اختياري — خامل بلا إعداد، وفشله لا يؤثر على التحديث)
-    telegram_client.notify_signal(ticker, signal_type, price)
+    telegram_client.notify_signal(ticker, signal_type, price, atr=atr)
 
 
 def dedupe_signals():
@@ -299,22 +303,23 @@ def refresh_cache(time_budget=20):
                 db.session.add(StockCache(ticker=key, data_json=payload, updated_at=now))
 
             # توليد إشارات تعليمية عند تجاوز العتبات
+            sig_price, sig_atr = record.get("price"), record.get("atr")
             if record.get("piotroski") is not None and record["piotroski"] >= PIOTROSKI_SIGNAL_MIN:
-                _record_signal(ticker, "piotroski_strong", record.get("price"))
+                _record_signal(ticker, "piotroski_strong", sig_price, atr=sig_atr)
             if record.get("catalyst") is not None and record["catalyst"] >= CATALYST_SIGNAL_MIN:
-                _record_signal(ticker, "catalyst_strong", record.get("price"))
+                _record_signal(ticker, "catalyst_strong", sig_price, atr=sig_atr)
             # 🥇 الإشارة الذهبية: 3 عوامل مجتمعة (نادرة) — جودة عالية + سيولة داخلة + اختراق فني
             if is_golden(record):
-                _record_signal(ticker, "golden", record.get("price"))
+                _record_signal(ticker, "golden", sig_price, atr=sig_atr)
             # 💣 الانفجار الوشيك: انضغاط بولينجر + اختراق + حجم مرتفع
             if record.get("squeeze_breakout"):
-                _record_signal(ticker, "squeeze_breakout", record.get("price"))
+                _record_signal(ticker, "squeeze_breakout", sig_price, atr=sig_atr)
             # 🌟 التقاطع الذهبي: SMA50 قطع SMA200 صعوداً (اتجاه صاعد طويل المدى)
             if record.get("golden_cross") == "golden":
-                _record_signal(ticker, "golden_cross", record.get("price"))
+                _record_signal(ticker, "golden_cross", sig_price, atr=sig_atr)
             # 🎯 ارتداد الترند: ترند صاعد + تراجع لمس EMA20 + بدء ارتداد (شراء الانخفاض)
             if record.get("trend_pullback"):
-                _record_signal(ticker, "trend_pullback", record.get("price"))
+                _record_signal(ticker, "trend_pullback", sig_price, atr=sig_atr)
 
             db.session.commit()  # حفظ هذا السهم مباشرة
             updated += 1

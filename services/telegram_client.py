@@ -44,8 +44,12 @@ def send_message(text):
         return False
 
 
-def notify_signal(ticker, signal_type, price):
-    """يبني نص تنبيه إشارة ويرسله (لو الميزة مفعّلة)."""
+def notify_signal(ticker, signal_type, price, atr=None):
+    """يبني نص تنبيه إشارة ويرسله (لو الميزة مفعّلة).
+
+    atr (اختياري): تذبذب السهم — عند توفره مع السعر تُضاف مستويات تعليمية:
+    دخول = السعر الحالي، وقف = السعر − 1.5×ATR، هدف = السعر + 3×ATR (عائد/مخاطرة 1:2).
+    """
     kind = {
         "piotroski_strong": "💎 جودة مالية قوية (Piotroski)",
         "catalyst_strong": "⚡ زخم قوي (Catalyst)",
@@ -55,11 +59,27 @@ def notify_signal(ticker, signal_type, price):
         "trend_pullback": "🎯 ارتداد الترند — تراجع مؤقت بترند صاعد بدأ يرتد (شراء الانخفاض)",
     }.get(signal_type, signal_type)
     price_txt = f"{price:.2f}$" if price is not None else "غير متوفر"
+
+    levels = ""
+    if price is not None and atr:
+        stop = price - 1.5 * atr
+        target = price + 3.0 * atr
+        risk_pct = (price - stop) / price * 100
+        gain_pct = (target - price) / price * 100
+        levels = (
+            f"\n📐 <b>مستويات تعليمية</b> (محسوبة من تذبذب السهم ATR — ليست توصية):\n"
+            f"▫️ دخول مقترح: {price:.2f}$\n"
+            f"🎯 الهدف: {target:.2f}$ (+{gain_pct:.1f}%)\n"
+            f"🛑 وقف الخسارة: {stop:.2f}$ (-{risk_pct:.1f}%)\n"
+            f"⚖️ العائد مقابل المخاطرة: 2 : 1\n"
+        )
+
     text = (
         f"🚨 <b>إشارة جديدة من Algomatix</b>\n\n"
         f"السهم: <b>{ticker}</b>\n"
         f"النوع: {kind}\n"
-        f"السعر وقت الإشارة: {price_txt}\n\n"
+        f"السعر وقت الإشارة: {price_txt}\n"
+        f"{levels}\n"
         f"https://algomatix-production.up.railway.app/stock/{ticker}"
     )
     return send_message(text)

@@ -540,3 +540,22 @@ def trend_pullback(candles):
         return False
 
     return closes[-1] > closes[-2]  # بدأ يرتد فعلاً
+
+
+def atr(candles, period=14):
+    """ATR (متوسط المدى الحقيقي، تمهيد Wilder) — مقياس تذبذب السهم بالدولار.
+
+    يُرجع float أو None لو البيانات غير كافية.
+    يُستخدم لحساب مستويات وقف الخسارة والهدف في تنبيهات تلغرام.
+    """
+    rows = [r for r in _clean(candles) if r["high"] is not None and r["low"] is not None]
+    if len(rows) < period + 1:
+        return None
+    trs = []
+    for i in range(1, len(rows)):
+        h, l, pc = rows[i]["high"], rows[i]["low"], rows[i - 1]["close"]
+        trs.append(max(h - l, abs(h - pc), abs(l - pc)))
+    val = sum(trs[:period]) / period
+    for tr in trs[period:]:
+        val = (val * (period - 1) + tr) / period
+    return val
