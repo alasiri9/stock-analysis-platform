@@ -3,6 +3,27 @@
 {% block title %}الرئيسية — Screener{% endblock %}
 
 {% block content %}
+  {# مزاج السوق: نظرة سريعة على اتجاه الـ32 سهماً (من مؤشرات الكاش، بلا استدعاء API) #}
+  {% if mood %}
+    <div class="mood-banner mood-{{ mood.cls }}">
+      <div class="mood-head">
+        <span class="mood-emoji">{{ mood.emoji }}</span>
+        <span class="mood-label">مزاج السوق اليوم: <b>{{ mood.label }}</b></span>
+        <span class="mood-pct" dir="ltr">{{ "%.0f"|format(mood.bull_pct) }}% صاعد</span>
+      </div>
+      <div class="mood-bar" title="نسبة الأسهم الصاعدة/المحايدة/الهابطة">
+        <span class="mood-seg bull" style="width:{{ mood.bull / mood.total * 100 }}%"></span>
+        <span class="mood-seg neutral" style="width:{{ mood.neutral / mood.total * 100 }}%"></span>
+        <span class="mood-seg bear" style="width:{{ mood.bear / mood.total * 100 }}%"></span>
+      </div>
+      <div class="mood-legend">
+        <span>🟢 {{ mood.bull }} صاعد</span>
+        <span>⚪ {{ mood.neutral }} محايد</span>
+        <span>🔴 {{ mood.bear }} هابط</span>
+      </div>
+    </div>
+  {% endif %}
+
   {# بحث مباشر عن أي سهم #}
   <form class="search" action="{{ url_for('stock_search') }}" method="get">
     <input type="text" name="ticker" placeholder="حلّل أي سهم (مثال: AAPL)">

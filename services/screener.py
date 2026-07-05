@@ -504,6 +504,45 @@ def load_records():
     return records, latest
 
 
+def market_mood(records=None):
+    """مزاج السوق العام: كم سهم صاعد/هابط/محايد من كامل العيّنة (من الكاش، بلا API).
+
+    لكل سهم نوازن مؤشراته الفنية: عدد الإشارات الصاعدة مقابل الهابطة.
+    - صاعد لو غلبت الصاعدة، هابط لو غلبت الهابطة، محايد لو تعادلا.
+    ثم نحكم على السوق: إيجابي (≥60% صاعد)، سلبي (≤40%)، أو متوازن بينهما.
+    يُرجع dict بالعدّات والنسبة وحكم عام، أو None لو لا بيانات مؤشرات بعد.
+    """
+    if records is None:
+        records, _ = load_records()
+    bull = bear = neutral = 0
+    for r in records:
+        inds = r.get("indicators") or []
+        if not inds:
+            continue  # None ≠ 0 : سهم بلا مؤشرات لا يُحسب (لا يُعدّ محايداً زوراً)
+        up = sum(1 for i in inds if i.get("status") == "bull")
+        down = sum(1 for i in inds if i.get("status") == "bear")
+        if up > down:
+            bull += 1
+        elif down > up:
+            bear += 1
+        else:
+            neutral += 1
+    total = bull + bear + neutral
+    if total == 0:
+        return None
+    bull_pct = bull / total * 100.0
+    if bull_pct >= 60:
+        label, emoji, cls = "إيجابي", "🟢", "bull"
+    elif bull_pct <= 40:
+        label, emoji, cls = "سلبي", "🔴", "bear"
+    else:
+        label, emoji, cls = "متوازن", "🟡", "neutral"
+    return {
+        "bull": bull, "bear": bear, "neutral": neutral, "total": total,
+        "bull_pct": bull_pct, "label": label, "emoji": emoji, "cls": cls,
+    }
+
+
 def filter_records(records, piotroski_min=None, catalyst_min=None,
                    price_max=None, market_cap_min=None, sector=None):
     """يطبّق الفلاتر على السجلّات المخزّنة.

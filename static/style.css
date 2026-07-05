@@ -140,6 +140,29 @@ a.stat-box:hover { filter: brightness(1.15); transform: translateY(-1px); }
 }
 .btn:hover { filter: brightness(1.08); }
 
+/* ---------- بانر مزاج السوق ---------- */
+.mood-banner {
+  background: var(--panel-2); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 14px 18px; margin-bottom: 16px;
+}
+.mood-banner.mood-bull { border-color: rgba(34,197,94,.45); }
+.mood-banner.mood-bear { border-color: rgba(239,68,68,.45); }
+.mood-banner.mood-neutral { border-color: rgba(245,196,81,.45); }
+.mood-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.mood-emoji { font-size: 22px; }
+.mood-label { font-size: 18px; font-weight: 700; color: var(--text); }
+.mood-pct { margin-right: auto; font-size: 16px; font-weight: 900; color: var(--green); }
+.mood-banner.mood-bear .mood-pct { color: var(--red); }
+.mood-banner.mood-neutral .mood-pct { color: var(--gold); }
+.mood-bar {
+  display: flex; height: 12px; border-radius: 6px; overflow: hidden;
+  margin: 12px 0 8px; background: var(--card);
+}
+.mood-seg.bull { background: var(--green); }
+.mood-seg.neutral { background: var(--muted); }
+.mood-seg.bear { background: var(--red); }
+.mood-legend { display: flex; gap: 18px; flex-wrap: wrap; color: var(--muted); font-size: 14px; }
+
 /* ---------- لوحة الفلاتر ---------- */
 .filters {
   display: flex; gap: 14px; align-items: flex-end; flex-wrap: wrap;
