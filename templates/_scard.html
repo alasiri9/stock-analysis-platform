@@ -17,12 +17,12 @@
     </div>
   </div>
 
-  {# شارات فنية (8) — كلها محسوبة فعلياً وتُضاء خضراء حسب المؤشرات #}
+  {# شارات فنية (9) — كلها محسوبة فعلياً وتُضاء خضراء حسب المؤشرات #}
   {% set ind = {} %}
   {% for b in (r.indicators or []) %}{% set _ = ind.update({b.label: b.status}) %}{% endfor %}
   <div class="scard-mid">
     <div class="scard-badges">
-      {% for cat, key in [('حجم','الحجم'), ('RS','RSI'), ('MACD','MACD'), ('EMA','EMA'), ('اختراق','اختراق'), ('ADX','ADX'), ('قمة','قمة'), ('انضغاط','انضغاط')] %}
+      {% for cat, key in [('حجم','الحجم'), ('RS','RSI'), ('MACD','MACD'), ('EMA','EMA'), ('اختراق','اختراق'), ('ADX','ADX'), ('قمة','قمة'), ('انضغاط','انضغاط'), ('تقاطع','تقاطع')] %}
         <span class="cat-pill {{ 'on' if key and ind.get(key) == 'bull' }}">{{ cat }}</span>
       {% endfor %}
     </div>

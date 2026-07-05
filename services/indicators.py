@@ -174,7 +174,63 @@ def build_indicators(candles):
             "status": "bull" if sq["squeezed"] else "neutral",
         })
 
+    # --- التقاطع الذهبي/الموت: SMA50 مقابل SMA200 (اتجاه طويل المدى) ---
+    gc = golden_cross(closes)
+    if gc is not None:
+        if gc["cross"] == "golden":
+            badges.append({"label": "تقاطع", "value": "ذهبي 🌟", "status": "bull"})
+        elif gc["cross"] == "death":
+            badges.append({"label": "تقاطع", "value": "هابط", "status": "bear"})
+        else:
+            badges.append({
+                "label": "تقاطع",
+                "value": "فوق" if gc["above"] else "تحت",
+                "status": "bull" if gc["above"] else "bear",
+            })
+
     return badges
+
+
+def _sma_series(values, period):
+    """سلسلة متوسط بسيط. تُرجع [] لو البيانات أقل من period."""
+    if len(values) < period:
+        return []
+    out = []
+    total = sum(values[:period])
+    out.append(total / period)
+    for i in range(period, len(values)):
+        total += values[i] - values[i - period]
+        out.append(total / period)
+    return out
+
+
+def golden_cross(closes, fast=50, slow=200, recent=5):
+    """يكشف التقاطع الذهبي/الهابط بين SMA50 وSMA200.
+
+    يُرجع dict {cross: 'golden'|'death'|None, above: bool} — cross تعني تقاطعاً
+    حدث خلال آخر `recent` جلسات، وabove حالة SMA50 مقابل SMA200 الآن.
+    None لو البيانات أقل من slow + recent (لا حكم بلا تاريخ كافٍ).
+    """
+    if len(closes) < slow + recent:
+        return None
+    fast_s = _sma_series(closes, fast)
+    slow_s = _sma_series(closes, slow)
+    # نحاذي السلسلتين من النهاية (لكل نقطة نفس يوم الإغلاق)
+    n = min(len(fast_s), len(slow_s))
+    fast_s, slow_s = fast_s[-n:], slow_s[-n:]
+    if n < recent + 1:
+        return None
+
+    above_now = fast_s[-1] > slow_s[-1]
+    cross = None
+    for i in range(n - recent, n):
+        prev_above = fast_s[i - 1] > slow_s[i - 1]
+        now_above = fast_s[i] > slow_s[i]
+        if not prev_above and now_above:
+            cross = "golden"
+        elif prev_above and not now_above:
+            cross = "death"
+    return {"cross": cross, "above": above_now}
 
 
 def _adx(rows, period=14):

@@ -142,6 +142,7 @@ def create_app():
             "catalyst_strong": "⚡ زخم قوي",
             "golden": "🥇 إشارة ذهبية (3 عوامل)",
             "squeeze_breakout": "💣 انفجار وشيك (انضغاط + اختراق)",
+            "golden_cross": "🌟 تقاطع ذهبي (SMA50/200)",
         }.get(signal_type, signal_type)
 
     def _to_float(name):
