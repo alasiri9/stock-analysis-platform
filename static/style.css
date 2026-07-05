@@ -83,7 +83,8 @@ a { color: inherit; text-decoration: none; }
 }
 .nav a .ic { font-size: 25px; width: 28px; text-align: center; }
 .nav a:hover { background: rgba(34,197,94,.38); border-color: rgba(34,197,94,.65); color: #fff; }
-.nav a.active { background: rgba(34,197,94,.28); border-color: rgba(34,197,94,.55); color: var(--text); }
+/* لا تمييز دائم لأي زر — الإضاءة فقط عند مرور الماوس (:hover) */
+.nav a.active { background: rgba(34,197,94,.12); border-color: rgba(34,197,94,.3); color: #cdd5e4; }
 .nav a.soon { color: #c4ccdd; }
 .nav a.soon:hover { background: rgba(34,197,94,.22); cursor: default; color: var(--text); }
 .soon-tag {
