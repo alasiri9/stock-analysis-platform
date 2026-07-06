@@ -157,6 +157,17 @@ def create_app():
             return "🟡"   # متوسطة أو جيدة
         return "🔴"       # ضعيفة — احذر
 
+    @app.template_filter("growth_icon")
+    def growth_icon(score):
+        """أيقونة مستوى قوة النمو (Catalyst): أخضر/أصفر/أحمر حسب الرقم (0–100)."""
+        if score is None:
+            return ""
+        if score >= 80:
+            return "🟢"   # نمو قوي
+        if score >= 40:
+            return "🟡"   # نمو متوسط أو جيد
+        return "🔴"       # نمو ضعيف
+
     @app.template_filter("sector_ar")
     def sector_ar(sector):
         """اسم القطاع بالعربية للعرض (القيمة المخزّنة تبقى إنجليزية للفلترة)."""
