@@ -65,7 +65,7 @@
       <label>القطاع</label>
       <select name="sector">
         <option value="">الكل</option>
-        {% for s in sectors %}<option value="{{ s }}" {{ 'selected' if filters.sector == s else '' }}>{{ s }}</option>{% endfor %}
+        {% for s in sectors %}<option value="{{ s }}" {{ 'selected' if filters.sector == s else '' }}>{{ s | sector_ar }}</option>{% endfor %}
       </select>
     </div>
     <div class="filter filter-check">

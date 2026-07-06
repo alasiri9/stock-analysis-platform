@@ -146,6 +146,24 @@ def create_app():
             "trend_pullback": "🎯 ارتداد الترند (شراء الانخفاض)",
         }.get(signal_type, signal_type)
 
+    @app.template_filter("sector_ar")
+    def sector_ar(sector):
+        """اسم القطاع بالعربية للعرض (القيمة المخزّنة تبقى إنجليزية للفلترة)."""
+        return {
+            "Technology": "التقنية",
+            "Healthcare": "الرعاية الصحية",
+            "Financial Services": "الخدمات المالية",
+            "Financial": "الخدمات المالية",
+            "Consumer Cyclical": "السلع الاستهلاكية الكمالية",
+            "Consumer Defensive": "السلع الاستهلاكية الأساسية",
+            "Energy": "الطاقة",
+            "Communication Services": "خدمات الاتصالات",
+            "Industrials": "الصناعات",
+            "Basic Materials": "المواد الأساسية",
+            "Real Estate": "العقارات",
+            "Utilities": "المرافق",
+        }.get(sector, sector or "")
+
     def _to_float(name):
         """يقرأ قيمة رقمية من باراميتر الطلب، أو None لو فارغة/غير صالحة."""
         raw = request.args.get(name, "").strip()
