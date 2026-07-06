@@ -139,7 +139,7 @@ def create_app():
         """اسم عربي موحّد لنوع الإشارة (بدل تكراره بكل قالب)."""
         return {
             "piotroski_strong": "💎 جودة مالية قوية",
-            "catalyst_strong": "⚡ زخم قوي",
+            "catalyst_strong": "⚡ نمو قوي",
             "golden": "🥇 إشارة ذهبية (3 عوامل)",
             "squeeze_breakout": "💣 انفجار وشيك (انضغاط + اختراق)",
             "golden_cross": "🌟 تقاطع ذهبي (SMA50/200)",

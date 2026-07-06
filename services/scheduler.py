@@ -88,7 +88,7 @@ def _send_daily_report():
     # حالة البيانات
     lines.append(f"✅ تحدّثت بيانات {len(records)} سهماً الليلة")
 
-    # أقوى 3 أسهم زخماً (Catalyst)
+    # أقوى 3 أسهم نمواً (Catalyst)
     ranked = sorted(
         (r for r in records if r.get("catalyst") is not None),
         key=lambda r: r["catalyst"], reverse=True,
@@ -97,7 +97,7 @@ def _send_daily_report():
         lines.append("")
         lines.append("🏆 <b>أقوى الأسهم اليوم:</b>")
         for i, r in enumerate(ranked, 1):
-            lines.append(f"{i}. {r['ticker']} — زخم {r['catalyst']:.0f}")
+            lines.append(f"{i}. {r['ticker']} — نمو {r['catalyst']:.0f}")
 
     # أقوى تجميع سيولة
     flows = sorted(
@@ -120,7 +120,7 @@ def _send_daily_report():
         lines.append("")
         lines.append(f"⚡ <b>إشارات جديدة ({len(new_sigs)}):</b>")
         for s in new_sigs[:5]:
-            kind = {"piotroski_strong": "💎 جودة", "catalyst_strong": "⚡ زخم",
+            kind = {"piotroski_strong": "💎 جودة", "catalyst_strong": "⚡ نمو",
                     "golden": "🥇 ذهبية"}.get(s.signal_type, s.signal_type)
             lines.append(f"• {s.ticker} ({kind})")
 

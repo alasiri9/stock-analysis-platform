@@ -51,7 +51,7 @@
   <div class="scard-score">
     <div class="scard-big">{{ "%.0f"|format(r.catalyst) if r.catalyst is not none else '—' }}</div>
     <div class="scard-status">
-      {% if is_gem %}جودة عالية{% elif r.catalyst is not none and r.catalyst >= 80 %}زخم قوي{% else %}قيد الفحص{% endif %}
+      {% if is_gem %}جودة عالية{% elif r.catalyst is not none and r.catalyst >= 80 %}نمو قوي{% else %}قيد الفحص{% endif %}
     </div>
   </div>
 </a>

@@ -53,7 +53,7 @@ def notify_signal(ticker, signal_type, price, atr=None, earnings_days=None):
     """
     kind = {
         "piotroski_strong": "💎 جودة مالية قوية (Piotroski)",
-        "catalyst_strong": "⚡ زخم قوي (Catalyst)",
+        "catalyst_strong": "⚡ نمو قوي (Catalyst)",
         "golden": "🥇 إشارة ذهبية — 3 عوامل مجتمعة (جودة + سيولة + اختراق)",
         "squeeze_breakout": "💣 انفجار وشيك — انضغاط بولينجر + اختراق بحجم مرتفع",
         "golden_cross": "🌟 تقاطع ذهبي — SMA50 قطع SMA200 صعوداً (اتجاه طويل المدى)",

@@ -50,7 +50,7 @@
       <input type="number" name="piotroski_min" min="0" max="9" step="1" placeholder="من 0 لـ9 (مثال: 8)" value="{{ filters.piotroski_min|int if filters.piotroski_min is not none else '' }}">
     </div>
     <div class="filter">
-      <label title="مقياس Catalyst من 0 إلى 100 — كلما زاد كان السهم أنشط وأقوى حركة. اكتب أقل قيمة تقبلها.">قوة الزخم</label>
+      <label title="مقياس Catalyst من 0 إلى 100 — يقيس نمو الشركة (مبيعات وأرباح). كلما زاد كانت أسرع نمواً. اكتب أقل قيمة تقبلها.">قوة النمو</label>
       <input type="number" name="catalyst_min" min="0" max="100" step="1" placeholder="من 0 لـ100 (مثال: 80)" value="{{ filters.catalyst_min|int if filters.catalyst_min is not none else '' }}">
     </div>
     <div class="filter">
@@ -168,7 +168,7 @@
     <section class="panel scanner-panel" id="scanner">
       <div class="panel-head">
         <h2>🎯 ماسح الانطلاق :</h2>
-        <p class="panel-sub">يفحص الأسهم ويرتّبها حسب الجودة (Piotroski) والزخم (Catalyst).</p>
+        <p class="panel-sub">يفحص الأسهم ويرتّبها حسب الجودة (Piotroski) والنمو (Catalyst).</p>
       </div>
 
       {# صناديق إحصائية — الجواهر تفلتر على الجواهر فقط، والجميع تعرض الكل #}
