@@ -54,7 +54,7 @@
       <input type="number" name="catalyst_min" min="0" max="100" step="1" placeholder="مثال: 80" value="{{ filters.catalyst_min|int if filters.catalyst_min is not none else '' }}">
     </div>
     <div class="filter">
-      <label title="يعرض فقط الأسهم التي سعرها لا يتجاوز الرقم المكتوب (بالدولار).">عرض الأسهم التي لا تتجاوز ($)</label>
+      <label title="يعرض فقط الأسهم التي سعرها أقل من الرقم المكتوب (بالدولار).">أسهم أقل من ($)</label>
       <input type="number" name="price_max" min="0" step="1" placeholder="مثال: 100" value="{{ filters.price_max|int if filters.price_max is not none else '' }}">
     </div>
     <div class="filter">
