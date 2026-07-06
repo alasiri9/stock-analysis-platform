@@ -11,7 +11,7 @@
     </div>
     <div class="scard-name">{{ r.name or '—' }}</div>
     <div class="scard-scores">
-      Piotroski <b>{{ r.piotroski if r.piotroski is not none else '—' }}</b>/9
+      Piotroski {{ r.piotroski | quality_icon }} <b>{{ r.piotroski if r.piotroski is not none else '—' }}</b>/9
       <span class="dot">·</span>
       Catalyst <b>{{ "%.0f"|format(r.catalyst) if r.catalyst is not none else '—' }}</b>
       {% set rs = r.get('rel_strength') %}

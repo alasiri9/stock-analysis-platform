@@ -146,6 +146,17 @@ def create_app():
             "trend_pullback": "🎯 ارتداد الترند (شراء الانخفاض)",
         }.get(signal_type, signal_type)
 
+    @app.template_filter("quality_icon")
+    def quality_icon(score):
+        """أيقونة مستوى الجودة المالية (Piotroski): جوهرة/أصفر/أحمر حسب الرقم."""
+        if score is None:
+            return ""
+        if score >= 8:
+            return "💎"   # قوية جداً (جوهرة)
+        if score >= 5:
+            return "🟡"   # متوسطة أو جيدة
+        return "🔴"       # ضعيفة — احذر
+
     @app.template_filter("sector_ar")
     def sector_ar(sector):
         """اسم القطاع بالعربية للعرض (القيمة المخزّنة تبقى إنجليزية للفلترة)."""
