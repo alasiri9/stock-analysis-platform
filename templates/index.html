@@ -58,8 +58,8 @@
       <input type="number" name="price_max" min="0" step="1" placeholder="مثال: 100" value="{{ filters.price_max|int if filters.price_max is not none else '' }}">
     </div>
     <div class="filter">
-      <label title="عدد الأسهم المتاحة للتداول (بالملايين). كلما قلّت، كان السهم أسرع حركة. يعرض الأسهم التي حرّتها أقل من هذا الرقم.">أعلى أسهم حرة (مليون) — الأقل أسرع</label>
-      <input type="number" name="float_max" min="0" step="1" placeholder="مثال: 500" value="{{ filters.float_max_millions|int if filters.float_max_millions is not none else '' }}">
+      <label title="عدد الأسهم المتاحة للتداول (بالملايين). كلما قلّت، كان السهم أسرع حركة. يعرض الأسهم التي حرّتها أقل من هذا الرقم.">عدد الأسهم الحرة</label>
+      <input type="number" name="float_max" min="0" step="1" placeholder="مثال: 500 مليون" value="{{ filters.float_max_millions|int if filters.float_max_millions is not none else '' }}">
     </div>
     <div class="filter">
       <label>القطاع</label>
