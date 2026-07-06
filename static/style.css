@@ -305,6 +305,7 @@ a.stat-box:hover { filter: brightness(1.15); transform: translateY(-1px); }
 .rs-pill { font-size: 13px; font-weight: 800; padding: 2px 8px; border-radius: 999px; }
 .rs-pill.pos { color: var(--green); background: var(--green-dim); }
 .rs-pill.neg { color: var(--red); background: var(--red-dim); }
+.measures-pill { font-size: 13px; font-weight: 900; color: var(--gold); background: rgba(245,196,81,.14); border: 1px solid rgba(245,196,81,.4); padding: 2px 9px; border-radius: 999px; }
 
 .scard-mid { display: flex; flex-direction: column; gap: 7px; width: 196px; flex-shrink: 1; flex-basis: 196px; min-width: 150px; }
 .scard-badges { display: flex; flex-wrap: wrap; gap: 5px; justify-content: flex-start; }

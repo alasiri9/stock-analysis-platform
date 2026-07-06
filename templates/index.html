@@ -68,6 +68,13 @@
         {% for s in sectors %}<option value="{{ s }}" {{ 'selected' if filters.sector == s else '' }}>{{ s | sector_ar }}</option>{% endfor %}
       </select>
     </div>
+    <div class="filter">
+      <label title="يعرض الأسهم التي تحقق هذا العدد من المقاييس الإيجابية أو أكثر (شارات فنية صاعدة + سيولة + قوة نسبية + جودة + نمو).">عدد المقاييس المجتمعة</label>
+      <select name="min_measures">
+        <option value="">الكل</option>
+        {% for n in [4, 6, 8, 10, 12] %}<option value="{{ n }}" {{ 'selected' if filters.min_measures == n else '' }}>{{ n }} فأكثر</option>{% endfor %}
+      </select>
+    </div>
     <div class="filter filter-check">
       <label class="check-label" title="يخفي الأسهم التي قفزت أكثر من 12% خلال آخر أسبوعين — للاصطياد المبكر">
         <input type="checkbox" name="not_risen" value="1" {{ 'checked' if filters.not_risen else '' }}>

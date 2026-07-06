@@ -76,6 +76,25 @@ def _bullish_strategies(record):
     return [name for name, ok in checks.items() if ok]
 
 
+def measures_met(record):
+    """عدد المقاييس الإيجابية المجتمعة للسهم (تضافر الأدلة الصاعدة).
+
+    يعدّ: كل شارة فنية حالتها صاعدة (حتى 12) + سيولة داخلة + أقوى من السوق
+    + جودة مالية عالية (Piotroski≥8) + نمو قوي (Catalyst≥80). الأقصى ~16.
+    كلما زاد العدد، زاد تضافر المقاييس الإيجابية على السهم.
+    """
+    count = sum(1 for b in (record.get("indicators") or []) if b.get("status") == "bull")
+    if (record.get("money_flow") or {}).get("status") == "bull":
+        count += 1
+    if record.get("rel_strength") is not None and record["rel_strength"] > 0:
+        count += 1
+    if record.get("piotroski") is not None and record["piotroski"] >= 8:
+        count += 1
+    if record.get("catalyst") is not None and record["catalyst"] >= 80:
+        count += 1
+    return count
+
+
 def early_launch_candidates(records=None, min_strategies=3):
     """مرشّحو "قبل الانطلاق": أسهم في مرحلة مبكرة ولم تصعد بعد، مرتّبة بقوة التأكيد.
 
@@ -784,7 +803,7 @@ def market_mood(records=None):
 
 def filter_records(records, piotroski_min=None, catalyst_min=None,
                    price_max=None, market_cap_min=None, sector=None,
-                   recent_gain_max=None, float_max=None):
+                   recent_gain_max=None, float_max=None, min_measures=None):
     """يطبّق الفلاتر على السجلّات المخزّنة.
 
     None ≠ 0 : السجلّ الذي تكون قيمته المطلوبة None لا يجتاز فلتراً يحدّ تلك القيمة
@@ -819,6 +838,9 @@ def filter_records(records, piotroski_min=None, catalyst_min=None,
         if float_max is not None:
             fs = r.get("float_shares")
             if fs is None or fs > float_max:
+                continue
+        if min_measures is not None:
+            if measures_met(r) < min_measures:
                 continue
         out.append(r)
     # ترتيب تنازلي حسب Catalyst ثم Piotroski (None في الأسفل)

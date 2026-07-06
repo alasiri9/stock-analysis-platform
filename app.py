@@ -115,6 +115,7 @@ def create_app():
 
     # دالة الإشارة الذهبية متاحة للقوالب (وسم 🥇 على كروت الماسح)
     app.jinja_env.globals["is_golden"] = screener.is_golden
+    app.jinja_env.globals["measures_met"] = screener.measures_met
 
     @app.template_filter("ts_ago")
     def ts_ago(unix_ts):
@@ -208,6 +209,7 @@ def create_app():
 
         # "لسا ما صعد": يستبعد ما قفز أكثر من الحدّ خلال آخر أسبوعين (اصطياد مبكر)
         not_risen = request.args.get("not_risen") in ("1", "on", "true")
+        min_measures = _to_float("min_measures")  # عدد المقاييس الإيجابية المجتمعة (الأدنى)
         filters = {
             "piotroski_min": _to_float("piotroski_min"),
             "catalyst_min": _to_float("catalyst_min"),
@@ -215,6 +217,7 @@ def create_app():
             "sector": request.args.get("sector", "").strip() or None,
             "recent_gain_max": screener.EARLY_MAX_RECENT_GAIN if not_risen else None,
             "float_max": float_max,
+            "min_measures": int(min_measures) if min_measures is not None else None,
         }
         results = screener.filter_records(records, **filters)
         # نمرّر قيمة الملايين وحالة الشيك بوكس للواجهة (لإبقائها بالخانة)
