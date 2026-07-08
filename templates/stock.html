@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "_gauge.html" import gauge %}
 {% block title %}{{ ticker }} — تقرير السهم{% endblock %}
 
 {# دالة مساعدة لعرض القيم: None تظهر "—" تطبيقاً لمبدأ None ≠ 0 #}
@@ -81,7 +82,7 @@
       {% if scan %}
       <div class="score-card">
         <div class="cap">قوة التأكيد <a class="help-q" href="{{ url_for('learn') }}#confidence" title="اشرح لي هذا المصطلح">؟</a></div>
-        <div><span class="big">{{ measures_met(scan) }}</span><span class="out"> مقياس</span></div>
+        {{ gauge(measures_met(scan), 16, '', 'lg') }}
         <div class="cap">عدد العوامل الإيجابية المجتمعة</div>
       </div>
       {% endif %}
@@ -95,9 +96,7 @@
       </div>
       <div class="score-card">
         <div class="cap">Catalyst Score <a class="help-q" href="{{ url_for('learn') }}#catalyst" title="اشرح لي هذا المصطلح">؟</a></div>
-        <div>
-          <span class="big">{{ show(report.catalyst.score, '', 0) }}</span><span class="out"> / 100</span>
-        </div>
+        {{ gauge(report.catalyst.score, 100, '', 'lg') }}
         <div class="cap">⚠️ أوزان افتراضية غير مُختبرة تاريخياً</div>
       </div>
     </div>

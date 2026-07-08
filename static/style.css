@@ -595,3 +595,29 @@ a.stat-box:hover { filter: brightness(1.15); transform: translateY(-1px); }
   color: var(--text); font-size: 14.5px; line-height: 1.7;
 }
 .why-box b { color: var(--gold); }
+
+/* عدّاد نصف دائري (سبيدومتر) بإبرة متحركة */
+.gauge-wrap { text-align: center; }
+.gauge-sm { width: 84px; }
+.gauge-lg { width: 150px; margin: 0 auto; }
+.gauge { width: 100%; height: auto; display: block; }
+.g-zone-r { fill: none; stroke: var(--red); stroke-width: 8; stroke-linecap: butt; }
+.g-zone-y { fill: none; stroke: var(--gold); stroke-width: 8; stroke-linecap: butt; }
+.g-zone-g { fill: none; stroke: var(--green); stroke-width: 8; stroke-linecap: butt; }
+.g-hub { fill: var(--text); }
+.gauge-needle {
+  stroke: var(--text); stroke-width: 3; stroke-linecap: round;
+  transform-box: view-box; transform-origin: 50px 50px;
+  animation: gauge-sweep 1.1s cubic-bezier(.2,.8,.2,1) forwards;
+}
+@keyframes gauge-sweep {
+  from { transform: rotate(-90deg); }
+  to { transform: rotate(var(--angle, 0deg)); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .gauge-needle { animation: none; transform: rotate(var(--angle, 0deg)); }
+}
+.gauge-num { font-weight: 900; font-size: 20px; color: var(--text); line-height: 1; margin-top: 2px; }
+.gauge-lg .gauge-num { font-size: 30px; }
+.gauge-max { color: var(--muted); font-weight: 600; font-size: 13px; }
+.gauge-label { color: var(--muted); font-size: 12.5px; margin-top: 3px; }
