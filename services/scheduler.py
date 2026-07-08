@@ -64,6 +64,14 @@ def _auto_refresh(app):
         except Exception as e:  # noqa: BLE001
             print(f"[scheduler] تعذّر تسجيل لقطة المحفظة: {e}")
 
+        # فحص التنبيهات السعرية مقابل الأسعار المحدَّثة (يرسل تلغرام عند التحقّق)
+        try:
+            fired = screener.check_price_alerts()
+            if fired:
+                print(f"[scheduler] أُطلقت {fired} تنبيهات سعرية")
+        except Exception as e:  # noqa: BLE001
+            print(f"[scheduler] تعذّر فحص التنبيهات السعرية: {e}")
+
         # ختاماً: التقرير الصباحي المجمّع بتلغرام (خامل بلا إعداد، وفشله لا يؤثر)
         try:
             _send_daily_report()

@@ -543,3 +543,22 @@ a.stat-box:hover { filter: brightness(1.15); transform: translateY(-1px); }
   .nav-logout { margin: 14px 4px 4px; font-size: 16px; }
   .content { padding: 14px 12px; }
 }
+
+/* قسم تعلّم (قاموس المصطلحات) */
+.learn-group {
+  color: var(--gold); font-size: 18px; font-weight: 900;
+  margin: 24px 0 12px; padding-bottom: 6px; border-bottom: 1px solid var(--border);
+}
+.learn-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; }
+.learn-term {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 14px 16px;
+}
+.learn-term-name { color: var(--accent); font-weight: 900; font-size: 16px; margin-bottom: 6px; }
+.learn-term-desc { color: var(--text); font-size: 14px; line-height: 1.7; }
+.learn-term-ex { color: var(--muted); font-size: 13px; margin-top: 8px; font-style: italic; }
+
+/* رسم مصغّر داخل بطاقة السهم المشتركة */
+.scard-spark { width: 100%; height: 30px; display: block; margin-top: 8px; opacity: .85; }
+.scard-spark.up { color: var(--green); }
+.scard-spark.down { color: var(--red); }

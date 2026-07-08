@@ -383,6 +383,18 @@ def get_price_series(ticker, limit=60):
     return [r.price for r in rows if r.price is not None]
 
 
+def attach_sparklines(records):
+    """يضيف نقاط الرسم المصغّر (spark_points/spark_up) لكل سجل معروض — من جدول الأسعار، بلا استدعاء API.
+
+    يُستدعى فقط على القائمة المعروضة (نتائج مُفلترة) لتفادي أي حِمل زائد.
+    """
+    for r in records:
+        prices = get_price_series(r["ticker"])
+        r["spark_points"] = _sparkline_points(prices)
+        r["spark_up"] = (prices[-1] >= prices[0]) if len(prices) >= 2 else None
+    return records
+
+
 def _sparkline_points(prices, width=100, height=32, pad=3):
     """يبني نقاط SVG polyline لمسار سعري (رسم مصغّر). يُرجع '' لو البيانات غير كافية."""
     if not prices or len(prices) < 2:
@@ -397,6 +409,37 @@ def _sparkline_points(prices, width=100, height=32, pad=3):
         y = pad + (height - 2 * pad) * (1 - (p - lo) / span)
         points.append(f"{x:.1f},{y:.1f}")
     return " ".join(points)
+
+
+def check_price_alerts():
+    """يفحص التنبيهات السعرية النشطة مقابل آخر الأسعار (من الكاش — بلا استدعاء API).
+
+    عند تحقّق الشرط: يرسل رسالة تلغرام ثم يطفئ التنبيه (مرة واحدة). يُرجع عدد ما أُطلق.
+    يُستدعى بعد التحديث الليلي داخل app_context. None ≠ 0: سهم بلا سعر لا يُحكم عليه.
+    """
+    from models import PriceAlert  # استيراد محلي يتجنب دورة استيراد
+    alerts = PriceAlert.query.filter_by(active=True).all()
+    if not alerts:
+        return 0
+    records, _ = load_records()
+    price_by = {r["ticker"]: r.get("price") for r in records}
+    fired = 0
+    now = datetime.now(timezone.utc)
+    for a in alerts:
+        price = price_by.get(a.ticker)
+        if price is None:
+            continue  # لا سعر متوفّر ⇒ لا حكم
+        hit = ((a.direction == "below" and price <= a.target_price)
+               or (a.direction == "above" and price >= a.target_price))
+        if not hit:
+            continue
+        telegram_client.notify_price_alert(a.ticker, a.direction, a.target_price, price)
+        a.active = False
+        a.triggered_at = now
+        fired += 1
+    if fired:
+        db.session.commit()
+    return fired
 
 
 def backfill_price_history(time_budget=20):

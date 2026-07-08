@@ -21,12 +21,13 @@ import secrets
 
 from flask import Flask, render_template, request, redirect, url_for, session
 
-from models import db, Watchlist, PortfolioHolding
+from models import db, Watchlist, PortfolioHolding, PriceAlert
 from services import analysis
 from services import fmp_client
 from services import radar
 from services import news_client
 from services import screener
+from services import telegram_client
 
 # مستخدم افتراضي وحيد (لا يوجد تسجيل دخول بعد)
 GUEST_USER = "guest"
@@ -220,6 +221,7 @@ def create_app():
             "min_measures": int(min_measures) if min_measures is not None else None,
         }
         results = screener.filter_records(records, **filters)
+        screener.attach_sparklines(results)  # رسم مصغّر لكل بطاقة (من جدول الأسعار — بلا API)
         # نمرّر قيمة الملايين وحالة الشيك بوكس للواجهة (لإبقائها بالخانة)
         filters["float_max_millions"] = float_max_millions
         filters["not_risen"] = not_risen
@@ -246,6 +248,7 @@ def create_app():
         # الجواهر المخفية = نفس فلتر Piotroski>=8 من الماسح، بصفحة مستقلة
         records, latest = screener.load_records()
         results = screener.filter_records(records, piotroski_min=8)
+        screener.attach_sparklines(results)
         return render_template("gems.html", results=results, latest=latest, total=len(records))
 
     @app.route("/leaders")
@@ -253,6 +256,7 @@ def create_app():
         # القادة المستقبليون = أعلى 10 أسهم حسب Catalyst (بيانات الماسح نفسها، ترتيب مختلف)
         records, latest = screener.load_records()
         results = screener.filter_records(records)[:10]
+        screener.attach_sparklines(results)
         return render_template("leaders.html", results=results, latest=latest, total=len(records))
 
     @app.route("/prelaunch")
@@ -265,6 +269,95 @@ def create_app():
     def signals_page():
         # كل الإشارات الأخيرة (بدل آخر 6 فقط في الرئيسية)
         return render_template("signals.html", signals=screener.recent_signals(limit=50))
+
+    @app.route("/learn")
+    def learn():
+        # قسم تعليمي: قاموس مصطلحات مبسّط (محتوى ثابت — بلا استدعاءات API)
+        glossary = [
+            {"icon": "🏦", "title": "الجودة المالية للشركة", "terms": [
+                {"name": "Piotroski (بيوتروسكي)",
+                 "desc": "درجة من 0 إلى 9 تقيس صحة الشركة المالية (ربحيتها، ديونها، كفاءتها). كلما زادت الدرجة كانت الشركة أمتن مالياً. 8 أو 9 تعتبر قوية.",
+                 "example": "شركة درجتها 8 تعني أنها اجتازت 8 من 9 اختبارات صحّة مالية."},
+                {"name": "ROE (العائد على حقوق الملكية)",
+                 "desc": "كم ربح تحقّقه الشركة مقابل أموال المساهمين. أعلى = استغلال أفضل لأموال الملّاك.",
+                 "example": "ROE = 15% يعني كل 100 ريال من المساهمين تولّد 15 ريال ربح."},
+                {"name": "ROA (العائد على الأصول)",
+                 "desc": "كم ربح تحقّقه الشركة مقابل كل أصولها (مصانع، نقد، معدّات). يقيس كفاءة استخدام الموارد.",
+                 "example": None},
+                {"name": "P/E (مكرّر الربحية)",
+                 "desc": "كم يدفع المستثمر مقابل كل ريال ربح. مرتفع = السوق يتوقّع نمواً كبيراً (أو السهم غالٍ).",
+                 "example": "P/E = 20 يعني السعر يعادل 20 ضعف ربح السهم السنوي."},
+                {"name": "PEG",
+                 "desc": "يعدّل مكرّر الربحية حسب نمو الشركة. أقل من 1 يُعتبر تقييماً معقولاً مقابل النمو.",
+                 "example": None},
+            ]},
+            {"icon": "🚀", "title": "النمو (Catalyst)", "terms": [
+                {"name": "Catalyst / قوة النمو",
+                 "desc": "درجة من 0 إلى 100 تقيس سرعة نمو الشركة (مبيعات وأرباح). كلما زادت كانت أسرع نمواً. 🟢 قوي (80+) 🟡 متوسط (40-79) 🔴 ضعيف (أقل من 40).",
+                 "example": "درجة 85 تعني الشركة تنمو بسرعة واضحة."},
+            ]},
+            {"icon": "📈", "title": "الاتجاه والزخم", "terms": [
+                {"name": "EMA (المتوسط المتحرّك)",
+                 "desc": "خط يوضّح اتجاه السعر العام. السعر فوق الخط = اتجاه صاعد، وتحته = هابط.",
+                 "example": None},
+                {"name": "MACD (زخم السعر)",
+                 "desc": "يقيس قوة الحركة وتسارعها. إيجابي = زخم صاعد يدعم استمرار الصعود.",
+                 "example": None},
+                {"name": "RSI (القوة النسبية)",
+                 "desc": "مقياس من 0 إلى 100 يوضّح هل السهم اشتُري بكثرة (فوق 70) أو بيع بكثرة (تحت 30).",
+                 "example": None},
+                {"name": "ADX (قوة الاتجاه)",
+                 "desc": "يقيس قوة الاتجاه (وليس اتجاهه). قيمة عالية = اتجاه قوي واضح، منخفضة = حركة عرضية بلا اتجاه.",
+                 "example": None},
+                {"name": "سوبرترند (Supertrend)",
+                 "desc": "مؤشر يلوّن الاتجاه: أخضر صاعد وأحمر هابط، ويساعد على متابعة الاتجاه الحالي.",
+                 "example": None},
+            ]},
+            {"icon": "💥", "title": "الاختراق والحجم", "terms": [
+                {"name": "اختراق القمة (Breakout)",
+                 "desc": "تجاوز السعر أعلى نقطة خلال فترة (مثلاً 20 يوماً). كثيراً ما يسبق بداية حركة صاعدة.",
+                 "example": None},
+                {"name": "انضغاط بولينجر (Squeeze)",
+                 "desc": "تضيّق التذبذب بشدّة — مثل نابض مشدود. غالباً يسبق حركة قوية (صعوداً أو هبوطاً).",
+                 "example": None},
+                {"name": "الحجم (Volume)",
+                 "desc": "عدد الأسهم المتداولة. حجم مرتفع مع الحركة = اهتمام حقيقي يدعم الحركة.",
+                 "example": None},
+                {"name": "تراكم الحجم (OBV)",
+                 "desc": "يتتبّع تدفّق الأسهم داخلاً وخارجاً. صاعد = تراكم (شراء تدريجي) قد يسبق الصعود.",
+                 "example": None},
+            ]},
+            {"icon": "💧", "title": "السيولة والقوة", "terms": [
+                {"name": "السيولة الداخلة (Money Flow)",
+                 "desc": "تقدير لتدفّق الأموال إلى السهم. داخلة = ضغط شراء، خارجة = ضغط بيع.",
+                 "example": None},
+                {"name": "أقوى من السوق (القوة النسبية)",
+                 "desc": "مقارنة أداء السهم بأداء السوق العام. أقوى من السوق = السهم يتفوّق على المؤشر.",
+                 "example": None},
+            ]},
+            {"icon": "🎯", "title": "خطة التداول (ATR)", "terms": [
+                {"name": "ATR (متوسط المدى الحقيقي)",
+                 "desc": "يقيس مقدار تحرّك السهم يومياً (تقلّبه). يُستخدم لحساب مسافات منطقية للوقف والهدف.",
+                 "example": None},
+                {"name": "الدخول / الوقف / الهدف",
+                 "desc": "خطة تعليمية: الدخول سعر بداية الصفقة، الوقف حدّ الخسارة لحماية رأس المال، الهدف مستوى جني الربح — محسوبة من ATR كمثال تعليمي لا توصية.",
+                 "example": None},
+            ]},
+            {"icon": "🕵️", "title": "المطّلعون (Insiders)", "terms": [
+                {"name": "معاملات المطّلعين (EDGAR)",
+                 "desc": "بيع وشراء المدراء وكبار المسؤولين لأسهم شركتهم، من هيئة الأوراق المالية الأمريكية (SEC). شراؤهم قد يعكس ثقة بالشركة.",
+                 "example": None},
+            ]},
+        ]
+        return render_template("learn.html", glossary=glossary)
+
+    @app.route("/earnings")
+    def earnings():
+        # رزنامة الأرباح: الأسهم ذات موعد أرباح قادم، مرتّبة بالأقرب (من الكاش — بلا استدعاء API)
+        records, latest = screener.load_records()
+        upcoming = [r for r in records if r.get("days_to_earnings") is not None]
+        upcoming.sort(key=lambda r: r["days_to_earnings"])
+        return render_template("earnings.html", upcoming=upcoming, latest=latest)
 
     @app.route("/daily-report")
     def daily_report():
@@ -427,6 +520,49 @@ def create_app():
             db.session.delete(item)
             db.session.commit()
         return redirect(url_for("watchlist"))
+
+    # ===================== التنبيهات السعرية =====================
+
+    @app.route("/alerts")
+    def alerts():
+        items = PriceAlert.query.filter_by(user_id=GUEST_USER).order_by(
+            PriceAlert.active.desc(), PriceAlert.created_at.desc()).all()
+        # السعر الحالي من كاش الماسح (فوري وبلا استهلاك حصة)
+        records, _ = screener.load_records()
+        cache_prices = {r["ticker"]: r.get("price") for r in records}
+        rows = [{
+            "id": a.id, "ticker": a.ticker, "direction": a.direction,
+            "target_price": a.target_price, "active": a.active,
+            "triggered_at": a.triggered_at,
+            "current": cache_prices.get(a.ticker),
+        } for a in items]
+        telegram_on = telegram_client.is_configured()
+        return render_template("alerts.html", rows=rows, telegram_on=telegram_on)
+
+    @app.route("/alerts/add", methods=["POST"])
+    def alerts_add():
+        ticker = request.form.get("ticker", "").strip().upper()
+        direction = request.form.get("direction", "").strip()
+        target_raw = request.form.get("target_price", "").strip()
+        try:
+            target = float(target_raw)
+        except (TypeError, ValueError):
+            target = None
+        # نقبل فقط مدخلات صحيحة (سهم + اتجاه معروف + سعر موجب)
+        if ticker and direction in ("below", "above") and target is not None and target > 0:
+            db.session.add(PriceAlert(
+                ticker=ticker, direction=direction, target_price=target, user_id=GUEST_USER))
+            db.session.commit()
+        return redirect(url_for("alerts"))
+
+    @app.route("/alerts/remove", methods=["POST"])
+    def alerts_remove():
+        item_id = request.form.get("id")
+        item = PriceAlert.query.filter_by(id=item_id, user_id=GUEST_USER).first()
+        if item:
+            db.session.delete(item)
+            db.session.commit()
+        return redirect(url_for("alerts"))
 
     # ===================== المحفظة الذكية =====================
 

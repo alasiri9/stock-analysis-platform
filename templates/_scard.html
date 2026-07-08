@@ -48,6 +48,11 @@ Catalyst {{ r.catalyst | growth_icon }} <b>{{ "%.0f"|format(r.catalyst) if r.cat
     {% if dte is not none %}
       <div class="scard-earn {{ 'soon' if dte <= 7 }}">📅 أرباح {{ 'اليوم' if dte == 0 else ('بعد يوم' if dte == 1 else 'بعد ' ~ dte ~ ' يوم') }}</div>
     {% endif %}
+    {% if r.get('spark_points') %}
+      <svg class="scard-spark {{ 'up' if r.spark_up else 'down' }}" viewBox="0 0 100 32" preserveAspectRatio="none" title="مسار السعر آخر ~3 أشهر">
+        <polyline points="{{ r.spark_points }}" fill="none" stroke="currentColor" stroke-width="2"/>
+      </svg>
+    {% endif %}
   </div>
 
   <div class="scard-score">

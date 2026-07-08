@@ -78,6 +78,31 @@ class Watchlist(db.Model):
         return f"<Watchlist {self.ticker} user={self.user_id}>"
 
 
+class PriceAlert(db.Model):
+    """تنبيه سعري — ينبّه المستخدم بتلغرام عند وصول سهم لسعر مستهدف.
+
+    - direction: 'below' (تحت السعر) أو 'above' (فوق السعر).
+    - target_price: السعر المستهدف الذي يُطلق التنبيه عند تجاوزه.
+    - active: True طالما لم يتحقق بعد؛ يُطفأ (False) بعد إطلاقه مرة واحدة.
+    - triggered_at: وقت تحقّق التنبيه (None = لم يتحقق بعد).
+    يُفحص مرة يومياً بعد تحديث الأسعار الليلي (الباقة المجانية لا تسمح بفحص لحظي).
+    """
+
+    __tablename__ = "price_alert"
+
+    id = db.Column(db.Integer, primary_key=True)
+    ticker = db.Column(db.String(16), nullable=False, index=True)
+    direction = db.Column(db.String(8), nullable=False)  # 'below' | 'above'
+    target_price = db.Column(db.Float, nullable=False)
+    user_id = db.Column(db.String(64), nullable=False, index=True)
+    active = db.Column(db.Boolean, nullable=False, default=True)
+    created_at = db.Column(db.DateTime(timezone=True), nullable=False, default=_utcnow)
+    triggered_at = db.Column(db.DateTime(timezone=True), nullable=True)
+
+    def __repr__(self):
+        return f"<PriceAlert {self.ticker} {self.direction} {self.target_price} user={self.user_id}>"
+
+
 class StockCache(db.Model):
     """تخزين مؤقت لبيانات سهم — نقلّل عدد استدعاءات الـ API (الباقات المجانية محدودة).
 

@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% set active = 'earnings' %}
+{% block title %}رزنامة الأرباح — Algomatix{% endblock %}
+
+{% block content %}
+  <section class="panel">
+    <div class="panel-head">
+      <h2>📅 رزنامة الأرباح القادمة</h2>
+      <p class="panel-sub">مواعيد إعلان أرباح أسهم المنصة، مرتّبة بالأقرب. الأرباح تحرّك السهم بقوة — انتبه للتذبذب قربها. (تعليمي فقط)</p>
+    </div>
+
+    {% if upcoming %}
+      <table class="insider">
+        <thead>
+          <tr>
+            <th>السهم</th>
+            <th>الشركة</th>
+            <th>الموعد</th>
+            <th>المتبقّي</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in upcoming %}
+            {% set dte = r.days_to_earnings %}
+            <tr>
+              <td><a href="{{ url_for('stock_report', ticker=r.ticker) }}">{{ r.ticker }}</a></td>
+              <td>{{ r.name or '—' }}</td>
+              <td dir="ltr">{{ r.earnings_date or '—' }}</td>
+              <td>
+                <span class="pill {{ 'buy' if dte <= 7 else '' }}">
+                  {{ 'اليوم' if dte == 0 else ('بعد يوم' if dte == 1 else 'بعد ' ~ dte ~ ' يوم') }}
+                </span>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <div class="empty">لا توجد مواعيد أرباح قريبة حالياً — حدّث الماسح من الرئيسية أولاً.</div>
+    {% endif %}
+  </section>
+{% endblock %}

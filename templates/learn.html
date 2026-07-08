@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% set active = 'learn' %}
+{% block title %}تعلّم — Algomatix{% endblock %}
+
+{% block content %}
+  <section class="panel">
+    <div class="panel-head">
+      <h2>📚 تعلّم — قاموس المصطلحات</h2>
+      <p class="panel-sub">شرح مبسّط لكل مصطلح تشوفه في المنصة. تعليمي فقط — لا توصية ولا وعد بربح.</p>
+    </div>
+
+    {% for group in glossary %}
+      <h3 class="learn-group">{{ group.icon }} {{ group.title }}</h3>
+      <div class="learn-list">
+        {% for t in group.terms %}
+          <div class="learn-term">
+            <div class="learn-term-name">{{ t.name }}</div>
+            <div class="learn-term-desc">{{ t.desc }}</div>
+            {% if t.example %}<div class="learn-term-ex">مثال: {{ t.example }}</div>{% endif %}
+          </div>
+        {% endfor %}
+      </div>
+    {% endfor %}
+  </section>
+{% endblock %}

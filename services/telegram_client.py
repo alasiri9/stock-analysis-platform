@@ -90,3 +90,17 @@ def notify_signal(ticker, signal_type, price, atr=None, earnings_days=None):
         f"https://algomatix-production.up.railway.app/stock/{ticker}"
     )
     return send_message(text)
+
+
+def notify_price_alert(ticker, direction, target_price, current_price):
+    """يرسل تنبيهاً بأن سهماً بلغ السعر المستهدف (لو الميزة مفعّلة)."""
+    arrow = "🔻 نزل إلى" if direction == "below" else "🔺 صعد إلى"
+    cond = "أقل من" if direction == "below" else "أكثر من"
+    text = (
+        f"🔔 <b>تنبيه سعري من Algomatix</b>\n\n"
+        f"السهم: <b>{ticker}</b>\n"
+        f"{arrow} السعر المستهدف ({cond} {target_price:.2f}$)\n"
+        f"السعر الحالي: <b>{current_price:.2f}$</b>\n\n"
+        f"https://algomatix-production.up.railway.app/stock/{ticker}"
+    )
+    return send_message(text)

@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% set active = 'alerts' %}
+{% block title %}التنبيهات السعرية{% endblock %}
+
+{% block content %}
+  <h1 class="page-title">🔔 التنبيهات السعرية</h1>
+  <p class="page-sub">نبّهك على تلغرام عند وصول سهم لسعر تحدّده. يُفحص مرة يومياً بعد تحديث الأسعار — تعليمي فقط.</p>
+
+  {% if not telegram_on %}
+    <div class="empty">⚠️ تلغرام غير مفعّل — تقدر تضيف التنبيهات، لكن لن تصلك رسائل حتى تُضبط إعدادات تلغرام.</div>
+  {% endif %}
+
+  <form class="filters" action="{{ url_for('alerts_add') }}" method="post">
+    <div class="filter">
+      <label>رمز السهم</label>
+      <input type="text" name="ticker" placeholder="مثال: AAPL" required>
+    </div>
+    <div class="filter">
+      <label>الشرط</label>
+      <select name="direction">
+        <option value="below">نزل تحت</option>
+        <option value="above">صعد فوق</option>
+      </select>
+    </div>
+    <div class="filter">
+      <label>السعر المستهدف ($)</label>
+      <input type="number" name="target_price" min="0" step="0.01" placeholder="مثال: 200" required>
+    </div>
+    <button class="btn" type="submit">➕ أضف تنبيهاً</button>
+  </form>
+
+  {% if rows %}
+    <table class="insider">
+      <thead>
+        <tr><th>الرمز</th><th>الشرط</th><th>السعر المستهدف</th><th>السعر الحالي</th><th>الحالة</th><th></th></tr>
+      </thead>
+      <tbody>
+        {% for r in rows %}
+          <tr>
+            <td><a href="{{ url_for('stock_report', ticker=r.ticker) }}"><b>{{ r.ticker }}</b></a></td>
+            <td>{{ '🔻 نزل تحت' if r.direction == 'below' else '🔺 صعد فوق' }}</td>
+            <td dir="ltr">{{ "%.2f $"|format(r.target_price) }}</td>
+            <td dir="ltr">{{ "%.2f $"|format(r.current) if r.current is not none else '—' }}</td>
+            <td>
+              {% if r.active %}
+                <span class="pill buy">نشط</span>
+              {% else %}
+                <span class="pill sell">تحقّق {{ '· ' ~ r.triggered_at.strftime('%Y-%m-%d') if r.triggered_at else '' }}</span>
+              {% endif %}
+            </td>
+            <td>
+              <form action="{{ url_for('alerts_remove') }}" method="post" style="margin:0">
+                <input type="hidden" name="id" value="{{ r.id }}">
+                <button class="btn-del" type="submit">حذف</button>
+              </form>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <div class="empty">لا توجد تنبيهات بعد. أضف تنبيهاً بالأعلى للبدء.</div>
+  {% endif %}
+{% endblock %}
