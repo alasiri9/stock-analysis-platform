@@ -100,9 +100,18 @@
       </select>
     </div>
     <button class="btn" type="submit">فلترة</button>
-    <button class="btn" type="submit" formaction="{{ url_for('screener_backfill_history') }}" formmethod="post" title="يعبّئ الرسم البياني للأسهم المحدّثة أصلاً باستدعاء واحد فقط لكل سهم">📈 تحديث شارت الأسهم التي انطلقت</button>
-    <button class="btn" type="submit" formaction="{{ url_for('screener_refresh') }}" formmethod="post">🔄 تحديث البيانات</button>
   </form>
+
+  {# صندوق أدوات التحديث — منفصل عن الفلترة #}
+  <div class="tools-box">
+    <span class="tools-box-label">🔧 أدوات التحديث:</span>
+    <form action="{{ url_for('screener_backfill_history') }}" method="post" class="tools-form">
+      <button class="btn" type="submit" title="يعبّئ الرسم البياني للأسهم المحدّثة أصلاً باستدعاء واحد فقط لكل سهم">📈 تحديث شارت الأسهم التي انطلقت</button>
+    </form>
+    <form action="{{ url_for('screener_refresh') }}" method="post" class="tools-form">
+      <button class="btn" type="submit">🔄 تحديث البيانات</button>
+    </form>
+  </div>
 
   <div class="dashboard">
 
