@@ -11,11 +11,9 @@
     </div>
     <div class="scard-name">{{ r.name or '—' }}</div>
     <div class="scard-scores">
-      <span class="measures-pill" title="عدد المقاييس الإيجابية المجتمعة على السهم (كلما زاد قوي التأكيد)">🎯 {{ measures_met(r) }} مقياس</span>
+      <span class="measures-pill" title="درجة النمو (Catalyst) من 100 — كلما زادت كان نمو الشركة أقوى">🚀 نمو {{ r.catalyst | growth_icon }} <b>{{ "%.0f"|format(r.catalyst) if r.catalyst is not none else '—' }}</b></span>
       <span class="dot">·</span>
       Piotroski {{ r.piotroski | quality_icon }} <b>{{ r.piotroski if r.piotroski is not none else '—' }}</b>/9
-      <span class="dot">·</span>
-Catalyst {{ r.catalyst | growth_icon }} <b>{{ "%.0f"|format(r.catalyst) if r.catalyst is not none else '—' }}</b>
       {% set rs = r.get('rel_strength') %}
       {% if rs is not none %}
         <span class="rs-pill {{ 'pos' if rs >= 0 else 'neg' }}" title="تفوّق السهم على مؤشر السوق (SPY) خلال آخر 3 أشهر">
@@ -60,9 +58,7 @@ Catalyst {{ r.catalyst | growth_icon }} <b>{{ "%.0f"|format(r.catalyst) if r.cat
   </div>
 
   <div class="scard-score">
-    <div class="scard-big">{{ "%.0f"|format(r.catalyst) if r.catalyst is not none else '—' }}</div>
-    <div class="scard-status">
-      {% if is_gem %}جودة عالية{% elif r.catalyst is not none and r.catalyst >= 80 %}نمو قوي{% else %}قيد الفحص{% endif %}
-    </div>
+    <div class="scard-big">{{ measures_met(r) }}</div>
+    <div class="scard-status">قوة التأكيد</div>
   </div>
 </a>
