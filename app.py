@@ -117,6 +117,7 @@ def create_app():
     # دالة الإشارة الذهبية متاحة للقوالب (وسم 🥇 على كروت الماسح)
     app.jinja_env.globals["is_golden"] = screener.is_golden
     app.jinja_env.globals["measures_met"] = screener.measures_met
+    app.jinja_env.globals["bullish_reasons"] = screener.bullish_reasons
 
     @app.template_filter("ts_ago")
     def ts_ago(unix_ts):
@@ -275,7 +276,7 @@ def create_app():
         # قسم تعليمي: قاموس مصطلحات مبسّط (محتوى ثابت — بلا استدعاءات API)
         glossary = [
             {"icon": "🏦", "title": "الجودة المالية للشركة", "terms": [
-                {"name": "Piotroski (بيوتروسكي)",
+                {"name": "Piotroski (بيوتروسكي)", "id": "piotroski",
                  "desc": "درجة من 0 إلى 9 تقيس صحة الشركة المالية (ربحيتها، ديونها، كفاءتها). كلما زادت الدرجة كانت الشركة أمتن مالياً. 8 أو 9 تعتبر قوية.",
                  "example": "شركة درجتها 8 تعني أنها اجتازت 8 من 9 اختبارات صحّة مالية."},
                 {"name": "ROE (العائد على حقوق الملكية)",
@@ -292,7 +293,7 @@ def create_app():
                  "example": None},
             ]},
             {"icon": "🚀", "title": "النمو (Catalyst)", "terms": [
-                {"name": "Catalyst / قوة النمو",
+                {"name": "Catalyst / قوة النمو", "id": "catalyst",
                  "desc": "درجة من 0 إلى 100 تقيس سرعة نمو الشركة (مبيعات وأرباح). كلما زادت كانت أسرع نمواً. 🟢 قوي (80+) 🟡 متوسط (40-79) 🔴 ضعيف (أقل من 40).",
                  "example": "درجة 85 تعني الشركة تنمو بسرعة واضحة."},
             ]},

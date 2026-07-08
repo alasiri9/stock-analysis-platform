@@ -132,6 +132,20 @@ def _send_daily_report():
                     "golden": "🥇 ذهبية"}.get(s.signal_type, s.signal_type)
             lines.append(f"• {s.ticker} ({kind})")
 
+    # تنبيه أرباح وشيكة (خلال يومين) — تذبذب مرتفع متوقّع
+    soon_earn = sorted(
+        (r for r in records
+         if r.get("days_to_earnings") is not None and r["days_to_earnings"] <= 2),
+        key=lambda r: r["days_to_earnings"],
+    )
+    if soon_earn:
+        lines.append("")
+        lines.append("⚠️ <b>أرباح وشيكة (خلال يومين):</b>")
+        for r in soon_earn:
+            dte = r["days_to_earnings"]
+            when = "اليوم" if dte == 0 else ("غداً" if dte == 1 else f"بعد {dte} أيام")
+            lines.append(f"• {r['ticker']} — {when}")
+
     # ملخص المحفظة (لو فيها مقتنيات)
     holdings = PortfolioHolding.query.all()
     if holdings:

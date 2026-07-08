@@ -13,7 +13,7 @@
       <h3 class="learn-group">{{ group.icon }} {{ group.title }}</h3>
       <div class="learn-list">
         {% for t in group.terms %}
-          <div class="learn-term">
+          <div class="learn-term"{% if t.id %} id="{{ t.id }}"{% endif %}>
             <div class="learn-term-name">{{ t.name }}</div>
             <div class="learn-term-desc">{{ t.desc }}</div>
             {% if t.example %}<div class="learn-term-ex">مثال: {{ t.example }}</div>{% endif %}

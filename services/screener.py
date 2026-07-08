@@ -76,6 +76,11 @@ def _bullish_strategies(record):
     return [name for name, ok in checks.items() if ok]
 
 
+def bullish_reasons(record):
+    """أسباب ترشّح السهم (العوامل الصاعدة المتحققة) — لعرض جملة مبسّطة على البطاقة."""
+    return _bullish_strategies(record)
+
+
 def measures_met(record):
     """عدد المقاييس الإيجابية المجتمعة للسهم (تضافر الأدلة الصاعدة).
 

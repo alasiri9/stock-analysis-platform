@@ -43,14 +43,24 @@
     <button class="btn" type="submit">تحليل</button>
   </form>
 
+  {# أزرار فلترة جاهزة — نقرة واحدة تطبّق فلتراً شائعاً (بلا كتابة أرقام) #}
+  <div class="presets">
+    <span class="presets-label">فلاتر سريعة:</span>
+    <a class="preset" href="{{ url_for('index', piotroski_min=8, catalyst_min=80) }}">💎 جواهر النمو</a>
+    <a class="preset" href="{{ url_for('index', catalyst_min=80) }}">⚡ نمو قوي</a>
+    <a class="preset" href="{{ url_for('index', not_risen=1) }}">🔎 لسا ما صعد</a>
+    <a class="preset" href="{{ url_for('index', price_max=100) }}">💰 أقل من 100$</a>
+    <a class="preset clear" href="{{ url_for('index') }}">🔄 مسح الكل</a>
+  </div>
+
   {# لوحة الفلاتر — زرّا تحديث الشارت/البيانات داخل نفس الصندوق، يسار زر فلترة (formaction يرسلهم لمسار مختلف بدون فورم متداخل) #}
   <form class="filters" action="{{ url_for('index') }}" method="get">
     <div class="filter">
-      <label title="مقياس Piotroski من 0 إلى 9 — كلما زاد كانت مالية الشركة أقوى وأصح. اكتب أقل قيمة تقبلها.">الجودة المالية</label>
+      <label title="مقياس Piotroski من 0 إلى 9 — كلما زاد كانت مالية الشركة أقوى وأصح. اكتب أقل قيمة تقبلها.">الجودة المالية <a class="help-q" href="{{ url_for('learn') }}#piotroski" title="اشرح لي هذا المصطلح">؟</a></label>
       <input type="number" name="piotroski_min" min="0" max="9" step="1" placeholder="من 0 لـ9 (مثال: 8)" value="{{ filters.piotroski_min|int if filters.piotroski_min is not none else '' }}">
     </div>
     <div class="filter">
-      <label title="مقياس Catalyst من 0 إلى 100 — يقيس نمو الشركة (مبيعات وأرباح). كلما زاد كانت أسرع نمواً. اكتب أقل قيمة تقبلها.">قوة النمو</label>
+      <label title="مقياس Catalyst من 0 إلى 100 — يقيس نمو الشركة (مبيعات وأرباح). كلما زاد كانت أسرع نمواً. اكتب أقل قيمة تقبلها.">قوة النمو <a class="help-q" href="{{ url_for('learn') }}#catalyst" title="اشرح لي هذا المصطلح">؟</a></label>
       <input type="number" name="catalyst_min" min="0" max="100" step="1" placeholder="من 0 لـ100 (مثال: 80)" value="{{ filters.catalyst_min|int if filters.catalyst_min is not none else '' }}">
     </div>
     <div class="filter">
