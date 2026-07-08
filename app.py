@@ -222,6 +222,17 @@ def create_app():
             "min_measures": int(min_measures) if min_measures is not None else None,
         }
         results = screener.filter_records(records, **filters)
+
+        # ترتيب النتائج حسب اختيار المستخدم (افتراضياً: قوة التأكيد)
+        sort = request.args.get("sort", "confidence")
+        if sort == "growth":
+            results.sort(key=lambda r: (r.get("catalyst") is not None, r.get("catalyst") or 0), reverse=True)
+        elif sort == "price":
+            results.sort(key=lambda r: (r.get("price") is None, r.get("price") or 0))
+        else:  # confidence — عدد المقاييس المجتمعة
+            sort = "confidence"
+            results.sort(key=lambda r: screener.measures_met(r), reverse=True)
+
         screener.attach_sparklines(results)  # رسم مصغّر لكل بطاقة (من جدول الأسعار — بلا API)
         # نمرّر قيمة الملايين وحالة الشيك بوكس للواجهة (لإبقائها بالخانة)
         filters["float_max_millions"] = float_max_millions
@@ -242,6 +253,7 @@ def create_app():
             filters=filters, total=len(records), stats=stats,
             signals=screener.recent_signals(),
             launched=launched, perf=perf, mood=mood, market_dir=market_dir,
+            sort=sort,
         )
 
     @app.route("/gems")
@@ -455,7 +467,10 @@ def create_app():
         if report is None:
             # لا نخترع بيانات: نوضّح أن السهم غير متاح
             return render_template("stock.html", report=None, ticker=ticker.upper())
-        return render_template("stock.html", report=report, ticker=report["ticker"])
+        # سجل الماسح لنفس السهم (لعرض قوة التأكيد وسبب الترشّح) — None لو خارج قائمة المنصة
+        records, _ = screener.load_records()
+        scan = next((r for r in records if r["ticker"] == report["ticker"]), None)
+        return render_template("stock.html", report=report, ticker=report["ticker"], scan=scan)
 
     # ===================== حاسبة حجم الصفقة =====================
 

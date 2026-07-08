@@ -75,25 +75,38 @@
     </div>
   {% endif %}
 
-  {# ===== الدرجتان الكبيرتان ===== #}
+  {# ===== الدرجات الكبيرة ===== #}
   <div class="section">
     <div class="score-cards">
+      {% if scan %}
+      <div class="score-card">
+        <div class="cap">قوة التأكيد <a class="help-q" href="{{ url_for('learn') }}#confidence" title="اشرح لي هذا المصطلح">؟</a></div>
+        <div><span class="big">{{ measures_met(scan) }}</span><span class="out"> مقياس</span></div>
+        <div class="cap">عدد العوامل الإيجابية المجتمعة</div>
+      </div>
+      {% endif %}
       <div class="score-card">
         {% if report.piotroski.score >= 8 %}<div class="badge-gem">💎 جوهرة</div>{% endif %}
-        <div class="cap">Piotroski Score</div>
+        <div class="cap">Piotroski Score <a class="help-q" href="{{ url_for('learn') }}#piotroski" title="اشرح لي هذا المصطلح">؟</a></div>
         <div><span class="big">{{ report.piotroski.score }}</span><span class="out"> / 9</span></div>
         {% if report.piotroski.computable < 9 %}
           <div class="cap">أمكن حساب {{ report.piotroski.computable }} نقاط فقط</div>
         {% endif %}
       </div>
       <div class="score-card">
-        <div class="cap">Catalyst Score</div>
+        <div class="cap">Catalyst Score <a class="help-q" href="{{ url_for('learn') }}#catalyst" title="اشرح لي هذا المصطلح">؟</a></div>
         <div>
           <span class="big">{{ show(report.catalyst.score, '', 0) }}</span><span class="out"> / 100</span>
         </div>
         <div class="cap">⚠️ أوزان افتراضية غير مُختبرة تاريخياً</div>
       </div>
     </div>
+    {% if scan %}
+      {% set reasons = bullish_reasons(scan) %}
+      {% if reasons %}
+        <div class="why-box">💡 <b>سبب الترشّح:</b> {{ reasons | join(' + ') }}</div>
+      {% endif %}
+    {% endif %}
   </div>
 
   {# ===== المؤشرات الفنية ===== #}
