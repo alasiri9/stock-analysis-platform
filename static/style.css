@@ -642,6 +642,9 @@ a.stat-box:hover { filter: brightness(1.15); transform: translateY(-1px); }
 }
 .set-links { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
 .sub-code { background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 2px 8px; font-weight: 900; letter-spacing: 1px; color: var(--accent); }
+.copy-btn { background: var(--card); border: 1px solid var(--border); border-radius: 6px; cursor: pointer; font-size: 13px; padding: 2px 7px; }
+.copy-btn:hover { border-color: var(--accent); }
+.pill.warn { background: rgba(245,196,81,.16); color: var(--gold); }
 
 /* صفحة كل ملاحظاتي */
 .notes-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 12px; }

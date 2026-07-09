@@ -56,10 +56,12 @@
             {% for s in subscribers %}
               <tr>
                 <td>{{ s.name }}</td>
-                <td dir="ltr"><code class="sub-code">{{ s.access_code }}</code></td>
+                <td dir="ltr"><code class="sub-code">{{ s.access_code }}</code> <button type="button" class="copy-btn" onclick="copyCode(this, '{{ s.access_code }}')" title="نسخ الرمز">📋</button></td>
                 <td dir="ltr">{{ s.end_date.strftime('%Y-%m-%d') }}</td>
                 <td>
-                  {% if s.is_active() %}<span class="pill buy">نشط · {{ s.days_left() }} يوم</span>
+                  {% if s.is_active() %}
+                    {% if s.days_left() <= 3 %}<span class="pill warn">⏳ ينتهي قريباً · {{ s.days_left() }} يوم</span>
+                    {% else %}<span class="pill buy">نشط · {{ s.days_left() }} يوم</span>{% endif %}
                   {% else %}<span class="pill sell">منتهٍ</span>{% endif %}
                 </td>
                 <td>
@@ -100,5 +102,15 @@
         if (!isNaN(v) && v > 0) { localStorage.setItem('simAmount', Math.round(v)); }
       });
     })();
+
+    // نسخ رمز المشترك بضغطة
+    function copyCode(btn, code) {
+      var done = function () { var o = btn.textContent; btn.textContent = '✓'; setTimeout(function () { btn.textContent = o; }, 1200); };
+      if (navigator.clipboard) { navigator.clipboard.writeText(code).then(done).catch(function () {}); }
+      else {
+        var t = document.createElement('textarea'); t.value = code; document.body.appendChild(t);
+        t.select(); try { document.execCommand('copy'); } catch (e) {} document.body.removeChild(t); done();
+      }
+    }
   </script>
 {% endblock %}
