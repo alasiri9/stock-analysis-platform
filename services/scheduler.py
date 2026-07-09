@@ -78,6 +78,13 @@ def _auto_refresh(app):
         except Exception as e:  # noqa: BLE001
             print(f"[scheduler] تعذّر إرسال التقرير الصباحي: {e}")
 
+        # تقرير أسبوعي (السبت فقط) — ملخّص أداء الإشارات
+        try:
+            if datetime.now(timezone.utc).weekday() == 5:  # 5 = السبت
+                _send_weekly_report()
+        except Exception as e:  # noqa: BLE001
+            print(f"[scheduler] تعذّر إرسال التقرير الأسبوعي: {e}")
+
 
 def _send_daily_report():
     """يبني تقريراً صباحياً مجمّعاً ويرسله بتلغرام (لو الميزة مفعّلة).
@@ -169,6 +176,46 @@ def _send_daily_report():
     lines.append("https://algomatix-production.up.railway.app")
     sent = telegram_client.send_message("\n".join(lines))
     print(f"[scheduler] التقرير الصباحي: {'أُرسل ✅' if sent else 'فشل الإرسال'}")
+
+
+def _send_weekly_report():
+    """يبني تقريراً أسبوعياً لأداء الإشارات ويرسله بتلغرام (لو الميزة مفعّلة).
+
+    يُستدعى داخل app_context أيام السبت. كل البيانات من الكاش — لا استدعاءات API.
+    """
+    if not telegram_client.is_configured():
+        return
+
+    rows, overall, _ = screener.signals_performance()
+    lines = ["🗓️ <b>تقرير Algomatix الأسبوعي</b>", "", "📊 <b>أداء إشاراتنا حتى الآن:</b>"]
+
+    if overall and overall.get("count"):
+        lines.append(f"• عدد الإشارات المقيسة: {overall['count']}")
+        if overall.get("win_rate") is not None:
+            lines.append(f"• نسبة الإشارات الرابحة: {overall['win_rate']:.0f}%")
+        if overall.get("avg") is not None:
+            lines.append(f"• متوسط العائد منذ الإشارة: {overall['avg']:+.1f}%")
+        if overall.get("best_ticker") and overall.get("best") is not None:
+            lines.append(f"• أفضل إشارة: {overall['best_ticker']} ({overall['best']:+.1f}%)")
+    else:
+        lines.append("• لا توجد إشارات مقيسة بعد.")
+
+    # أفضل 3 أسهم منذ إشارتها
+    ranked = sorted(
+        (r for r in (rows or []) if r.get("return_pct") is not None),
+        key=lambda r: r["return_pct"], reverse=True,
+    )[:3]
+    if ranked:
+        lines.append("")
+        lines.append("🏆 <b>الأفضل منذ الإشارة:</b>")
+        for r in ranked:
+            lines.append(f"• {r['ticker']} ({r['return_pct']:+.1f}%)")
+
+    lines.append("")
+    lines.append("📌 تعليمي — الأداء السابق لا يضمن المستقبل.")
+    lines.append("https://algomatix-production.up.railway.app")
+    sent = telegram_client.send_message("\n".join(lines))
+    print(f"[scheduler] التقرير الأسبوعي: {'أُرسل ✅' if sent else 'فشل الإرسال'}")
 
 
 def init_scheduler(app):
