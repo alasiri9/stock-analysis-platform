@@ -335,6 +335,37 @@ def _record_signal(ticker, signal_type, price, atr=None, earnings_days=None):
     telegram_client.notify_signal(ticker, signal_type, price, atr=atr, earnings_days=earnings_days)
 
 
+def notify_new_prelaunch(min_strategies=3):
+    """يُنبّه (تلغرام) عن الأسهم التي دخلت حديثاً قائمة «الاستعداد للانطلاق».
+
+    يسجّل إشارة "prelaunch_ready" لكل مرشّح جديد (منع تكرار SIGNAL_COOLDOWN_DAYS)
+    ويرسل تنبيهاً. يُستدعى بعد التحديث الليلي داخل app_context. يُرجع عدد التنبيهات الجديدة.
+    """
+    candidates = early_launch_candidates(min_strategies=min_strategies)
+    if not candidates:
+        return 0
+    cutoff = datetime.now(timezone.utc) - timedelta(days=SIGNAL_COOLDOWN_DAYS)
+    fired = 0
+    for c in candidates:
+        ticker = c["ticker"]
+        exists = (
+            Signal.query
+            .filter(Signal.ticker == ticker,
+                    Signal.signal_type == "prelaunch_ready",
+                    Signal.triggered_at >= cutoff)
+            .first()
+        )
+        if exists:
+            continue  # سبق التنبيه عنه ضمن نافذة منع التكرار
+        db.session.add(Signal(ticker=ticker, signal_type="prelaunch_ready",
+                              price_at_signal=c.get("price")))
+        telegram_client.notify_signal(ticker, "prelaunch_ready", c.get("price"))
+        fired += 1
+    if fired:
+        db.session.commit()
+    return fired
+
+
 def dedupe_signals():
     """تنظيف الإشارات المكررة: يُبقي الأقدم لكل (سهم، نوع) ويحذف الأحدث المكررة.
 

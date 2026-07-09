@@ -72,6 +72,14 @@ def _auto_refresh(app):
         except Exception as e:  # noqa: BLE001
             print(f"[scheduler] تعذّر فحص التنبيهات السعرية: {e}")
 
+        # تنبيه الأسهم الجديدة الداخلة قائمة "الاستعداد للانطلاق"
+        try:
+            n = screener.notify_new_prelaunch()
+            if n:
+                print(f"[scheduler] {n} سهم جديد جاهز للانطلاق (أُرسلت تنبيهات)")
+        except Exception as e:  # noqa: BLE001
+            print(f"[scheduler] تعذّر تنبيه الاستعداد للانطلاق: {e}")
+
         # ختاماً: التقرير الصباحي المجمّع بتلغرام (خامل بلا إعداد، وفشله لا يؤثر)
         try:
             _send_daily_report()
