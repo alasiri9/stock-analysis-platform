@@ -629,6 +629,11 @@ a.stat-box:hover { filter: brightness(1.15); transform: translateY(-1px); }
 .how-list { margin: 0 0 6px; padding-inline-start: 22px; }
 .how-list li { color: var(--text); font-size: 15px; line-height: 2; }
 
+/* صفحة "كيف تعمل المنصة" */
+.how-p { color: var(--text); font-size: 15px; line-height: 1.9; margin: 0 0 10px; }
+.how-list { margin: 0 0 10px; padding-inline-start: 22px; }
+.how-list li { color: var(--text); font-size: 15px; line-height: 2; }
+
 /* محاكاة "لو تابعت الإشارات" (صفحة الأداء) */
 .sim-box { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px 18px; margin: 18px 0; }
 .sim-head { font-weight: 900; font-size: 16px; color: var(--gold); margin-bottom: 12px; }
