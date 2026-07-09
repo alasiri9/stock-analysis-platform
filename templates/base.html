@@ -9,7 +9,7 @@
   <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
   <meta name="theme-color" content="#0d1830">
   <script>(function(){try{if(localStorage.getItem('theme')==='light'){document.documentElement.classList.add('light');}}catch(e){}})();</script>
-  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=20260709s">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=20260709u">
 </head>
 <body>
   <div class="layout">
@@ -21,28 +21,28 @@
         <div class="brand-phrases">نرصد الفرص<span class="sep">|</span>نحلل الاختراقات<span class="sep">|</span>نواكب الصعود</div>
       </div>
       <nav class="nav">
-        <a href="{{ url_for('index') }}" class="{{ 'active' if active=='home' else '' }}"><span class="ic">📊</span> الرئيسية</a>
-        <a href="{{ url_for('leaders') }}" class="{{ 'active' if active=='leaders' else '' }}"><span class="ic">🚀</span> القادة المستقبليون</a>
-        <a href="{{ url_for('prelaunch') }}" class="{{ 'active' if active=='prelaunch' else '' }}"><span class="ic">🔎</span> قبل الانطلاق</a>
-        <a href="{{ url_for('gems') }}" class="{{ 'active' if active=='gems' else '' }}"><span class="ic">💎</span> الجواهر المخفية</a>
-        <a href="{{ url_for('radar_page') }}" class="{{ 'active' if active=='radar' else '' }}"><span class="ic">🎯</span> رادار المحفزات</a>
-        <a href="{{ url_for('flow_page') }}" class="{{ 'active' if active=='flow' else '' }}"><span class="ic">📡</span> التدفق الذكي</a>
-        <a href="{{ url_for('portfolio') }}" class="{{ 'active' if active=='portfolio' else '' }}"><span class="ic">🧠</span> المحفظة الذكية</a>
-        <a href="{{ url_for('signals_page') }}" class="{{ 'active' if active=='signals' else '' }}"><span class="ic">⚡</span> إشارات التداول</a>
-        <a href="{{ url_for('index') }}#scanner"><span class="ic">🔍</span> الاستعداد للانطلاق</a>
-        <a href="{{ url_for('daily_report') }}" class="{{ 'active' if active=='daily_report' else '' }}"><span class="ic">📅</span> التقرير اليومي</a>
-        <a href="{{ url_for('movers') }}" class="{{ 'active' if active=='movers' else '' }}"><span class="ic">📊</span> الرابحون والخاسرون</a>
-        <a href="{{ url_for('earnings') }}" class="{{ 'active' if active=='earnings' else '' }}"><span class="ic">📆</span> رزنامة الأرباح</a>
-        <a href="{{ url_for('compare') }}" class="{{ 'active' if active=='compare' else '' }}"><span class="ic">⚖️</span> مقارنة أسهم</a>
-        <a href="{{ url_for('calculator') }}" class="{{ 'active' if active=='calculator' else '' }}"><span class="ic">🧮</span> حاسبة المخاطرة</a>
-        <a href="{{ url_for('news_page') }}" class="{{ 'active' if active=='news' else '' }}"><span class="ic">📰</span> أخبار السوق</a>
-        <a href="{{ url_for('performance') }}" class="{{ 'active' if active=='performance' else '' }}"><span class="ic">📈</span> اختيار الأداء</a>
-        <a href="{{ url_for('watchlist') }}" class="{{ 'active' if active=='watchlist' else '' }}"><span class="ic">👁</span> قائمة المراقبة</a>
-        <a href="{{ url_for('notes') }}" class="{{ 'active' if active=='notes' else '' }}"><span class="ic">📝</span> ملاحظاتي</a>
-        <a href="{{ url_for('alerts') }}" class="{{ 'active' if active=='alerts' else '' }}"><span class="ic">🔔</span> التنبيهات السعرية</a>
-        <a href="{{ url_for('learn') }}" class="{{ 'active' if active=='learn' else '' }}"><span class="ic">📚</span> تعلّم</a>
-        <a href="{{ url_for('how') }}" class="{{ 'active' if active=='how' else '' }}"><span class="ic">📘</span> كيف تعمل المنصة</a>
-        <a href="{{ url_for('settings') }}" class="{{ 'active' if active=='settings' else '' }}"><span class="ic">⚙️</span> الإعدادات</a>
+        <a href="{{ url_for('index') }}" class="{{ 'active' if active=='home' else '' }}"><span class="ic">📊</span> الرئيسية<span class="nav-eye" data-tip="الماسح الرئيسي: يفحص 32 سهماً أمريكياً ويرتّبها حسب قوة التأكيد، مع فلاتر جاهزة وعدّادات وبار اتجاه السوق.">👁</span></a>
+        <a href="{{ url_for('leaders') }}" class="{{ 'active' if active=='leaders' else '' }}"><span class="ic">🚀</span> القادة المستقبليون<span class="nav-eye" data-tip="أعلى الأسهم حسب درجة النمو (Catalyst) — الشركات الأسرع نمواً.">👁</span></a>
+        <a href="{{ url_for('prelaunch') }}" class="{{ 'active' if active=='prelaunch' else '' }}"><span class="ic">🔎</span> قبل الانطلاق<span class="nav-eye" data-tip="أسهم في مرحلة مبكرة (انضغاط أو بداية اختراق) لم تصعد بعد — للاصطياد المبكر.">👁</span></a>
+        <a href="{{ url_for('gems') }}" class="{{ 'active' if active=='gems' else '' }}"><span class="ic">💎</span> الجواهر المخفية<span class="nav-eye" data-tip="الأسهم ذات الجودة المالية العالية (Piotroski ≥ 8) — شركات متينة مالياً.">👁</span></a>
+        <a href="{{ url_for('radar_page') }}" class="{{ 'active' if active=='radar' else '' }}"><span class="ic">🎯</span> رادار المحفزات<span class="nav-eye" data-tip="معاملات المطّلعين (شراء/بيع كبار المسؤولين لأسهم شركتهم) من هيئة SEC.">👁</span></a>
+        <a href="{{ url_for('flow_page') }}" class="{{ 'active' if active=='flow' else '' }}"><span class="ic">📡</span> التدفق الذكي<span class="nav-eye" data-tip="ترتيب الأسهم حسب تدفّق السيولة — أين تدخل الأموال وأين تخرج.">👁</span></a>
+        <a href="{{ url_for('portfolio') }}" class="{{ 'active' if active=='portfolio' else '' }}"><span class="ic">🧠</span> المحفظة الذكية<span class="nav-eye" data-tip="سجّل مشترياتك وتابع قيمتها وأرباحك لحظياً مع منحنى أداء المحفظة.">👁</span></a>
+        <a href="{{ url_for('signals_page') }}" class="{{ 'active' if active=='signals' else '' }}"><span class="ic">⚡</span> إشارات التداول<span class="nav-eye" data-tip="كل الإشارات التي ولّدها الماسح (جودة/نمو/ذهبية...) مع سعرها ووقتها.">👁</span></a>
+        <a href="{{ url_for('index') }}#scanner"><span class="ic">🔍</span> الاستعداد للانطلاق<span class="nav-eye" data-tip="قائمة الماسح في الرئيسية: الأسهم المرشّحة للانطلاق مرتّبة بقوة التأكيد.">👁</span></a>
+        <a href="{{ url_for('daily_report') }}" class="{{ 'active' if active=='daily_report' else '' }}"><span class="ic">📅</span> التقرير اليومي<span class="nav-eye" data-tip="ملخّص يومي: حالة السوق، أقوى الأسهم، وأحدث الإشارات.">👁</span></a>
+        <a href="{{ url_for('movers') }}" class="{{ 'active' if active=='movers' else '' }}"><span class="ic">📊</span> الرابحون والخاسرون<span class="nav-eye" data-tip="أعلى 5 ارتفاعاً وأعلى 5 انخفاضاً اليوم من أسهم المنصة.">👁</span></a>
+        <a href="{{ url_for('earnings') }}" class="{{ 'active' if active=='earnings' else '' }}"><span class="ic">📆</span> رزنامة الأرباح<span class="nav-eye" data-tip="مواعيد إعلان أرباح الأسهم مرتّبة بالأقرب — الأرباح تحرّك السهم بقوة.">👁</span></a>
+        <a href="{{ url_for('compare') }}" class="{{ 'active' if active=='compare' else '' }}"><span class="ic">⚖️</span> مقارنة أسهم<span class="nav-eye" data-tip="قارن حتى 4 أسهم جنباً لجنب: عدّادات ومقاييس ونقاط قوة/تنبيهات.">👁</span></a>
+        <a href="{{ url_for('calculator') }}" class="{{ 'active' if active=='calculator' else '' }}"><span class="ic">🧮</span> حاسبة المخاطرة<span class="nav-eye" data-tip="احسب عدد الأسهم المناسب حسب رأس مالك ونسبة المخاطرة والدخول/الوقف.">👁</span></a>
+        <a href="{{ url_for('news_page') }}" class="{{ 'active' if active=='news' else '' }}"><span class="ic">📰</span> أخبار السوق<span class="nav-eye" data-tip="آخر أخبار السوق الأمريكي العامة من Finnhub.">👁</span></a>
+        <a href="{{ url_for('performance') }}" class="{{ 'active' if active=='performance' else '' }}"><span class="ic">📈</span> اختيار الأداء<span class="nav-eye" data-tip="سجل أداء كل الإشارات منذ صدورها + محاكاة «لو تابعت الإشارات».">👁</span></a>
+        <a href="{{ url_for('watchlist') }}" class="{{ 'active' if active=='watchlist' else '' }}"><span class="ic">👁</span> قائمة المراقبة<span class="nav-eye" data-tip="أضف أسهماً وتابع عائدها منذ لحظة الإضافة.">👁</span></a>
+        <a href="{{ url_for('notes') }}" class="{{ 'active' if active=='notes' else '' }}"><span class="ic">📝</span> ملاحظاتي<span class="nav-eye" data-tip="كل ملاحظاتك الشخصية على الأسهم في مكان واحد.">👁</span></a>
+        <a href="{{ url_for('alerts') }}" class="{{ 'active' if active=='alerts' else '' }}"><span class="ic">🔔</span> التنبيهات السعرية<span class="nav-eye" data-tip="نبّهني عند وصول سهم لسعر تحدّده — يصلك تنبيه تلغرام.">👁</span></a>
+        <a href="{{ url_for('learn') }}" class="{{ 'active' if active=='learn' else '' }}"><span class="ic">📚</span> تعلّم<span class="nav-eye" data-tip="قاموس يشرح مصطلحات المنصة بالعربي المبسّط.">👁</span></a>
+        <a href="{{ url_for('how') }}" class="{{ 'active' if active=='how' else '' }}"><span class="ic">📘</span> كيف تعمل المنصة<span class="nav-eye" data-tip="شرح منهجية عمل المنصة خطوة بخطوة.">👁</span></a>
+        <a href="{{ url_for('settings') }}" class="{{ 'active' if active=='settings' else '' }}"><span class="ic">⚙️</span> الإعدادات<span class="nav-eye" data-tip="المظهر، الترتيب الافتراضي، مبلغ المحاكاة، وإدارة اشتراكات المستخدمين.">👁</span></a>
       </nav>
       <button class="theme-toggle" type="button" onclick="toggleTheme()">🌗 تبديل الوضع (فاتح/داكن)</button>
       <a href="{{ url_for('logout') }}" class="nav-logout"><span class="ic">🚪</span> خروج</a>
@@ -69,6 +69,35 @@
       el.classList.toggle('light');
       try { localStorage.setItem('theme', el.classList.contains('light') ? 'light' : 'dark'); } catch (e) {}
     }
+
+    // تلميح تفاعلي لعناصر القائمة (يظهر عند تمرير الماوس على العين، ويختفي عند إزالته)
+    (function () {
+      var tip = document.createElement('div');
+      tip.className = 'nav-tip';
+      document.body.appendChild(tip);
+      function show(eye) {
+        tip.textContent = eye.getAttribute('data-tip') || '';
+        tip.classList.add('show');
+        var r = eye.getBoundingClientRect();
+        var tw = tip.offsetWidth, th = tip.offsetHeight;
+        // التلميح يسار العين إن وُجدت مساحة، وإلا يمينها
+        var left = (r.left > tw + 20) ? (r.left - 10 - tw) : (r.right + 10);
+        left = Math.max(8, Math.min(left, window.innerWidth - tw - 8));
+        var top = Math.max(8, Math.min(r.top, window.innerHeight - th - 8));
+        tip.style.left = left + 'px';
+        tip.style.top = top + 'px';
+      }
+      function hide() { tip.classList.remove('show'); }
+      document.querySelectorAll('.nav-eye').forEach(function (eye) {
+        eye.addEventListener('mouseenter', function () { show(eye); });
+        eye.addEventListener('mouseleave', hide);
+        // منع فتح الصفحة عند الضغط على العين (وإظهار التلميح على الجوال باللمس)
+        eye.addEventListener('click', function (e) {
+          e.preventDefault(); e.stopPropagation();
+          if (tip.classList.contains('show')) { hide(); } else { show(eye); }
+        });
+      });
+    })();
   </script>
 </body>
 </html>
