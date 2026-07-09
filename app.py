@@ -369,6 +369,11 @@ def create_app():
         ]
         return render_template("learn.html", glossary=glossary)
 
+    @app.route("/how")
+    def how():
+        # صفحة تعليمية: كيف تعمل المنصة (محتوى ثابت — بلا استدعاءات API)
+        return render_template("how.html")
+
     @app.route("/earnings")
     def earnings():
         # رزنامة الأرباح: الأسهم ذات موعد أرباح قادم، مرتّبة بالأقرب (من الكاش — بلا استدعاء API)

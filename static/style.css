@@ -624,6 +624,11 @@ a.stat-box:hover { filter: brightness(1.15); transform: translateY(-1px); }
 .scard-chg.up { color: var(--green); }
 .scard-chg.down { color: var(--red); }
 
+/* صفحة "كيف تعمل المنصة" */
+.how-p { color: var(--text); font-size: 15px; line-height: 1.9; margin: 0 0 6px; }
+.how-list { margin: 0 0 6px; padding-inline-start: 22px; }
+.how-list li { color: var(--text); font-size: 15px; line-height: 2; }
+
 /* محاكاة "لو تابعت الإشارات" (صفحة الأداء) */
 .sim-box { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px 18px; margin: 18px 0; }
 .sim-head { font-weight: 900; font-size: 16px; color: var(--gold); margin-bottom: 12px; }
@@ -680,3 +685,34 @@ a.stat-box:hover { filter: brightness(1.15); transform: translateY(-1px); }
 .gauge-lg .gauge-num { font-size: 30px; }
 .gauge-max { color: var(--muted); font-weight: 600; font-size: 13px; }
 .gauge-label { color: var(--muted); font-size: 12.5px; margin-top: 3px; }
+
+/* زر تبديل الوضع */
+.theme-toggle {
+  margin: 8px 4px 4px; padding: 9px 12px; background: transparent;
+  border: 1px solid var(--border); border-radius: 10px; color: var(--muted);
+  font-size: 14px; font-weight: 700; cursor: pointer; font-family: inherit; text-align: center;
+}
+.theme-toggle:hover { border-color: var(--accent); color: var(--accent); }
+
+/* ================= الوضع الفاتح ================= */
+html.light {
+  --bg: #f4f7fc;
+  --panel: #ffffff;
+  --panel-2: #eef3fb;
+  --card: #ffffff;
+  --border: #d6deec;
+  --text: #1b2438;
+  --muted: #5f6b82;
+  --green-dim: #d8f5e1;
+  --red-dim: #fbe0e0;
+  --gold: #b7791f;
+  --accent: #0284c7;
+}
+html.light body,
+html.light .sidebar {
+  background: linear-gradient(160deg, #e9f0fb 0%, #eef2fb 50%, #f4eefb 100%);
+}
+html.light .brand-name,
+html.light .brand-tag,
+html.light .brand-phrases { color: var(--text); }
+html.light .panel-head h2 { text-shadow: none; }

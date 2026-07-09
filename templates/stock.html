@@ -37,6 +37,7 @@
         <input type="hidden" name="ticker" value="{{ report.ticker }}">
         <button class="btn-add" type="submit">⭐ أضف للمتابعة</button>
       </form>
+      <button class="btn-add" type="button" onclick="shareStock(this)">🔗 مشاركة</button>
     </div>
   </div>
 
@@ -248,6 +249,20 @@
   <div class="note" style="margin-top:24px">
     📌 هذه شاشة فحص تعليمية فقط. كل الأرقام مشتقّة من بيانات حقيقية (FMP) ولا تمثّل توصية أو تنبؤاً.
   </div>
+
+  <script>
+    function shareStock(btn) {
+      var url = window.location.href;
+      if (navigator.share) {
+        navigator.share({ title: document.title, url: url }).catch(function () {});
+      } else if (navigator.clipboard) {
+        navigator.clipboard.writeText(url).then(function () {
+          var t = btn.textContent; btn.textContent = '✅ نُسخ الرابط';
+          setTimeout(function () { btn.textContent = t; }, 1500);
+        });
+      }
+    }
+  </script>
 
 {% endif %}
 {% endblock %}

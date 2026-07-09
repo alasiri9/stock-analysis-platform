@@ -8,7 +8,8 @@
   <link rel="apple-touch-icon" href="{{ url_for('static', filename='icon-192.png') }}">
   <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
   <meta name="theme-color" content="#0d1830">
-  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=20260709i">
+  <script>(function(){try{if(localStorage.getItem('theme')==='light'){document.documentElement.classList.add('light');}}catch(e){}})();</script>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=20260709j">
 </head>
 <body>
   <div class="layout">
@@ -38,7 +39,9 @@
         <a href="{{ url_for('watchlist') }}" class="{{ 'active' if active=='watchlist' else '' }}"><span class="ic">👁</span> قائمة المراقبة</a>
         <a href="{{ url_for('alerts') }}" class="{{ 'active' if active=='alerts' else '' }}"><span class="ic">🔔</span> التنبيهات السعرية</a>
         <a href="{{ url_for('learn') }}" class="{{ 'active' if active=='learn' else '' }}"><span class="ic">📚</span> تعلّم</a>
+        <a href="{{ url_for('how') }}" class="{{ 'active' if active=='how' else '' }}"><span class="ic">⚙️</span> كيف تعمل المنصة</a>
       </nav>
+      <button class="theme-toggle" type="button" onclick="toggleTheme()">🌗 تبديل الوضع (فاتح/داكن)</button>
       <a href="{{ url_for('logout') }}" class="nav-logout"><span class="ic">🚪</span> خروج</a>
       <div class="sidebar-foot">
         <small>Algomatix © 2026</small>
@@ -48,5 +51,12 @@
       {% block content %}{% endblock %}
     </main>
   </div>
+  <script>
+    function toggleTheme() {
+      var el = document.documentElement;
+      el.classList.toggle('light');
+      try { localStorage.setItem('theme', el.classList.contains('light') ? 'light' : 'dark'); } catch (e) {}
+    }
+  </script>
 </body>
 </html>
