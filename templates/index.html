@@ -49,7 +49,7 @@
 
   {# بحث مباشر عن أي سهم #}
   <form class="search" action="{{ url_for('stock_search') }}" method="get">
-    <input type="text" name="ticker" placeholder="حلّل أي سهم (مثال: AAPL)">
+    <input type="text" name="ticker" list="universe-list" placeholder="حلّل أي سهم (مثال: AAPL)" autocomplete="off">
     <button class="btn" type="submit">تحليل</button>
   </form>
 

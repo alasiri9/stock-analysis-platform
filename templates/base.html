@@ -9,7 +9,7 @@
   <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
   <meta name="theme-color" content="#0d1830">
   <script>(function(){try{if(localStorage.getItem('theme')==='light'){document.documentElement.classList.add('light');}}catch(e){}})();</script>
-  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=20260709m">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=20260709n">
 </head>
 <body>
   <div class="layout">
@@ -38,6 +38,7 @@
         <a href="{{ url_for('news_page') }}" class="{{ 'active' if active=='news' else '' }}"><span class="ic">📰</span> أخبار السوق</a>
         <a href="{{ url_for('performance') }}" class="{{ 'active' if active=='performance' else '' }}"><span class="ic">📈</span> اختيار الأداء</a>
         <a href="{{ url_for('watchlist') }}" class="{{ 'active' if active=='watchlist' else '' }}"><span class="ic">👁</span> قائمة المراقبة</a>
+        <a href="{{ url_for('notes') }}" class="{{ 'active' if active=='notes' else '' }}"><span class="ic">📝</span> ملاحظاتي</a>
         <a href="{{ url_for('alerts') }}" class="{{ 'active' if active=='alerts' else '' }}"><span class="ic">🔔</span> التنبيهات السعرية</a>
         <a href="{{ url_for('learn') }}" class="{{ 'active' if active=='learn' else '' }}"><span class="ic">📚</span> تعلّم</a>
         <a href="{{ url_for('how') }}" class="{{ 'active' if active=='how' else '' }}"><span class="ic">⚙️</span> كيف تعمل المنصة</a>
@@ -52,6 +53,12 @@
       {% block content %}{% endblock %}
     </main>
   </div>
+
+  {# قائمة اقتراح رموز الأسهم (تظهر أثناء الكتابة في خانات البحث) #}
+  <datalist id="universe-list">
+    {% for t in UNIVERSE %}<option value="{{ t }}"></option>{% endfor %}
+  </datalist>
+
   <script>
     function toggleTheme() {
       var el = document.documentElement;

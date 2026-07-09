@@ -629,6 +629,26 @@ a.stat-box:hover { filter: brightness(1.15); transform: translateY(-1px); }
 .how-list { margin: 0 0 10px; padding-inline-start: 22px; }
 .how-list li { color: var(--text); font-size: 15px; line-height: 2; }
 
+/* صفحة كل ملاحظاتي */
+.notes-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 12px; }
+.note-card { display: block; text-decoration: none; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 14px; }
+.note-card:hover { border-color: var(--accent); }
+.note-card-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+.note-card-ticker { color: var(--accent); font-weight: 900; font-size: 16px; }
+.note-card-date { color: var(--muted); font-size: 12px; }
+.note-card-body { color: var(--text); font-size: 14px; line-height: 1.7; white-space: pre-wrap; }
+
+/* الطباعة: نخفي القوائم والأزرار ونجعل الخلفية بيضاء (توفير حبر) */
+@media print {
+  .sidebar, .theme-toggle, .no-print, .search, .btn, .btn-add { display: none !important; }
+  .layout { display: block; }
+  .content { padding: 0; max-width: 100%; }
+  :root {
+    --bg: #fff; --panel: #fff; --panel-2: #fff; --card: #fff;
+    --text: #111; --muted: #555; --border: #bbb;
+  }
+}
+
 /* ملاحظاتي على السهم */
 .note-area {
   width: 100%; box-sizing: border-box; resize: vertical; min-height: 70px;

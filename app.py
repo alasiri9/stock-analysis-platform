@@ -118,6 +118,7 @@ def create_app():
     app.jinja_env.globals["is_golden"] = screener.is_golden
     app.jinja_env.globals["measures_met"] = screener.measures_met
     app.jinja_env.globals["bullish_reasons"] = screener.bullish_reasons
+    app.jinja_env.globals["UNIVERSE"] = screener.UNIVERSE  # لاقتراح الرموز في البحث
 
     @app.template_filter("ts_ago")
     def ts_ago(unix_ts):
@@ -373,6 +374,13 @@ def create_app():
     def how():
         # صفحة تعليمية: كيف تعمل المنصة (محتوى ثابت — بلا استدعاءات API)
         return render_template("how.html")
+
+    @app.route("/notes")
+    def notes():
+        # كل ملاحظات المستخدم على الأسهم (مرتّبة بالأحدث تعديلاً)
+        items = StockNote.query.filter_by(user_id=GUEST_USER).order_by(
+            StockNote.updated_at.desc()).all()
+        return render_template("notes.html", notes=items)
 
     @app.route("/movers")
     def movers():
