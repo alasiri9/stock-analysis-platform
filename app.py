@@ -430,8 +430,20 @@ def create_app():
     def performance():
         # اختيار الأداء: سجل كل الإشارات التاريخية وأداؤها منذ صدورها (من الكاش، بلا API)
         rows, overall, type_stats = screener.signals_performance()
+        # محاكاة "لو تابعت الإشارات": استثمار مبلغ ثابت عند كل إشارة
+        PER_TRADE = 1000.0
+        measured = [r for r in rows if r.get("return_pct") is not None]
+        sim = None
+        if measured:
+            invested = PER_TRADE * len(measured)
+            value = sum(PER_TRADE * (1 + r["return_pct"] / 100.0) for r in measured)
+            sim = {
+                "per_trade": PER_TRADE, "count": len(measured), "invested": invested,
+                "value": value, "pnl": value - invested,
+                "pnl_pct": (value - invested) / invested * 100.0 if invested else None,
+            }
         return render_template(
-            "performance.html", rows=rows, overall=overall, type_stats=type_stats,
+            "performance.html", rows=rows, overall=overall, type_stats=type_stats, sim=sim,
         )
 
     @app.route("/screener/refresh", methods=["POST"])

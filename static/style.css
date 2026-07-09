@@ -624,6 +624,17 @@ a.stat-box:hover { filter: brightness(1.15); transform: translateY(-1px); }
 .scard-chg.up { color: var(--green); }
 .scard-chg.down { color: var(--red); }
 
+/* محاكاة "لو تابعت الإشارات" (صفحة الأداء) */
+.sim-box { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px 18px; margin: 18px 0; }
+.sim-head { font-weight: 900; font-size: 16px; color: var(--gold); margin-bottom: 12px; }
+.sim-stats { display: flex; flex-wrap: wrap; gap: 20px; }
+.sim-item { display: flex; flex-direction: column; gap: 3px; }
+.sim-label { color: var(--muted); font-size: 13px; }
+.sim-val { font-size: 22px; font-weight: 900; color: var(--text); }
+.sim-val.pos { color: var(--green); }
+.sim-val.neg { color: var(--red); }
+.sim-sub { color: var(--muted); font-size: 12px; }
+
 /* أسهم من نفس القطاع (صفحة السهم) */
 .peers-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
 .peer-card {
