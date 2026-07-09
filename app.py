@@ -471,7 +471,15 @@ def create_app():
         records, _ = screener.load_records()
         scan = next((r for r in records if r["ticker"] == report["ticker"]), None)
         summary = analysis.smart_summary(report, scan)  # ملخّص ذكي مُولّد آلياً (بلا API)
-        return render_template("stock.html", report=report, ticker=report["ticker"], scan=scan, summary=summary)
+        # أسهم من نفس القطاع للمقارنة (من الكاش، بلا API) — الأعلى قوة تأكيد أولاً
+        peers = []
+        if report.get("sector"):
+            peers = [r for r in records
+                     if r.get("sector") == report["sector"] and r["ticker"] != report["ticker"]]
+            peers.sort(key=lambda r: screener.measures_met(r), reverse=True)
+            peers = peers[:6]
+        return render_template("stock.html", report=report, ticker=report["ticker"],
+                               scan=scan, summary=summary, peers=peers)
 
     # ===================== حاسبة حجم الصفقة =====================
 

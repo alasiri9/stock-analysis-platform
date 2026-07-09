@@ -221,11 +221,29 @@
         <div class="metric"><div class="label">الهدف (+{{ "%.1f"|format(p.target_mult) }}×ATR)</div><div class="num" style="color:var(--green)">{{ "%.2f $"|format(p.target) }}</div></div>
         <div class="metric"><div class="label">العائد/المخاطرة</div><div class="num">{{ "%.1f : 1"|format(p.risk_reward) if p.risk_reward is not none else '—' }}</div></div>
       </div>
+      <a class="btn" style="margin-top:12px; display:inline-block" href="{{ url_for('calculator') }}?entry={{ '%.2f'|format(p.entry) }}&stop={{ '%.2f'|format(p.stop) }}">🧮 احسب كمية الشراء بهذه المستويات</a>
       <div class="note">⚠️ حساب تعليمي بحت مبني على ATR ومضاعفات افتراضية — ليس توصية بالدخول أو الخروج.</div>
     {% else %}
       <div class="soon">تعذّر حساب خطة ATR (بيانات الأسعار التاريخية غير كافية لهذا السهم).</div>
     {% endif %}
   </div>
+
+  {# ===== أسهم من نفس القطاع (من الكاش — بلا API) ===== #}
+  {% if peers %}
+    <div class="section">
+      <h2>🏢 أسهم من نفس القطاع ({{ report.sector }})</h2>
+      <div class="peers-grid">
+        {% for pr in peers %}
+          <a class="peer-card" href="{{ url_for('stock_report', ticker=pr.ticker) }}">
+            <span class="peer-ticker">{{ pr.ticker }}</span>
+            <span class="peer-name">{{ pr.name or '—' }}</span>
+            <span class="peer-meta">🎯 {{ measures_met(pr) }}/16 · {{ "%.2f $"|format(pr.price) if pr.price is not none else '—' }}</span>
+          </a>
+        {% endfor %}
+      </div>
+      <div class="note">📌 للمقارنة السريعة مع سهمك — تعليمي فقط.</div>
+    </div>
+  {% endif %}
 
   <div class="note" style="margin-top:24px">
     📌 هذه شاشة فحص تعليمية فقط. كل الأرقام مشتقّة من بيانات حقيقية (FMP) ولا تمثّل توصية أو تنبؤاً.

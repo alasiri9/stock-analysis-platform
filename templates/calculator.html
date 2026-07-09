@@ -110,6 +110,14 @@
       }
 
       ids.forEach(function (k) { el[k].addEventListener('input', recalc); });
+
+      // تعبئة تلقائية من الرابط (قادمة من زر "احسب كمية الشراء" بصفحة السهم)
+      var params = new URLSearchParams(window.location.search);
+      ['entry', 'stop'].forEach(function (k) {
+        var v = params.get(k);
+        if (v !== null && !isNaN(parseFloat(v))) { el[k].value = parseFloat(v); }
+      });
+
       recalc();
     })();
   </script>

@@ -624,6 +624,18 @@ a.stat-box:hover { filter: brightness(1.15); transform: translateY(-1px); }
 .scard-chg.up { color: var(--green); }
 .scard-chg.down { color: var(--red); }
 
+/* أسهم من نفس القطاع (صفحة السهم) */
+.peers-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+.peer-card {
+  display: flex; flex-direction: column; gap: 3px; text-decoration: none;
+  background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 14px;
+  transition: border-color .15s;
+}
+.peer-card:hover { border-color: var(--accent); }
+.peer-ticker { color: var(--accent); font-weight: 900; font-size: 16px; }
+.peer-name { color: var(--text); font-size: 12.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.peer-meta { color: var(--muted); font-size: 12.5px; }
+
 /* بار اتجاه السوق (متمركز في الصفر: أخضر يميناً صاعد، أحمر يساراً هابط) */
 .dir-bar { position: relative; height: 10px; background: var(--border); border-radius: 6px; margin-top: 10px; overflow: hidden; }
 .dir-bar-fill { position: absolute; top: 0; bottom: 0; }
