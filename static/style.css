@@ -270,7 +270,7 @@ a.stat-box:hover { filter: brightness(1.15); transform: translateY(-1px); }
   border-radius: 8px; text-align: center;
 }
 .lcard-tag-pill.up { color: var(--green); background: rgba(34,197,94,.12); border: 1px solid rgba(34,197,94,.3); }
-.lcard-tag-pill.down { color: var(--red); background: rgba(239,68,68,.1); border: 1px solid rgba(239,68,68,.25); }
+.lcard-tag-pill.down { color: var(--red); background: rgba(34,197,94,.14); border: 1px solid rgba(34,197,94,.4); }
 .perf-panel {
   background: rgba(34,197,94,.12); border: 1px solid rgba(34,197,94,.3); border-radius: var(--radius);
   padding: 18px; margin-top: 16px;
