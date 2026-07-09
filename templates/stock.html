@@ -119,7 +119,7 @@
       <div class="score-card">
         <div class="cap">Catalyst Score <a class="help-q" href="{{ url_for('learn') }}#catalyst" title="اشرح لي هذا المصطلح">؟</a></div>
         {{ gauge(report.catalyst.score, 100, '', 'lg') }}
-        <div class="cap">⚠️ أوزان افتراضية غير مُختبرة تاريخياً</div>
+        <div class="cap">📊 مقياس مساعد — اجتهادي للإرشاد</div>
       </div>
     </div>
   </div>
@@ -178,7 +178,7 @@
         <div class="val">{{ c.detail }}{% if c.points is not none %} · {{ "%.0f"|format(c.points) }}/100{% endif %}</div>
       </div>
     {% endfor %}
-    <div class="note">⚠️ أوزان وحدود Catalyst افتراضية ولم تُختبر تاريخياً — لأغراض تعليمية فقط.</div>
+    <div class="note">📊 «النمو» مقياس مساعد اجتهادي للإرشاد — تعليمي فقط، ليس توصية.</div>
   </div>
 
   {# ===== معاملات المطلعين (SEC EDGAR) ===== #}

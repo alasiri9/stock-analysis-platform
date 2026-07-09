@@ -17,11 +17,11 @@
         {% set ch = market_dir.change_20 %}
         {% set mag = ch if ch >= 0 else -ch %}
         {% set w = (mag / 6 * 50) %}{% set w = 50 if w > 50 else w %}
-        <div class="dir-bar" dir="ltr" title="حركة المؤشر خلال شهر (المنتصف = ثبات)">
+        <div class="dir-bar" dir="ltr" title="حركة المؤشر خلال شهر (المنتصف = بلا تغيّر)">
           <div class="dir-bar-fill {{ 'pos' if ch >= 0 else 'neg' }}" style="width: {{ '%.1f'|format(w) }}%; {{ 'left:50%' if ch >= 0 else 'right:50%' }}"></div>
           <div class="dir-bar-center"></div>
         </div>
-        <div class="dir-bar-ends" dir="ltr"><span>هابط</span><span>ثبات</span><span>صاعد</span></div>
+        <div class="dir-bar-ends" dir="ltr"><span>هابط</span><span>بلا تغيّر</span><span>صاعد</span></div>
       {% endif %}
     </div>
   {% endif %}
