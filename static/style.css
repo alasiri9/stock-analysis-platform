@@ -625,9 +625,9 @@ a.stat-box:hover { filter: brightness(1.15); transform: translateY(-1px); }
 .scard-chg.down { color: var(--red); }
 
 /* صفحة "كيف تعمل المنصة" */
-.how-p { color: var(--text); font-size: 15px; line-height: 1.9; margin: 0 0 10px; }
-.how-list { margin: 0 0 10px; padding-inline-start: 22px; }
-.how-list li { color: var(--text); font-size: 15px; line-height: 2; }
+.how-p { color: var(--text); font-size: 17.5px; line-height: 2; margin: 0 0 12px; }
+.how-list { margin: 0 0 12px; padding-inline-start: 22px; }
+.how-list li { color: var(--text); font-size: 17.5px; line-height: 2.1; }
 
 /* صفحة كل ملاحظاتي */
 .notes-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 12px; }
