@@ -40,7 +40,48 @@
       <a class="preset" href="{{ url_for('portfolio') }}">🧠 المحفظة</a>
     </div>
 
-    <div class="note" style="margin-top:18px">📌 الإعدادات محفوظة على هذا المتصفح فقط — تختلف بين الأجهزة.</div>
+    {# إدارة اشتراكات المستخدمين — للمدير فقط #}
+    {% if is_admin %}
+      <h3 class="learn-group">👥 اشتراكات المستخدمين</h3>
+      <p class="set-sub" style="margin-bottom:12px">أنشئ رمز دخول لكل مشترك وحدّد مدته. يدخل المشترك بالرمز في صفحة الدخول (بدل كلمة المرور)، ويُمنع تلقائياً عند انتهاء المدة.</p>
+      <form class="filters" action="{{ url_for('subscribers_add') }}" method="post">
+        <div class="filter"><label>اسم المشترك</label><input type="text" name="name" placeholder="مثال: خالد" required></div>
+        <div class="filter"><label>المدة (أيام)</label><input type="number" name="days" min="1" value="30" dir="ltr"></div>
+        <button class="btn" type="submit">➕ إنشاء اشتراك</button>
+      </form>
+      {% if subscribers %}
+        <table class="insider">
+          <thead><tr><th>المشترك</th><th>رمز الدخول</th><th>ينتهي في</th><th>الحالة</th><th></th></tr></thead>
+          <tbody>
+            {% for s in subscribers %}
+              <tr>
+                <td>{{ s.name }}</td>
+                <td dir="ltr"><code class="sub-code">{{ s.access_code }}</code></td>
+                <td dir="ltr">{{ s.end_date.strftime('%Y-%m-%d') }}</td>
+                <td>
+                  {% if s.is_active() %}<span class="pill buy">نشط · {{ s.days_left() }} يوم</span>
+                  {% else %}<span class="pill sell">منتهٍ</span>{% endif %}
+                </td>
+                <td>
+                  <form action="{{ url_for('subscribers_extend') }}" method="post" style="display:inline;margin:0">
+                    <input type="hidden" name="id" value="{{ s.id }}"><input type="hidden" name="days" value="30">
+                    <button class="btn-del" type="submit" title="تمديد 30 يوماً">+30 يوم</button>
+                  </form>
+                  <form action="{{ url_for('subscribers_remove') }}" method="post" style="display:inline;margin:0">
+                    <input type="hidden" name="id" value="{{ s.id }}">
+                    <button class="btn-del" type="submit">حذف</button>
+                  </form>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <div class="empty">لا مشتركين بعد. أنشئ اشتراكاً بالأعلى.</div>
+      {% endif %}
+    {% endif %}
+
+    <div class="note" style="margin-top:18px">📌 إعدادات المظهر/الترتيب/المبلغ محفوظة على هذا المتصفح. أما المشتركون فمحفوظون بقاعدة البيانات (يعملون من أي جهاز).</div>
   </section>
 
   <script>

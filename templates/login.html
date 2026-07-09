@@ -8,7 +8,7 @@
   <link rel="apple-touch-icon" href="{{ url_for('static', filename='icon-192.png') }}">
   <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
   <meta name="theme-color" content="#0d1830">
-  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=20260705i">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=20260709q">
 </head>
 <body>
   <div class="login-wrap">
@@ -18,10 +18,13 @@
       <div class="login-sub">ماسح ذكي للأسهم الأمريكية</div>
 
       <form method="post" class="login-form">
-        <input type="password" name="password" placeholder="كلمة المرور" autofocus required>
+        <input type="password" name="password" placeholder="كلمة المرور أو رمز الاشتراك" autofocus required>
         <button class="btn" type="submit">🔓 دخول</button>
       </form>
 
+      {% if expired %}
+        <div class="login-error">⏳ انتهت مدة اشتراكك. تواصل مع صاحب المنصة للتجديد.</div>
+      {% endif %}
       {% if error %}
         <div class="login-error">⚠️ {{ error }}</div>
       {% endif %}

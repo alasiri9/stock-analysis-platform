@@ -119,6 +119,37 @@ class StockNote(db.Model):
         return f"<StockNote {self.ticker} user={self.user_id}>"
 
 
+class Subscriber(db.Model):
+    """مشترك له صلاحية دخول للمنصة عبر رمز خاص، بمدة اشتراك محدّدة.
+
+    - access_code: رمز الدخول الفريد الذي يستخدمه المشترك في صفحة الدخول.
+    - start_date / end_date: مدة الاشتراك. ينتهي الدخول تلقائياً بعد end_date.
+    """
+
+    __tablename__ = "subscriber"
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(120), nullable=False)
+    access_code = db.Column(db.String(32), nullable=False, unique=True, index=True)
+    start_date = db.Column(db.Date, nullable=False)
+    end_date = db.Column(db.Date, nullable=False)
+    created_at = db.Column(db.DateTime(timezone=True), nullable=False, default=_utcnow)
+
+    def is_active(self, today=None):
+        """هل الاشتراك ساري (لم ينتهِ بعد)؟"""
+        from datetime import date as _date
+        today = today or _date.today()
+        return self.start_date <= today <= self.end_date
+
+    def days_left(self, today=None):
+        from datetime import date as _date
+        today = today or _date.today()
+        return (self.end_date - today).days
+
+    def __repr__(self):
+        return f"<Subscriber {self.name} ends={self.end_date}>"
+
+
 class StockCache(db.Model):
     """تخزين مؤقت لبيانات سهم — نقلّل عدد استدعاءات الـ API (الباقات المجانية محدودة).
 

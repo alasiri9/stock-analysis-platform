@@ -21,7 +21,7 @@ import secrets
 
 from flask import Flask, render_template, request, redirect, url_for, session
 
-from models import db, Watchlist, PortfolioHolding, PriceAlert, StockNote
+from models import db, Watchlist, PortfolioHolding, PriceAlert, StockNote, Subscriber
 from services import analysis
 from services import fmp_client
 from services import radar
@@ -67,6 +67,10 @@ def create_app():
         app.secret_key = secrets.token_hex(32)
         print("[app] تنبيه: APP_PASSWORD غير مضبوط — المنصة مفتوحة بلا تسجيل دخول")
 
+    def is_admin():
+        """المدير = صاحب المنصة (كلمة المرور الرئيسية)، أو الوضع المحلي بلا كلمة مرور."""
+        return (not app_password) or session.get("role") == "admin"
+
     @app.before_request
     def _require_login():
         if not app_password:
@@ -75,6 +79,12 @@ def create_app():
         if request.endpoint in ("login", "static"):
             return None
         if session.get("authed"):
+            # المشترك: نتحقق أن اشتراكه لم ينتهِ في كل طلب (يُمنع فور الانتهاء)
+            if session.get("role") == "sub":
+                sub = db.session.get(Subscriber, session.get("sub_id"))
+                if not sub or not sub.is_active():
+                    session.clear()
+                    return redirect(url_for("login", expired=1))
             return None
         return redirect(url_for("login"))
 
@@ -82,12 +92,28 @@ def create_app():
     def login():
         error = None
         if request.method == "POST":
-            if app_password and secrets.compare_digest(request.form.get("password", ""), app_password):
+            entered = request.form.get("password", "")
+            # 1) كلمة مرور المدير (صلاحية كاملة)
+            if app_password and secrets.compare_digest(entered, app_password):
                 session["authed"] = True
+                session["role"] = "admin"
                 session.permanent = True
                 return redirect(url_for("index"))
-            error = "كلمة المرور غير صحيحة"
-        return render_template("login.html", error=error)
+            # 2) رمز مشترك ساري المفعول
+            if entered.strip():
+                sub = Subscriber.query.filter_by(access_code=entered.strip()).first()
+                if sub and sub.is_active():
+                    session["authed"] = True
+                    session["role"] = "sub"
+                    session["sub_id"] = sub.id
+                    session.permanent = True
+                    return redirect(url_for("index"))
+                if sub and not sub.is_active():
+                    error = "انتهت مدة اشتراكك. تواصل مع صاحب المنصة للتجديد."
+            if not error:
+                error = "كلمة المرور أو رمز الاشتراك غير صحيح"
+        expired = request.args.get("expired")
+        return render_template("login.html", error=error, expired=expired)
 
     @app.route("/logout")
     def logout():
@@ -378,7 +404,61 @@ def create_app():
     @app.route("/settings")
     def settings():
         # إعدادات المنصة (المظهر/الترتيب/مبلغ المحاكاة تُحفظ في المتصفح — localStorage)
-        return render_template("settings.html")
+        # إدارة المشتركين تظهر للمدير فقط
+        subs = []
+        if is_admin():
+            subs = Subscriber.query.order_by(Subscriber.end_date.desc()).all()
+        return render_template("settings.html", is_admin=is_admin(), subscribers=subs)
+
+    @app.route("/subscribers/add", methods=["POST"])
+    def subscribers_add():
+        if not is_admin():
+            return redirect(url_for("settings"))
+        name = request.form.get("name", "").strip()
+        try:
+            days = int(request.form.get("days", "30"))
+        except (TypeError, ValueError):
+            days = 30
+        days = min(max(days, 1), 3650)  # بين يوم و10 سنوات
+        if name:
+            from datetime import date, timedelta
+            # رمز فريد للمشترك
+            code = secrets.token_hex(4).upper()
+            while Subscriber.query.filter_by(access_code=code).first():
+                code = secrets.token_hex(4).upper()
+            today = date.today()
+            db.session.add(Subscriber(
+                name=name, access_code=code, start_date=today,
+                end_date=today + timedelta(days=days)))
+            db.session.commit()
+        return redirect(url_for("settings"))
+
+    @app.route("/subscribers/extend", methods=["POST"])
+    def subscribers_extend():
+        if not is_admin():
+            return redirect(url_for("settings"))
+        sub = db.session.get(Subscriber, request.form.get("id"))
+        try:
+            days = int(request.form.get("days", "30"))
+        except (TypeError, ValueError):
+            days = 30
+        if sub:
+            from datetime import date, timedelta
+            # نمدّد من تاريخ الانتهاء إن كان مستقبلياً، وإلا من اليوم
+            base = sub.end_date if sub.end_date >= date.today() else date.today()
+            sub.end_date = base + timedelta(days=min(max(days, 1), 3650))
+            db.session.commit()
+        return redirect(url_for("settings"))
+
+    @app.route("/subscribers/remove", methods=["POST"])
+    def subscribers_remove():
+        if not is_admin():
+            return redirect(url_for("settings"))
+        sub = db.session.get(Subscriber, request.form.get("id"))
+        if sub:
+            db.session.delete(sub)
+            db.session.commit()
+        return redirect(url_for("settings"))
 
     @app.route("/notes")
     def notes():
