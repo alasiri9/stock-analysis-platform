@@ -617,6 +617,14 @@ a.stat-box:hover { filter: brightness(1.15); transform: translateY(-1px); }
 .ss-group ul { margin: 0; padding-inline-start: 20px; }
 .ss-group li { color: var(--text); font-size: 14.5px; line-height: 1.9; }
 
+/* بار اتجاه السوق (متمركز في الصفر: أخضر يميناً صاعد، أحمر يساراً هابط) */
+.dir-bar { position: relative; height: 10px; background: var(--border); border-radius: 6px; margin-top: 10px; overflow: hidden; }
+.dir-bar-fill { position: absolute; top: 0; bottom: 0; }
+.dir-bar-fill.pos { background: var(--green); border-radius: 0 6px 6px 0; }
+.dir-bar-fill.neg { background: var(--red); border-radius: 6px 0 0 6px; }
+.dir-bar-center { position: absolute; left: 50%; top: -1px; bottom: -1px; width: 2px; background: var(--muted); transform: translateX(-50%); }
+.dir-bar-ends { display: flex; justify-content: space-between; color: var(--muted); font-size: 12px; margin-top: 4px; }
+
 /* عدّاد نصف دائري (سبيدومتر) بإبرة متحركة */
 .gauge-wrap { text-align: center; }
 .gauge-sm { width: 84px; }
