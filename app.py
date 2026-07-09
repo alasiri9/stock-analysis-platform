@@ -120,6 +120,17 @@ def create_app():
         session.clear()
         return redirect(url_for("login") if app_password else url_for("index"))
 
+    @app.context_processor
+    def inject_sub_status():
+        # حالة اشتراك المشترك الحالي (لعرض تنبيه قرب الانتهاء) — None للمدير أو الوضع المفتوح
+        info = None
+        if app_password and session.get("role") == "sub":
+            sub = db.session.get(Subscriber, session.get("sub_id"))
+            if sub and sub.is_active():
+                info = {"name": sub.name, "days_left": sub.days_left(),
+                        "end_date": sub.end_date.strftime("%Y-%m-%d")}
+        return {"sub_status": info}
+
     db.init_app(app)
 
     @app.teardown_request
