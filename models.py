@@ -103,6 +103,22 @@ class PriceAlert(db.Model):
         return f"<PriceAlert {self.ticker} {self.direction} {self.target_price} user={self.user_id}>"
 
 
+class StockNote(db.Model):
+    """ملاحظة شخصية للمستخدم على سهم — واحدة لكل (مستخدم، سهم)، قابلة للتعديل."""
+
+    __tablename__ = "stock_note"
+
+    id = db.Column(db.Integer, primary_key=True)
+    ticker = db.Column(db.String(16), nullable=False, index=True)
+    user_id = db.Column(db.String(64), nullable=False, index=True)
+    body = db.Column(db.Text, nullable=False, default="")
+    updated_at = db.Column(db.DateTime(timezone=True), nullable=False,
+                           default=_utcnow, onupdate=_utcnow)
+
+    def __repr__(self):
+        return f"<StockNote {self.ticker} user={self.user_id}>"
+
+
 class StockCache(db.Model):
     """تخزين مؤقت لبيانات سهم — نقلّل عدد استدعاءات الـ API (الباقات المجانية محدودة).
 

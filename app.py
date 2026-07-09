@@ -21,7 +21,7 @@ import secrets
 
 from flask import Flask, render_template, request, redirect, url_for, session
 
-from models import db, Watchlist, PortfolioHolding, PriceAlert
+from models import db, Watchlist, PortfolioHolding, PriceAlert, StockNote
 from services import analysis
 from services import fmp_client
 from services import radar
@@ -504,8 +504,26 @@ def create_app():
                      if r.get("sector") == report["sector"] and r["ticker"] != report["ticker"]]
             peers.sort(key=lambda r: screener.measures_met(r), reverse=True)
             peers = peers[:6]
+        # ملاحظة المستخدم الشخصية على هذا السهم (إن وُجدت)
+        note = StockNote.query.filter_by(user_id=GUEST_USER, ticker=report["ticker"]).first()
         return render_template("stock.html", report=report, ticker=report["ticker"],
-                               scan=scan, summary=summary, peers=peers)
+                               scan=scan, summary=summary, peers=peers,
+                               note=(note.body if note else ""))
+
+    @app.route("/stock/<ticker>/note", methods=["POST"])
+    def stock_note_save(ticker):
+        ticker = ticker.upper().strip()
+        body = request.form.get("note", "").strip()
+        note = StockNote.query.filter_by(user_id=GUEST_USER, ticker=ticker).first()
+        if body:
+            if note:
+                note.body = body
+            else:
+                db.session.add(StockNote(ticker=ticker, user_id=GUEST_USER, body=body))
+        elif note:
+            db.session.delete(note)  # مسح الملاحظة إذا فُرّغت
+        db.session.commit()
+        return redirect(url_for("stock_report", ticker=ticker))
 
     # ===================== حاسبة حجم الصفقة =====================
 

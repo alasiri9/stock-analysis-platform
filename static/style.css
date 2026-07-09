@@ -629,6 +629,14 @@ a.stat-box:hover { filter: brightness(1.15); transform: translateY(-1px); }
 .how-list { margin: 0 0 10px; padding-inline-start: 22px; }
 .how-list li { color: var(--text); font-size: 15px; line-height: 2; }
 
+/* ملاحظاتي على السهم */
+.note-area {
+  width: 100%; box-sizing: border-box; resize: vertical; min-height: 70px;
+  background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
+  color: var(--text); font-size: 15px; line-height: 1.8; padding: 12px 14px; font-family: inherit;
+}
+.note-area:focus { outline: none; border-color: var(--accent); }
+
 /* تطوير صفحة المقارنة: عدّادات + نقاط قوة/تنبيهات */
 .compare-gauges { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 14px; margin-bottom: 18px; }
 .cg-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px; text-align: center; }

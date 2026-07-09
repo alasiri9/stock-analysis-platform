@@ -68,6 +68,15 @@
     </div>
   {% endif %}
 
+  {# ===== ملاحظاتي على السهم (شخصية — تُحفظ) ===== #}
+  <div class="section">
+    <h2>📝 ملاحظاتي على {{ report.ticker }}</h2>
+    <form action="{{ url_for('stock_note_save', ticker=report.ticker) }}" method="post">
+      <textarea name="note" class="note-area" rows="3" placeholder="اكتب ملاحظتك الخاصة عن هذا السهم (تُحفظ لك، وتظهر كل ما فتحته)...">{{ note }}</textarea>
+      <button class="btn" type="submit" style="margin-top:10px">💾 حفظ الملاحظة</button>
+    </form>
+  </div>
+
   {# ===== شارت مسار السعر ===== #}
   {% if report.chart %}
     {% set ch = report.chart %}
