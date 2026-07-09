@@ -85,12 +85,6 @@
         {% for n in [4, 6, 8, 10, 12] %}<option value="{{ n }}" {{ 'selected' if filters.min_measures == n else '' }}>{{ n }} فأكثر</option>{% endfor %}
       </select>
     </div>
-    <div class="filter filter-check">
-      <label class="check-label" title="يخفي الأسهم التي قفزت أكثر من 12% خلال آخر أسبوعين — للاصطياد المبكر">
-        <input type="checkbox" name="not_risen" value="1" {{ 'checked' if filters.not_risen else '' }}>
-        لسا ما صعد
-      </label>
-    </div>
     <div class="filter">
       <label title="طريقة ترتيب نتائج الأسهم">ترتيب حسب</label>
       <select name="sort" onchange="this.form.submit()">
@@ -98,6 +92,12 @@
         <option value="growth" {{ 'selected' if sort == 'growth' else '' }}>النمو</option>
         <option value="price" {{ 'selected' if sort == 'price' else '' }}>السعر (الأقل أولاً)</option>
       </select>
+    </div>
+    <div class="filter filter-check">
+      <label class="check-label" title="يخفي الأسهم التي قفزت أكثر من 12% خلال آخر أسبوعين — للاصطياد المبكر">
+        <input type="checkbox" name="not_risen" value="1" {{ 'checked' if filters.not_risen else '' }}>
+        لسا ما صعد
+      </label>
     </div>
     <button class="btn" type="submit">فلترة</button>
   </form>
