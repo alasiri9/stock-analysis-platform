@@ -467,10 +467,11 @@ def create_app():
         if report is None:
             # لا نخترع بيانات: نوضّح أن السهم غير متاح
             return render_template("stock.html", report=None, ticker=ticker.upper())
-        # سجل الماسح لنفس السهم (لعرض قوة التأكيد وسبب الترشّح) — None لو خارج قائمة المنصة
+        # سجل الماسح لنفس السهم (لعرض قوة التأكيد والملخّص الذكي) — None لو خارج قائمة المنصة
         records, _ = screener.load_records()
         scan = next((r for r in records if r["ticker"] == report["ticker"]), None)
-        return render_template("stock.html", report=report, ticker=report["ticker"], scan=scan)
+        summary = analysis.smart_summary(report, scan)  # ملخّص ذكي مُولّد آلياً (بلا API)
+        return render_template("stock.html", report=report, ticker=report["ticker"], scan=scan, summary=summary)
 
     # ===================== حاسبة حجم الصفقة =====================
 

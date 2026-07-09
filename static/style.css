@@ -606,6 +606,17 @@ a.stat-box:hover { filter: brightness(1.15); transform: translateY(-1px); }
 }
 .why-box b { color: var(--gold); }
 
+/* الملخّص الذكي للسهم */
+.smart-summary .ss-cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; }
+.ss-group { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; }
+.ss-pos { border-inline-start: 4px solid var(--green); }
+.ss-warn { border-inline-start: 4px solid var(--gold); }
+.ss-title { font-weight: 900; font-size: 15px; margin-bottom: 8px; }
+.ss-pos .ss-title { color: var(--green); }
+.ss-warn .ss-title { color: var(--gold); }
+.ss-group ul { margin: 0; padding-inline-start: 20px; }
+.ss-group li { color: var(--text); font-size: 14.5px; line-height: 1.9; }
+
 /* عدّاد نصف دائري (سبيدومتر) بإبرة متحركة */
 .gauge-wrap { text-align: center; }
 .gauge-sm { width: 84px; }

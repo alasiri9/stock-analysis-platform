@@ -45,6 +45,28 @@
     {%- if report.finnhub_price is not none %} (FMP + Finnhub){% else %} (FMP){% endif %}.
     {% if report.finnhub_price is not none %}<span class="muted">سعر Finnhub: {{ "%.2f $"|format(report.finnhub_price) }}</span>{% endif %}</div>
 
+  {# ===== الملخّص الذكي (مُولّد آلياً من البيانات — وصفي تعليمي) ===== #}
+  {% if summary and (summary.strengths or summary.cautions) %}
+    <div class="section smart-summary">
+      <h2>🧠 ملخّص ذكي للسهم</h2>
+      <div class="ss-cols">
+        {% if summary.strengths %}
+          <div class="ss-group ss-pos">
+            <div class="ss-title">✅ نقاط القوة</div>
+            <ul>{% for s in summary.strengths %}<li>{{ s }}</li>{% endfor %}</ul>
+          </div>
+        {% endif %}
+        {% if summary.cautions %}
+          <div class="ss-group ss-warn">
+            <div class="ss-title">⚠️ انتبه</div>
+            <ul>{% for s in summary.cautions %}<li>{{ s }}</li>{% endfor %}</ul>
+          </div>
+        {% endif %}
+      </div>
+      <div class="note">📌 ملخّص وصفي تعليمي مُولّد آلياً من بيانات السهم — ليس توصية ولا تنبؤاً.</div>
+    </div>
+  {% endif %}
+
   {# ===== شارت مسار السعر ===== #}
   {% if report.chart %}
     {% set ch = report.chart %}
@@ -100,12 +122,6 @@
         <div class="cap">⚠️ أوزان افتراضية غير مُختبرة تاريخياً</div>
       </div>
     </div>
-    {% if scan %}
-      {% set reasons = bullish_reasons(scan) %}
-      {% if reasons %}
-        <div class="why-box">💡 <b>سبب الترشّح:</b> {{ reasons | join(' + ') }}</div>
-      {% endif %}
-    {% endif %}
   </div>
 
   {# ===== المؤشرات الفنية ===== #}
