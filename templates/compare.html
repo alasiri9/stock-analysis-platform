@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "_gauge.html" import gauge %}
 {% set active = 'compare' %}
 {% block title %}مقارنة الأسهم{% endblock %}
 
@@ -17,6 +18,19 @@
   </form>
 
   {% if summaries %}
+    {# عدّادات جنباً لجنب #}
+    <div class="compare-gauges">
+      {% for s in summaries %}
+        <div class="cg-card">
+          <div class="cg-ticker"><a href="{{ url_for('stock_report', ticker=s.ticker) }}">{{ s.ticker }}</a></div>
+          <div class="cg-gauges">
+            {{ gauge(s.piotroski.score, 9, 'Piotroski', 'sm') }}
+            {{ gauge(s.catalyst.score, 100, 'النمو', 'sm') }}
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+
     <table class="insider compare">
       <thead>
         <tr>
@@ -37,7 +51,19 @@
         <tr><td class="muted">P/E</td>{% for s in summaries %}<td dir="ltr">{{ cell(s.metrics.pe, '', 1) }}</td>{% endfor %}</tr>
       </tbody>
     </table>
-    <div class="note">⚠️ Catalyst يعتمد أوزاناً افتراضية غير مُختبرة. كل الأرقام تعليمية، لا توصية.</div>
+    {# نقاط القوة والتنبيهات لكل سهم #}
+    <div class="compare-summ">
+      {% for s in summaries %}
+        <div class="cs-card">
+          <div class="cs-ticker">{{ s.ticker }}</div>
+          {% if s.summary.strengths %}<div class="cs-pos">✅ {{ s.summary.strengths | join('، ') }}</div>{% endif %}
+          {% if s.summary.cautions %}<div class="cs-warn">⚠️ {{ s.summary.cautions | join('، ') }}</div>{% endif %}
+          {% if not s.summary.strengths and not s.summary.cautions %}<div class="muted">لا نقاط بارزة.</div>{% endif %}
+        </div>
+      {% endfor %}
+    </div>
+
+    <div class="note">📊 «النمو» مقياس مساعد اجتهادي. كل الأرقام تعليمية، لا توصية.</div>
   {% elif raw %}
     <div class="empty">لم نعثر على بيانات للرموز المُدخلة. تأكّد من صحتها.</div>
   {% else %}

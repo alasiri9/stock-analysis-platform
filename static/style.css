@@ -629,6 +629,18 @@ a.stat-box:hover { filter: brightness(1.15); transform: translateY(-1px); }
 .how-list { margin: 0 0 10px; padding-inline-start: 22px; }
 .how-list li { color: var(--text); font-size: 15px; line-height: 2; }
 
+/* تطوير صفحة المقارنة: عدّادات + نقاط قوة/تنبيهات */
+.compare-gauges { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 14px; margin-bottom: 18px; }
+.cg-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px; text-align: center; }
+.cg-ticker { font-weight: 900; font-size: 17px; margin-bottom: 8px; }
+.cg-ticker a { color: var(--accent); text-decoration: none; }
+.cg-gauges { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; }
+.compare-summ { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; margin: 16px 0; }
+.cs-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 14px; }
+.cs-ticker { color: var(--accent); font-weight: 900; font-size: 15px; margin-bottom: 6px; }
+.cs-pos { color: var(--green); font-size: 13px; line-height: 1.8; margin-bottom: 4px; }
+.cs-warn { color: var(--gold); font-size: 13px; line-height: 1.8; }
+
 /* صفحة الرابحون والخاسرون */
 .movers-cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; }
 .mover-row {

@@ -525,6 +525,8 @@ def create_app():
         for t in tickers:
             s = analysis.build_quick_summary(t)
             if s:
+                # نقاط قوة/تنبيهات خفيفة من البيانات المتاحة (بلا استدعاء API إضافي)
+                s["summary"] = analysis.smart_summary(s)
                 summaries.append(s)
         return render_template("compare.html", summaries=summaries, raw=raw)
 
