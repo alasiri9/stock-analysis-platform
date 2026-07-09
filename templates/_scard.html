@@ -1,7 +1,8 @@
 {# بطاقة سهم مشتركة — تُستخدم في الرئيسية والجواهر المخفية والقادة المستقبليون. تتوقّع r و rank من السياق المحيط. #}
 {% from "_gauge.html" import gauge %}
 {% set is_gem = r.piotroski is not none and r.piotroski >= 8 %}
-<a class="scard {{ 'gem' if is_gem }}" href="{{ url_for('stock_report', ticker=r.ticker) }}">
+{% set mcount = measures_met(r) %}
+<a class="scard {{ 'gem' if is_gem }} {{ 'strong' if mcount >= 10 }}" href="{{ url_for('stock_report', ticker=r.ticker) }}">
   <div class="scard-rank">{{ rank }}</div>
 
   <div class="scard-info">
@@ -9,6 +10,10 @@
       {% if is_gem %}<span class="badge-gem">💎 جوهرة</span>{% endif %}
       <span class="scard-ticker">{{ r.ticker }}</span>
       <span class="scard-price" dir="ltr">{{ "%.2f $"|format(r.price) if r.price is not none else '—' }}</span>
+      {% set chp = r.get('change_percent') %}
+      {% if chp is not none %}
+        <span class="scard-chg {{ 'up' if chp >= 0 else 'down' }}" dir="ltr">{{ '▲' if chp >= 0 else '▼' }} {{ "%.1f"|format(chp) }}%</span>
+      {% endif %}
     </div>
     <div class="scard-name">{{ r.name or '—' }}</div>
     <div class="scard-scores">
@@ -59,6 +64,6 @@
   </div>
 
   <div class="scard-score">
-    {{ gauge(measures_met(r), 16, 'قوة التأكيد', 'sm') }}
+    {{ gauge(mcount, 16, 'قوة التأكيد', 'sm') }}
   </div>
 </a>

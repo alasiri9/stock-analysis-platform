@@ -617,6 +617,13 @@ a.stat-box:hover { filter: brightness(1.15); transform: translateY(-1px); }
 .ss-group ul { margin: 0; padding-inline-start: 20px; }
 .ss-group li { color: var(--text); font-size: 14.5px; line-height: 1.9; }
 
+/* تمييز البطاقات عالية قوة التأكيد (≥10 من 16) */
+.scard.strong { border-color: rgba(34,197,94,.5); box-shadow: 0 0 20px rgba(34,197,94,.13); }
+/* التغيّر اليومي على البطاقة */
+.scard-chg { font-size: 13px; font-weight: 800; }
+.scard-chg.up { color: var(--green); }
+.scard-chg.down { color: var(--red); }
+
 /* بار اتجاه السوق (متمركز في الصفر: أخضر يميناً صاعد، أحمر يساراً هابط) */
 .dir-bar { position: relative; height: 10px; background: var(--border); border-radius: 6px; margin-top: 10px; overflow: hidden; }
 .dir-bar-fill { position: absolute; top: 0; bottom: 0; }

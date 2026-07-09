@@ -276,6 +276,7 @@ def _build_record(ticker):
         "name": (quote.get("name") if quote else None) or (profile.get("name") if profile else None),
         "sector": profile.get("sector") if profile else None,
         "price": quote.get("price") if quote else None,
+        "change_percent": quote.get("change_percent") if quote else None,  # التغيّر اليومي %
         "market_cap": quote.get("market_cap") if quote else None,
         "piotroski": scoring.piotroski_score(financials)["score"],
         "catalyst": catalyst["score"],
