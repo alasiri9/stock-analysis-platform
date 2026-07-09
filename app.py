@@ -375,6 +375,11 @@ def create_app():
         # صفحة تعليمية: كيف تعمل المنصة (محتوى ثابت — بلا استدعاءات API)
         return render_template("how.html")
 
+    @app.route("/settings")
+    def settings():
+        # إعدادات المنصة (المظهر/الترتيب/مبلغ المحاكاة تُحفظ في المتصفح — localStorage)
+        return render_template("settings.html")
+
     @app.route("/notes")
     def notes():
         # كل ملاحظات المستخدم على الأسهم (مرتّبة بالأحدث تعديلاً)
@@ -452,8 +457,12 @@ def create_app():
     def performance():
         # اختيار الأداء: سجل كل الإشارات التاريخية وأداؤها منذ صدورها (من الكاش، بلا API)
         rows, overall, type_stats = screener.signals_performance()
-        # محاكاة "لو تابعت الإشارات": استثمار مبلغ ثابت عند كل إشارة
-        PER_TRADE = 1000.0
+        # محاكاة "لو تابعت الإشارات": استثمار مبلغ عند كل إشارة (قابل للتخصيص من الإعدادات)
+        try:
+            PER_TRADE = float(request.args.get("amount", 1000))
+        except (TypeError, ValueError):
+            PER_TRADE = 1000.0
+        PER_TRADE = min(max(PER_TRADE, 1.0), 1_000_000.0)  # حدود منطقية
         measured = [r for r in rows if r.get("return_pct") is not None]
         sim = None
         if measured:

@@ -3,6 +3,16 @@
 {% block title %}اختيار الأداء — Algomatix{% endblock %}
 
 {% block content %}
+  {# تطبيق مبلغ المحاكاة المحفوظ من الإعدادات (إن لم يُحدَّد في الرابط) #}
+  <script>
+    (function () {
+      var p = new URLSearchParams(location.search);
+      if (!p.has('amount')) {
+        var a = localStorage.getItem('simAmount');
+        if (a && a !== '1000') { p.set('amount', a); location.replace(location.pathname + '?' + p.toString()); }
+      }
+    })();
+  </script>
   <section class="panel">
     <div class="panel-head">
       <h2>📈 اختيار الأداء :</h2>

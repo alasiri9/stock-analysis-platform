@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% set active = 'settings' %}
+{% block title %}الإعدادات — Algomatix{% endblock %}
+
+{% block content %}
+  <section class="panel">
+    <div class="panel-head">
+      <h2>⚙️ الإعدادات</h2>
+      <p class="panel-sub">تحكّم بالمنصة حسب ذوقك. تُحفظ خياراتك في متصفحك على هذا الجهاز.</p>
+    </div>
+
+    {# المظهر #}
+    <div class="set-row">
+      <div class="set-info"><div class="set-title">🌗 المظهر</div><div class="set-sub">بدّل بين الوضع الفاتح والداكن.</div></div>
+      <button class="btn" type="button" onclick="toggleTheme()">تبديل الوضع</button>
+    </div>
+
+    {# الترتيب الافتراضي #}
+    <div class="set-row">
+      <div class="set-info"><div class="set-title">↕️ الترتيب الافتراضي للنتائج</div><div class="set-sub">كيف تُرتَّب أسهم الرئيسية عند فتحها.</div></div>
+      <select id="set-sort" class="set-select">
+        <option value="confidence">قوة التأكيد</option>
+        <option value="growth">النمو</option>
+        <option value="price">السعر (الأقل أولاً)</option>
+      </select>
+    </div>
+
+    {# مبلغ المحاكاة #}
+    <div class="set-row">
+      <div class="set-info"><div class="set-title">💰 مبلغ محاكاة الإشارات</div><div class="set-sub">المبلغ المفترض لكل إشارة في صفحة الأداء («لو تابعت الإشارات»).</div></div>
+      <input id="set-amount" class="set-select" type="number" min="1" step="100" dir="ltr" placeholder="1000">
+    </div>
+
+    {# روابط الإدارة #}
+    <h3 class="learn-group">🗂️ إدارة سريعة</h3>
+    <div class="set-links">
+      <a class="preset" href="{{ url_for('alerts') }}">🔔 التنبيهات السعرية</a>
+      <a class="preset" href="{{ url_for('watchlist') }}">👁 قائمة المراقبة</a>
+      <a class="preset" href="{{ url_for('notes') }}">📝 ملاحظاتي</a>
+      <a class="preset" href="{{ url_for('portfolio') }}">🧠 المحفظة</a>
+    </div>
+
+    <div class="note" style="margin-top:18px">📌 الإعدادات محفوظة على هذا المتصفح فقط — تختلف بين الأجهزة.</div>
+  </section>
+
+  <script>
+    (function () {
+      // الترتيب الافتراضي
+      var sortSel = document.getElementById('set-sort');
+      sortSel.value = localStorage.getItem('defaultSort') || 'confidence';
+      sortSel.addEventListener('change', function () {
+        localStorage.setItem('defaultSort', sortSel.value);
+      });
+      // مبلغ المحاكاة
+      var amount = document.getElementById('set-amount');
+      amount.value = localStorage.getItem('simAmount') || '1000';
+      amount.addEventListener('change', function () {
+        var v = parseFloat(amount.value);
+        if (!isNaN(v) && v > 0) { localStorage.setItem('simAmount', Math.round(v)); }
+      });
+    })();
+  </script>
+{% endblock %}

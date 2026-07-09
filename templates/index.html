@@ -3,6 +3,16 @@
 {% block title %}الرئيسية — Algomatix{% endblock %}
 
 {% block content %}
+  {# تطبيق الترتيب الافتراضي المحفوظ من الإعدادات (إن لم يُحدَّد ترتيب في الرابط) #}
+  <script>
+    (function () {
+      var p = new URLSearchParams(location.search);
+      if (!p.has('sort')) {
+        var d = localStorage.getItem('defaultSort');
+        if (d && d !== 'confidence') { p.set('sort', d); location.replace(location.pathname + '?' + p.toString()); }
+      }
+    })();
+  </script>
   {# اتجاه السوق الأمريكي: من مؤشر S&P 500 (بيانات SPY بالكاش، بلا استدعاء API) #}
   {% if market_dir %}
     <div class="mood-banner mood-{{ market_dir.cls }} market-dir">
