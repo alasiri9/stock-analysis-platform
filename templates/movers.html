@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% set active = 'movers' %}
+{% block title %}الرابحون والخاسرون اليوم — Algomatix{% endblock %}
+
+{% macro mover_row(r) %}
+  {% set chp = r.change_percent %}
+  <a class="mover-row" href="{{ url_for('stock_report', ticker=r.ticker) }}">
+    <span class="mover-ticker">{{ r.ticker }}</span>
+    <span class="mover-name">{{ r.name or '—' }}</span>
+    <span class="mover-price" dir="ltr">{{ "%.2f $"|format(r.price) if r.price is not none else '—' }}</span>
+    <span class="mover-chg {{ 'up' if chp >= 0 else 'down' }}" dir="ltr">{{ '▲' if chp >= 0 else '▼' }} {{ "%.2f"|format(chp) }}%</span>
+  </a>
+{% endmacro %}
+
+{% block content %}
+  <section class="panel">
+    <div class="panel-head">
+      <h2>📊 الرابحون والخاسرون اليوم</h2>
+      <p class="panel-sub">أكثر أسهم المنصة حركة اليوم (تغيّر السعر اليومي). تعليمي فقط — لا توصية.</p>
+    </div>
+
+    {% if gainers or losers %}
+      <div class="movers-cols">
+        <div class="movers-col">
+          <h3 class="learn-group" style="color:var(--green)">🟢 أعلى ارتفاعاً</h3>
+          {% if gainers %}{% for r in gainers %}{{ mover_row(r) }}{% endfor %}
+          {% else %}<div class="empty">لا يوجد.</div>{% endif %}
+        </div>
+        <div class="movers-col">
+          <h3 class="learn-group" style="color:var(--red)">🔴 أعلى انخفاضاً</h3>
+          {% if losers %}{% for r in losers %}{{ mover_row(r) }}{% endfor %}
+          {% else %}<div class="empty">لا يوجد.</div>{% endif %}
+        </div>
+      </div>
+    {% else %}
+      <div class="empty">لا تتوفّر بيانات التغيّر اليومي بعد — تظهر بعد أول تحديث ليلي.</div>
+    {% endif %}
+  </section>
+{% endblock %}

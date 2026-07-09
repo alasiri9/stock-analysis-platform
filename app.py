@@ -374,6 +374,15 @@ def create_app():
         # صفحة تعليمية: كيف تعمل المنصة (محتوى ثابت — بلا استدعاءات API)
         return render_template("how.html")
 
+    @app.route("/movers")
+    def movers():
+        # الرابحون والخاسرون اليوم: أعلى/أدنى تغيّر يومي من الـ32 (من الكاش، بلا API)
+        records, latest = screener.load_records()
+        measured = [r for r in records if r.get("change_percent") is not None]
+        gainers = sorted(measured, key=lambda r: r["change_percent"], reverse=True)[:5]
+        losers = sorted(measured, key=lambda r: r["change_percent"])[:5]
+        return render_template("movers.html", gainers=gainers, losers=losers, latest=latest)
+
     @app.route("/earnings")
     def earnings():
         # رزنامة الأرباح: الأسهم ذات موعد أرباح قادم، مرتّبة بالأقرب (من الكاش — بلا استدعاء API)

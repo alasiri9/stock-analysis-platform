@@ -9,7 +9,7 @@
   <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
   <meta name="theme-color" content="#0d1830">
   <script>(function(){try{if(localStorage.getItem('theme')==='light'){document.documentElement.classList.add('light');}}catch(e){}})();</script>
-  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=20260709j">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=20260709k">
 </head>
 <body>
   <div class="layout">
@@ -31,6 +31,7 @@
         <a href="{{ url_for('signals_page') }}" class="{{ 'active' if active=='signals' else '' }}"><span class="ic">⚡</span> إشارات التداول</a>
         <a href="{{ url_for('index') }}#scanner"><span class="ic">🔍</span> الاستعداد للانطلاق</a>
         <a href="{{ url_for('daily_report') }}" class="{{ 'active' if active=='daily_report' else '' }}"><span class="ic">📅</span> التقرير اليومي</a>
+        <a href="{{ url_for('movers') }}" class="{{ 'active' if active=='movers' else '' }}"><span class="ic">📊</span> الرابحون والخاسرون</a>
         <a href="{{ url_for('earnings') }}" class="{{ 'active' if active=='earnings' else '' }}"><span class="ic">📆</span> رزنامة الأرباح</a>
         <a href="{{ url_for('compare') }}" class="{{ 'active' if active=='compare' else '' }}"><span class="ic">⚖️</span> مقارنة أسهم</a>
         <a href="{{ url_for('calculator') }}" class="{{ 'active' if active=='calculator' else '' }}"><span class="ic">🧮</span> حاسبة المخاطرة</a>
