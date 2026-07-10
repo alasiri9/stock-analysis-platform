@@ -499,6 +499,15 @@ a.stat-box:hover { filter: brightness(1.15); transform: translateY(-1px); }
   margin-top: 16px; padding: 10px; border-radius: 10px; font-size: 15px; font-weight: 700;
   color: var(--red); background: rgba(239,68,68,.1); border: 1px solid rgba(239,68,68,.35);
 }
+.login-info {
+  margin-top: 16px; padding: 10px; border-radius: 10px; font-size: 15px; font-weight: 700;
+  color: var(--green); background: rgba(34,197,94,.1); border: 1px solid rgba(34,197,94,.35);
+}
+.login-forgot {
+  background: none; border: none; color: var(--muted); font-size: 14px; cursor: pointer;
+  text-decoration: underline; width: 100%; padding: 4px;
+}
+.login-forgot:hover { color: var(--accent); }
 
 /* ---------- الشارت الكبير بتقرير السهم ---------- */
 .big-chart {

@@ -21,9 +21,20 @@ import secrets
 
 from flask import Flask, render_template, request, redirect, url_for, session, Response
 
+from werkzeug.security import generate_password_hash, check_password_hash
+
 from models import (db, Watchlist, PortfolioHolding, PriceAlert, StockNote,
                     Subscriber, StockCache, Signal, PricePoint, MarketMoodSnapshot,
                     AppSetting)
+
+
+def _upsert_setting(key, value):
+    """يحفظ/يحدّث إعداداً في جدول AppSetting (لا يعمل commit — المتصل يلتزم)."""
+    row = db.session.get(AppSetting, key)
+    if row:
+        row.value = value
+    else:
+        db.session.add(AppSetting(key=key, value=value))
 from services import analysis
 from services import fmp_client
 from services import radar
@@ -77,8 +88,8 @@ def create_app():
     def _require_login():
         if not app_password:
             return None  # الحماية غير مفعّلة
-        # مسموح بلا جلسة: صفحة الدخول نفسها + الملفات الثابتة
-        if request.endpoint in ("login", "static"):
+        # مسموح بلا جلسة: الدخول + الملفات الثابتة + مسارات استعادة كلمة المرور (المستخدم مقفول برّه)
+        if request.endpoint in ("login", "static", "password_forgot", "password_reset"):
             return None
         if session.get("authed"):
             # المشترك: نتحقق أن اشتراكه لم ينتهِ في كل طلب (يُمنع فور الانتهاء)
@@ -95,8 +106,12 @@ def create_app():
         error = None
         if request.method == "POST":
             entered = request.form.get("password", "")
-            # 1) كلمة مرور المدير (صلاحية كاملة)
-            if app_password and secrets.compare_digest(entered, app_password):
+            # 1) المدير: الكلمة المخزّنة بالمنصة (مشفّرة) أو كلمة Railway (مفتاح طوارئ دائم)
+            stored = db.session.get(AppSetting, "admin_password_hash")
+            admin_ok = bool(stored and stored.value and check_password_hash(stored.value, entered))
+            if not admin_ok and app_password and secrets.compare_digest(entered, app_password):
+                admin_ok = True
+            if admin_ok:
                 session["authed"] = True
                 session["role"] = "admin"
                 session.permanent = True
@@ -154,6 +169,65 @@ def create_app():
             db.session.delete(row)  # مسح النص يلغي الإعلان
         db.session.commit()
         return redirect(url_for("settings"))
+
+    @app.route("/password/change", methods=["POST"])
+    def password_change():
+        # تغيير كلمة مرور المدير من المنصة (تُخزّن مشفّرة) — للمدير فقط
+        if not is_admin():
+            return redirect(url_for("settings"))
+        new = request.form.get("new_password", "").strip()
+        if len(new) >= 6:
+            _upsert_setting("admin_password_hash", generate_password_hash(new))
+            db.session.commit()
+        return redirect(url_for("settings"))
+
+    @app.route("/password/forgot", methods=["POST"])
+    def password_forgot():
+        # استعادة عبر تلغرام: يرسل رمزاً مؤقتاً لمحادثة المدير
+        if not app_password:
+            return redirect(url_for("login"))
+        if not telegram_client.is_configured():
+            return render_template("login.html",
+                                   error="الاستعادة عبر تلغرام غير متاحة (تلغرام غير مضبوط).")
+        import random
+        from datetime import datetime, timezone, timedelta
+        code = f"{random.randint(0, 999999):06d}"
+        _upsert_setting("reset_code_hash", generate_password_hash(code))
+        _upsert_setting("reset_code_expiry",
+                        (datetime.now(timezone.utc) + timedelta(minutes=10)).isoformat())
+        db.session.commit()
+        telegram_client.send_message(
+            f"🔑 <b>رمز استعادة كلمة مرور Algomatix</b>: <code>{code}</code>\n"
+            f"صالح 10 دقائق. إن لم تطلبه، تجاهله.")
+        return render_template("login.html", reset_stage=True,
+                               info="أرسلنا رمزاً إلى تلغرامك. أدخله مع كلمة مرور جديدة.")
+
+    @app.route("/password/reset", methods=["POST"])
+    def password_reset():
+        # التحقق من رمز تلغرام وتعيين كلمة مرور جديدة
+        if not app_password:
+            return redirect(url_for("login"))
+        from datetime import datetime, timezone
+        code = request.form.get("code", "").strip()
+        new = request.form.get("new_password", "").strip()
+        ch = db.session.get(AppSetting, "reset_code_hash")
+        exp = db.session.get(AppSetting, "reset_code_expiry")
+        valid = False
+        if ch and exp and code and check_password_hash(ch.value, code):
+            try:
+                valid = datetime.fromisoformat(exp.value) >= datetime.now(timezone.utc)
+            except (ValueError, TypeError):
+                valid = False
+        if valid and len(new) >= 6:
+            _upsert_setting("admin_password_hash", generate_password_hash(new))
+            for k in ("reset_code_hash", "reset_code_expiry"):
+                r = db.session.get(AppSetting, k)
+                if r:
+                    db.session.delete(r)
+            db.session.commit()
+            return render_template("login.html", info="✅ تم تغيير كلمة المرور. سجّل الدخول بها.")
+        return render_template("login.html", reset_stage=True,
+                               error="الرمز غير صحيح أو منتهٍ، أو كلمة المرور قصيرة (6 أحرف على الأقل).")
 
     db.init_app(app)
 

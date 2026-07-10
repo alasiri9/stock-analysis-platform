@@ -40,9 +40,17 @@
       <a class="preset" href="{{ url_for('portfolio') }}">🧠 المحفظة</a>
     </div>
 
-    {# إعلان المدير لكل المستخدمين — للمدير فقط #}
+    {# تغيير كلمة مرور المدير — للمدير فقط #}
     {% if is_admin %}
-      <h3 class="learn-group">📢 إعلان للمستخدمين</h3>
+      <h3 class="learn-group">🔑 كلمة مرور المدير</h3>
+      <p class="set-sub" style="margin-bottom:12px">غيّر كلمة مرورك من هنا (تُخزّن مشفّرة). كلمة Railway الأصلية تبقى مفتاح طوارئ. لو نسيتها، استخدم «نسيت كلمة المرور» بصفحة الدخول (رمز يصلك تلغرام).</p>
+      <form action="{{ url_for('password_change') }}" method="post" class="filters">
+        <div class="filter"><label>كلمة مرور جديدة</label><input type="password" name="new_password" minlength="6" placeholder="6 أحرف على الأقل" required></div>
+        <button class="btn" type="submit">💾 تغيير كلمة المرور</button>
+      </form>
+
+      <h3 class="learn-group">📢 إعلان للمستخدمين</h3>{% endif %}
+    {% if is_admin %}
       <p class="set-sub" style="margin-bottom:12px">اكتب رسالة تظهر كبانر لكل من يفتح المنصة. امسح النص لإلغاء الإعلان.</p>
       <form action="{{ url_for('announcement_save') }}" method="post">
         <textarea name="announcement" class="note-area" rows="2" placeholder="مثال: أضفنا صفحة نبض السوق — جرّبوها! أو: السوق متقلّب اليوم، توخّوا الحذر.">{{ announcement or '' }}</textarea>
