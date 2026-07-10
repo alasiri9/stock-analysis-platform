@@ -319,8 +319,10 @@ def create_app():
 
     @app.route("/signals")
     def signals_page():
-        # كل الإشارات الأخيرة (بدل آخر 6 فقط في الرئيسية)
-        return render_template("signals.html", signals=screener.recent_signals(limit=50))
+        # كل الإشارات الأخيرة + نسبة نجاح كل نوع تاريخياً (من الكاش، بلا API)
+        _, _, type_stats = screener.signals_performance()
+        return render_template("signals.html",
+                               signals=screener.recent_signals(limit=50), type_stats=type_stats)
 
     @app.route("/learn")
     def learn():

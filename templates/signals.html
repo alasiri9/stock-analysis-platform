@@ -15,6 +15,7 @@
           <tr>
             <th>السهم</th>
             <th>نوع الإشارة</th>
+            <th title="نسبة نجاح هذا النوع من الإشارات تاريخياً">دقة النوع تاريخياً</th>
             <th>السعر وقت الإشارة</th>
             <th>التاريخ</th>
           </tr>
@@ -24,6 +25,13 @@
             <tr>
               <td><a href="{{ url_for('stock_report', ticker=s.ticker) }}">{{ s.ticker }}</a></td>
               <td>{{ s.signal_type | signal_name }}</td>
+              <td dir="ltr">
+                {% set st = type_stats.get(s.signal_type) if type_stats else none %}
+                {% if st and st.win_rate is not none %}
+                  <span class="pill {{ 'buy' if st.win_rate >= 50 else 'sell' }}">{{ "%.0f"|format(st.win_rate) }}%</span>
+                  <span class="muted" style="font-size:12px">({{ st.count }} إشارة)</span>
+                {% else %}<span class="muted">—</span>{% endif %}
+              </td>
               <td dir="ltr">{{ "%.2f $"|format(s.price_at_signal) if s.price_at_signal is not none else '—' }}</td>
               <td dir="ltr">{{ s.triggered_at.strftime('%Y-%m-%d %H:%M') }}</td>
             </tr>
