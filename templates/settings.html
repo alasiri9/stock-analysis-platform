@@ -53,6 +53,7 @@
           <span class="sec-hint">
             {% if not security.telegram %}تلغرام غير مضبوط{% elif security.recovery_off %}معطّلة يدوياً (أقصى حماية){% else %}مفعّلة — يوصلك رمز عند النسيان{% endif %}
             <form action="{{ url_for('recovery_toggle') }}" method="post" style="display:inline;margin:0">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
               <button class="btn-del" type="submit">{{ 'تفعيل' if security.recovery_off else 'إيقاف' }}</button>
             </form>
           </span>
@@ -69,6 +70,7 @@
       <h3 class="learn-group">🔑 كلمة مرور المدير</h3>
       <p class="set-sub" style="margin-bottom:12px">غيّر كلمة مرورك من هنا (تُخزّن مشفّرة). كلمة Railway الأصلية تبقى مفتاح طوارئ. لو نسيتها، استخدم «نسيت كلمة المرور» بصفحة الدخول (رمز يصلك تلغرام).</p>
       <form action="{{ url_for('password_change') }}" method="post" class="filters">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <div class="filter"><label>كلمة مرور جديدة</label><input type="password" name="new_password" minlength="6" placeholder="6 أحرف على الأقل" required></div>
         <button class="btn" type="submit">💾 تغيير كلمة المرور</button>
       </form>
@@ -77,6 +79,7 @@
     {% if is_admin %}
       <p class="set-sub" style="margin-bottom:12px">اكتب رسالة تظهر كبانر لكل من يفتح المنصة. امسح النص لإلغاء الإعلان.</p>
       <form action="{{ url_for('announcement_save') }}" method="post">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <textarea name="announcement" class="note-area" rows="2" placeholder="مثال: أضفنا صفحة نبض السوق — جرّبوها! أو: السوق متقلّب اليوم، توخّوا الحذر.">{{ announcement or '' }}</textarea>
         <button class="btn" type="submit" style="margin-top:10px">💾 حفظ الإعلان</button>
       </form>
@@ -84,6 +87,7 @@
       <h3 class="learn-group">👥 اشتراكات المستخدمين</h3>
       <p class="set-sub" style="margin-bottom:12px">أنشئ رمز دخول لكل مشترك وحدّد مدته. يدخل المشترك بالرمز في صفحة الدخول (بدل كلمة المرور)، ويُمنع تلقائياً عند انتهاء المدة.</p>
       <form class="filters" action="{{ url_for('subscribers_add') }}" method="post">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <div class="filter"><label>اسم المشترك</label><input type="text" name="name" placeholder="مثال: خالد" required></div>
         <div class="filter"><label>المدة (أيام)</label><input type="number" name="days" min="1" value="30" dir="ltr"></div>
         <button class="btn" type="submit">➕ إنشاء اشتراك</button>
@@ -106,10 +110,12 @@
                 </td>
                 <td>
                   <form action="{{ url_for('subscribers_extend') }}" method="post" style="display:inline;margin:0">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <input type="hidden" name="id" value="{{ s.id }}"><input type="hidden" name="days" value="30">
                     <button class="btn-del" type="submit" title="تمديد 30 يوماً">+30 يوم</button>
                   </form>
                   <form action="{{ url_for('subscribers_remove') }}" method="post" style="display:inline;margin:0">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <input type="hidden" name="id" value="{{ s.id }}">
                     <button class="btn-del" type="submit">حذف</button>
                   </form>

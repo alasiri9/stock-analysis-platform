@@ -7,6 +7,7 @@
   <p class="page-sub">تتبّع عائد الأسهم منذ لحظة إضافتها — تعليمي فقط، لا توصية.</p>
 
   <form class="search" action="{{ url_for('watchlist_add') }}" method="post">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <input type="text" name="ticker" placeholder="أضف رمز سهم (مثال: MSFT)">
     <button class="btn" type="submit">➕ إضافة</button>
   </form>
@@ -32,6 +33,7 @@
             <td class="muted" dir="ltr">{{ r.added_at.strftime('%Y-%m-%d') }}</td>
             <td>
               <form action="{{ url_for('watchlist_remove') }}" method="post" style="margin:0">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <input type="hidden" name="id" value="{{ r.id }}">
                 <button class="btn-del" type="submit">حذف</button>
               </form>

@@ -10,6 +10,7 @@
     </div>
 
     <form action="{{ url_for('radar_refresh') }}" method="post" style="margin-bottom:12px">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <button class="btn" type="submit">🔄 تحديث الرادار</button>
     </form>
     <div class="confidence" style="margin-bottom:14px">

@@ -20,17 +20,20 @@
       {% if reset_stage %}
         {# مرحلة إدخال رمز الاستعادة + كلمة مرور جديدة #}
         <form method="post" action="{{ url_for('password_reset') }}" class="login-form">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
           <input type="text" name="code" inputmode="numeric" placeholder="رمز الاستعادة (من تلغرام)" autofocus required>
           <input type="password" name="new_password" placeholder="كلمة مرور جديدة (6 أحرف+)" required>
           <button class="btn" type="submit">🔐 تعيين كلمة المرور</button>
         </form>
       {% else %}
         <form method="post" class="login-form">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
           <input type="password" name="password" placeholder="كلمة المرور أو رمز الاشتراك" autofocus required>
           <button class="btn" type="submit">🔓 دخول</button>
         </form>
         {% if recovery_on %}
         <form method="post" action="{{ url_for('password_forgot') }}" style="margin-top:8px">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
           <button class="login-forgot" type="submit">نسيت كلمة المرور؟</button>
         </form>
         {% endif %}

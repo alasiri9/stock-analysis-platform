@@ -11,6 +11,7 @@
   {% endif %}
 
   <form class="filters" action="{{ url_for('alerts_add') }}" method="post">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <div class="filter">
       <label>رمز السهم</label>
       <input type="text" name="ticker" placeholder="مثال: AAPL" required>
@@ -50,6 +51,7 @@
             </td>
             <td>
               <form action="{{ url_for('alerts_remove') }}" method="post" style="margin:0">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <input type="hidden" name="id" value="{{ r.id }}">
                 <button class="btn-del" type="submit">حذف</button>
               </form>

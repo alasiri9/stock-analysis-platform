@@ -22,6 +22,7 @@ import secrets
 from flask import Flask, render_template, request, redirect, url_for, session, Response
 
 from werkzeug.security import generate_password_hash, check_password_hash
+from flask_wtf import CSRFProtect
 
 from models import (db, Watchlist, PortfolioHolding, PriceAlert, StockNote,
                     Subscriber, StockCache, Signal, PricePoint, MarketMoodSnapshot,
@@ -313,6 +314,7 @@ def create_app():
                                error="الرمز غير صحيح أو منتهٍ، أو كلمة المرور قصيرة (6 أحرف على الأقل).")
 
     db.init_app(app)
+    CSRFProtect(app)  # حماية CSRF لكل نماذج POST (الرمز مضاف في القوالب)
 
     @app.teardown_request
     def _cleanup_db_session(exc):

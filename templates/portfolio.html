@@ -69,6 +69,7 @@
 
     {# نموذج إضافة عملية شراء #}
     <form class="filters" action="{{ url_for('portfolio_add') }}" method="post">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <div class="filter">
         <label>رمز السهم</label>
         <input type="text" name="ticker" placeholder="AAPL" required style="text-transform: uppercase;">
@@ -114,6 +115,7 @@
               </td>
               <td>
                 <form action="{{ url_for('portfolio_remove') }}" method="post" style="margin:0">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                   <input type="hidden" name="id" value="{{ r.id }}">
                   <button class="btn-del" type="submit">حذف</button>
                 </form>
