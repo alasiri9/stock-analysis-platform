@@ -40,6 +40,30 @@
       <a class="preset" href="{{ url_for('portfolio') }}">🧠 المحفظة</a>
     </div>
 
+    {# حالة الأمان — للمدير فقط #}
+    {% if is_admin and security %}
+      <h3 class="learn-group">🛡️ حالة الأمان</h3>
+      <div class="sec-list">
+        <div class="sec-row {{ 'ok' if security.pw_changed else 'warn' }}">
+          <span>{{ '✅' if security.pw_changed else '⚠️' }} كلمة المرور الخاصة</span>
+          <span class="sec-hint">{{ 'غيّرت الكلمة الافتراضية — ممتاز' if security.pw_changed else 'لا تزال على كلمة Railway الافتراضية — يُفضّل تغييرها بالأسفل' }}</span>
+        </div>
+        <div class="sec-row {{ 'ok' if security.recovery_on else 'warn' }}">
+          <span>{{ '✅' if security.recovery_on else '⚠️' }} الاستعادة عبر تلغرام</span>
+          <span class="sec-hint">
+            {% if not security.telegram %}تلغرام غير مضبوط{% elif security.recovery_off %}معطّلة يدوياً (أقصى حماية){% else %}مفعّلة — يوصلك رمز عند النسيان{% endif %}
+            <form action="{{ url_for('recovery_toggle') }}" method="post" style="display:inline;margin:0">
+              <button class="btn-del" type="submit">{{ 'تفعيل' if security.recovery_off else 'إيقاف' }}</button>
+            </form>
+          </span>
+        </div>
+        <div class="sec-row ok">
+          <span>✅ حدّ محاولات الدخول</span>
+          <span class="sec-hint">شغّال — 3 محاولات ثم قفل 5 دقائق + تنبيه تلغرام</span>
+        </div>
+      </div>
+    {% endif %}
+
     {# تغيير كلمة مرور المدير — للمدير فقط #}
     {% if is_admin %}
       <h3 class="learn-group">🔑 كلمة مرور المدير</h3>

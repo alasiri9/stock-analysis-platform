@@ -659,6 +659,17 @@ a.stat-box:hover { filter: brightness(1.15); transform: translateY(-1px); }
 .h-value { color: var(--text); font-size: 22px; font-weight: 900; }
 .h-sub { color: var(--muted); font-size: 12px; margin-top: 3px; }
 
+/* حالة الأمان (الإعدادات) */
+.sec-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 8px; }
+.sec-row {
+  display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap;
+  background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 12px 14px; border-inline-start: 4px solid var(--border); font-weight: 700; color: var(--text);
+}
+.sec-row.ok { border-inline-start-color: var(--green); }
+.sec-row.warn { border-inline-start-color: var(--gold); }
+.sec-hint { color: var(--muted); font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+
 /* صفحة الإعدادات */
 .set-row {
   display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap;

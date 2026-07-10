@@ -37,6 +37,12 @@ def _upsert_setting(key, value):
         db.session.add(AppSetting(key=key, value=value))
 
 
+def _get_setting(key):
+    """يُرجع قيمة إعداد أو None."""
+    row = db.session.get(AppSetting, key)
+    return row.value if row else None
+
+
 # حدّ محاولات الدخول (حماية من التخمين) — في الذاكرة (Procfile يشغّل عاملاً واحداً)
 _LOGIN_MAX_FAILS = 3
 _LOGIN_LOCK_MINUTES = 5
@@ -61,13 +67,22 @@ def _login_locked_minutes():
 
 
 def _record_login_fail():
-    """يسجّل محاولة فاشلة؛ بعد _LOGIN_MAX_FAILS يقفل الآيبي مؤقتاً."""
+    """يسجّل محاولة فاشلة؛ بعد _LOGIN_MAX_FAILS يقفل الآيبي مؤقتاً وينبّه تلغرام."""
     from datetime import datetime, timezone, timedelta
-    st = _login_state.setdefault(_client_ip(), {"fails": 0, "lock_until": None})
+    ip = _client_ip()
+    st = _login_state.setdefault(ip, {"fails": 0, "lock_until": None})
     st["fails"] += 1
     if st["fails"] >= _LOGIN_MAX_FAILS:
         st["lock_until"] = datetime.now(timezone.utc) + timedelta(minutes=_LOGIN_LOCK_MINUTES)
         st["fails"] = 0
+        # تنبيه محاولة اختراق (خامل بلا تلغرام، وفشله لا يؤثر)
+        try:
+            telegram_client.send_message(
+                f"⚠️ <b>محاولة دخول مشبوهة على Algomatix</b>\n"
+                f"{_LOGIN_MAX_FAILS} محاولات فاشلة من IP: <code>{ip}</code>\n"
+                f"تم القفل {_LOGIN_LOCK_MINUTES} دقائق تلقائياً.")
+        except Exception:  # noqa: BLE001
+            pass
 
 
 def _clear_login_fails():
@@ -199,7 +214,10 @@ def create_app():
         # إعلان المدير (يظهر لكل المستخدمين إن وُجد)
         ann = db.session.get(AppSetting, "announcement")
         announcement = ann.value if (ann and ann.value.strip()) else None
-        return {"sub_status": info, "is_admin": is_admin(), "announcement": announcement}
+        # هل الاستعادة عبر تلغرام مفعّلة؟ (لإظهار زر «نسيت كلمة المرور»)
+        recovery_on = telegram_client.is_configured() and _get_setting("recovery_off") != "1"
+        return {"sub_status": info, "is_admin": is_admin(),
+                "announcement": announcement, "recovery_on": recovery_on}
 
     @app.route("/announcement/save", methods=["POST"])
     def announcement_save():
@@ -214,6 +232,16 @@ def create_app():
                 db.session.add(AppSetting(key="announcement", value=text))
         elif row:
             db.session.delete(row)  # مسح النص يلغي الإعلان
+        db.session.commit()
+        return redirect(url_for("settings"))
+
+    @app.route("/recovery/toggle", methods=["POST"])
+    def recovery_toggle():
+        # تفعيل/إيقاف الاستعادة عبر تلغرام — للمدير فقط
+        if not is_admin():
+            return redirect(url_for("settings"))
+        cur_off = _get_setting("recovery_off") == "1"
+        _upsert_setting("recovery_off", "0" if cur_off else "1")
         db.session.commit()
         return redirect(url_for("settings"))
 
@@ -233,6 +261,9 @@ def create_app():
         # استعادة عبر تلغرام: يرسل رمزاً مؤقتاً لمحادثة المدير
         if not app_password:
             return redirect(url_for("login"))
+        if _get_setting("recovery_off") == "1":
+            return render_template("login.html",
+                                   error="الاستعادة عبر تلغرام معطّلة حالياً. تواصل مع صاحب المنصة.")
         if not telegram_client.is_configured():
             return render_template("login.html",
                                    error="الاستعادة عبر تلغرام غير متاحة (تلغرام غير مضبوط).")
@@ -611,9 +642,18 @@ def create_app():
         # إعدادات المنصة (المظهر/الترتيب/مبلغ المحاكاة تُحفظ في المتصفح — localStorage)
         # إدارة المشتركين تظهر للمدير فقط
         subs = []
+        security = None
         if is_admin():
             subs = Subscriber.query.order_by(Subscriber.end_date.desc()).all()
-        return render_template("settings.html", is_admin=is_admin(), subscribers=subs)
+            tg = telegram_client.is_configured()
+            security = {
+                "pw_changed": _get_setting("admin_password_hash") is not None,
+                "telegram": tg,
+                "recovery_on": tg and _get_setting("recovery_off") != "1",
+                "recovery_off": _get_setting("recovery_off") == "1",
+            }
+        return render_template("settings.html", is_admin=is_admin(), subscribers=subs,
+                               security=security)
 
     @app.route("/subscribers/add", methods=["POST"])
     def subscribers_add():

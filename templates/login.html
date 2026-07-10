@@ -29,9 +29,11 @@
           <input type="password" name="password" placeholder="كلمة المرور أو رمز الاشتراك" autofocus required>
           <button class="btn" type="submit">🔓 دخول</button>
         </form>
+        {% if recovery_on %}
         <form method="post" action="{{ url_for('password_forgot') }}" style="margin-top:8px">
           <button class="login-forgot" type="submit">نسيت كلمة المرور؟</button>
         </form>
+        {% endif %}
       {% endif %}
 
       {% if info %}
