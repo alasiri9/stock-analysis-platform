@@ -9,7 +9,7 @@
   <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
   <meta name="theme-color" content="#0d1830">
   <script>(function(){try{if(localStorage.getItem('theme')==='light'){document.documentElement.classList.add('light');}}catch(e){}})();</script>
-  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=20260710a">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=20260710b">
 </head>
 <body>
   <div class="layout">
@@ -53,6 +53,9 @@
       </div>
     </aside>
     <main class="content">
+      {% if announcement %}
+        <div class="announce-banner">📢 {{ announcement }}</div>
+      {% endif %}
       {% if sub_status and sub_status.days_left <= 7 %}
         <div class="sub-banner">⏳ اشتراكك ينتهي {{ 'اليوم' if sub_status.days_left == 0 else ('غداً' if sub_status.days_left == 1 else 'بعد ' ~ sub_status.days_left ~ ' يوم') }} ({{ sub_status.end_date }}) — للتجديد تواصل مع صاحب المنصة.</div>
       {% endif %}

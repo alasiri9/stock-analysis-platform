@@ -40,8 +40,15 @@
       <a class="preset" href="{{ url_for('portfolio') }}">🧠 المحفظة</a>
     </div>
 
-    {# إدارة اشتراكات المستخدمين — للمدير فقط #}
+    {# إعلان المدير لكل المستخدمين — للمدير فقط #}
     {% if is_admin %}
+      <h3 class="learn-group">📢 إعلان للمستخدمين</h3>
+      <p class="set-sub" style="margin-bottom:12px">اكتب رسالة تظهر كبانر لكل من يفتح المنصة. امسح النص لإلغاء الإعلان.</p>
+      <form action="{{ url_for('announcement_save') }}" method="post">
+        <textarea name="announcement" class="note-area" rows="2" placeholder="مثال: أضفنا صفحة نبض السوق — جرّبوها! أو: السوق متقلّب اليوم، توخّوا الحذر.">{{ announcement or '' }}</textarea>
+        <button class="btn" type="submit" style="margin-top:10px">💾 حفظ الإعلان</button>
+      </form>
+
       <h3 class="learn-group">👥 اشتراكات المستخدمين</h3>
       <p class="set-sub" style="margin-bottom:12px">أنشئ رمز دخول لكل مشترك وحدّد مدته. يدخل المشترك بالرمز في صفحة الدخول (بدل كلمة المرور)، ويُمنع تلقائياً عند انتهاء المدة.</p>
       <form class="filters" action="{{ url_for('subscribers_add') }}" method="post">
@@ -51,13 +58,14 @@
       </form>
       {% if subscribers %}
         <table class="insider">
-          <thead><tr><th>المشترك</th><th>رمز الدخول</th><th>ينتهي في</th><th>الحالة</th><th></th></tr></thead>
+          <thead><tr><th>المشترك</th><th>رمز الدخول</th><th>ينتهي في</th><th>آخر دخول</th><th>الحالة</th><th></th></tr></thead>
           <tbody>
             {% for s in subscribers %}
               <tr>
                 <td>{{ s.name }}</td>
                 <td dir="ltr"><code class="sub-code">{{ s.access_code }}</code> <button type="button" class="copy-btn" onclick="copyCode(this, '{{ s.access_code }}')" title="نسخ الرمز">📋</button></td>
                 <td dir="ltr">{{ s.end_date.strftime('%Y-%m-%d') }}</td>
+                <td dir="ltr" class="muted">{{ s.last_login.strftime('%Y-%m-%d') if s.last_login else 'لم يدخل بعد' }}</td>
                 <td>
                   {% if s.is_active() %}
                     {% if s.days_left() <= 3 %}<span class="pill warn">⏳ ينتهي قريباً · {{ s.days_left() }} يوم</span>

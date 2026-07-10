@@ -666,6 +666,13 @@ a.stat-box:hover { filter: brightness(1.15); transform: translateY(-1px); }
 .copy-btn { background: var(--card); border: 1px solid var(--border); border-radius: 6px; cursor: pointer; font-size: 13px; padding: 2px 7px; }
 .copy-btn:hover { border-color: var(--accent); }
 .pill.warn { background: rgba(245,196,81,.16); color: var(--gold); }
+/* بانر إعلان المدير (يظهر لكل المستخدمين) */
+.announce-banner {
+  background: rgba(56,189,248,.14); border: 1px solid rgba(56,189,248,.5);
+  color: var(--accent); font-weight: 800; font-size: 15px;
+  border-radius: var(--radius); padding: 13px 18px; margin-bottom: 16px; line-height: 1.7;
+}
+
 /* شريط تنبيه اشتراك المشترك (قرب الانتهاء) */
 .sub-banner {
   background: rgba(245,196,81,.14); border: 1px solid rgba(245,196,81,.45);

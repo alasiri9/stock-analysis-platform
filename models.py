@@ -134,6 +134,7 @@ class Subscriber(db.Model):
     start_date = db.Column(db.Date, nullable=False)
     end_date = db.Column(db.Date, nullable=False)
     created_at = db.Column(db.DateTime(timezone=True), nullable=False, default=_utcnow)
+    last_login = db.Column(db.DateTime(timezone=True), nullable=True)  # آخر دخول للمشترك
 
     def is_active(self, today=None):
         """هل الاشتراك ساري (لم ينتهِ بعد)؟"""
@@ -163,6 +164,18 @@ class MarketMoodSnapshot(db.Model):
 
     def __repr__(self):
         return f"<MarketMoodSnapshot {self.date} bull%={self.bull_pct:.0f}>"
+
+
+class AppSetting(db.Model):
+    """إعدادات عامة للمنصة (مفتاح/قيمة) — مثل إعلان المدير لكل المستخدمين."""
+
+    __tablename__ = "app_setting"
+
+    key = db.Column(db.String(64), primary_key=True)
+    value = db.Column(db.Text, nullable=False, default="")
+
+    def __repr__(self):
+        return f"<AppSetting {self.key}>"
 
 
 class StockCache(db.Model):

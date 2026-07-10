@@ -19,10 +19,11 @@ from dotenv import load_dotenv
 import hashlib
 import secrets
 
-from flask import Flask, render_template, request, redirect, url_for, session
+from flask import Flask, render_template, request, redirect, url_for, session, Response
 
 from models import (db, Watchlist, PortfolioHolding, PriceAlert, StockNote,
-                    Subscriber, StockCache, Signal, PricePoint, MarketMoodSnapshot)
+                    Subscriber, StockCache, Signal, PricePoint, MarketMoodSnapshot,
+                    AppSetting)
 from services import analysis
 from services import fmp_client
 from services import radar
@@ -108,6 +109,9 @@ def create_app():
                     session["role"] = "sub"
                     session["sub_id"] = sub.id
                     session.permanent = True
+                    from datetime import datetime as _dt, timezone as _tz
+                    sub.last_login = _dt.now(_tz.utc)  # تتبّع آخر دخول
+                    db.session.commit()
                     return redirect(url_for("index"))
                 if sub and not sub.is_active():
                     error = "انتهت مدة اشتراكك. تواصل مع صاحب المنصة للتجديد."
@@ -130,7 +134,26 @@ def create_app():
             if sub and sub.is_active():
                 info = {"name": sub.name, "days_left": sub.days_left(),
                         "end_date": sub.end_date.strftime("%Y-%m-%d")}
-        return {"sub_status": info, "is_admin": is_admin()}
+        # إعلان المدير (يظهر لكل المستخدمين إن وُجد)
+        ann = db.session.get(AppSetting, "announcement")
+        announcement = ann.value if (ann and ann.value.strip()) else None
+        return {"sub_status": info, "is_admin": is_admin(), "announcement": announcement}
+
+    @app.route("/announcement/save", methods=["POST"])
+    def announcement_save():
+        if not is_admin():
+            return redirect(url_for("settings"))
+        text = request.form.get("announcement", "").strip()
+        row = db.session.get(AppSetting, "announcement")
+        if text:
+            if row:
+                row.value = text
+            else:
+                db.session.add(AppSetting(key="announcement", value=text))
+        elif row:
+            db.session.delete(row)  # مسح النص يلغي الإعلان
+        db.session.commit()
+        return redirect(url_for("settings"))
 
     db.init_app(app)
 
@@ -142,6 +165,14 @@ def create_app():
             db.session.rollback()
     with app.app_context():
         db.create_all()  # ينشئ الجداول لو ما كانت موجودة
+        # هجرة خفيفة: أعمدة أُضيفت لجداول موجودة مسبقاً (create_all لا يعدّل الجداول القائمة)
+        from sqlalchemy import text as _sql
+        for stmt in ("ALTER TABLE subscriber ADD COLUMN last_login TIMESTAMP",):
+            try:
+                db.session.execute(_sql(stmt))
+                db.session.commit()
+            except Exception:  # noqa: BLE001 — العمود موجود أصلاً: تجاهل
+                db.session.rollback()
         # تنظيف الإشارات المكررة (آمن ورخيص — يصحح ما خلّفته نسخة قديمة كانت تكرر يومياً)
         try:
             screener.dedupe_signals()
@@ -514,6 +545,29 @@ def create_app():
         items = StockNote.query.filter_by(user_id=GUEST_USER).order_by(
             StockNote.updated_at.desc()).all()
         return render_template("notes.html", notes=items)
+
+    @app.route("/export/scanner.csv")
+    def export_scanner():
+        # تصدير نتائج الماسح كملف CSV (يفتح بـExcel) — من الكاش، بلا API
+        import csv
+        import io
+        records, _ = screener.load_records()
+        records.sort(key=lambda r: screener.measures_met(r), reverse=True)
+        buf = io.StringIO()
+        buf.write("﻿")  # BOM ليعرض Excel العربية صح
+        w = csv.writer(buf)
+        w.writerow(["الرمز", "الشركة", "القطاع", "السعر", "التغير اليومي %",
+                    "Piotroski", "النمو", "قوة التأكيد"])
+        for r in records:
+            w.writerow([
+                r.get("ticker"), r.get("name"), r.get("sector"),
+                r.get("price"), r.get("change_percent"),
+                r.get("piotroski"), r.get("catalyst"), screener.measures_met(r),
+            ])
+        return Response(
+            buf.getvalue(), mimetype="text/csv; charset=utf-8",
+            headers={"Content-Disposition": "attachment; filename=algomatix_scanner.csv"},
+        )
 
     @app.route("/pulse")
     def pulse():

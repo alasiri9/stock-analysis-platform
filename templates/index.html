@@ -130,6 +130,7 @@
     <form action="{{ url_for('screener_refresh') }}" method="post" class="tools-form">
       <button class="btn" type="submit">🔄 تحديث البيانات</button>
     </form>
+    <a class="btn" href="{{ url_for('export_scanner') }}" title="تنزيل نتائج الماسح كملف Excel">📥 تصدير Excel</a>
   </div>
 
   <div class="dashboard">
