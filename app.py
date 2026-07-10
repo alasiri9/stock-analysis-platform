@@ -22,7 +22,7 @@ import secrets
 from flask import Flask, render_template, request, redirect, url_for, session
 
 from models import (db, Watchlist, PortfolioHolding, PriceAlert, StockNote,
-                    Subscriber, StockCache, Signal, PricePoint)
+                    Subscriber, StockCache, Signal, PricePoint, MarketMoodSnapshot)
 from services import analysis
 from services import fmp_client
 from services import radar
@@ -512,6 +512,32 @@ def create_app():
         items = StockNote.query.filter_by(user_id=GUEST_USER).order_by(
             StockNote.updated_at.desc()).all()
         return render_template("notes.html", notes=items)
+
+    @app.route("/pulse")
+    def pulse():
+        # نبض السوق التاريخي: نسبة الأسهم الصاعدة عبر الأيام (من لقطات المزاج المخزّنة)
+        snaps = MarketMoodSnapshot.query.order_by(MarketMoodSnapshot.date.asc()).all()
+        chart = None
+        if len(snaps) >= 2:
+            W, H, pad = 900, 260, 14
+            vals = [s.bull_pct for s in snaps]
+            n = len(vals)
+            step = (W - 2 * pad) / (n - 1)
+            pts = []
+            for i, v in enumerate(vals):
+                x = pad + i * step
+                y = pad + (H - 2 * pad) * (1 - v / 100.0)
+                pts.append(f"{x:.1f},{y:.1f}")
+            chart = {
+                "points": " ".join(pts),
+                "area_points": f"{pad:.1f},{H - pad} " + " ".join(pts) + f" {pad + (n - 1) * step:.1f},{H - pad}",
+                "width": W, "height": H, "days": n,
+                "first_date": snaps[0].date.strftime("%Y-%m-%d"),
+                "last_date": snaps[-1].date.strftime("%Y-%m-%d"),
+                "first_pct": vals[0], "last_pct": vals[-1],
+                "up": vals[-1] >= vals[0],
+            }
+        return render_template("pulse.html", snaps=snaps, chart=chart)
 
     @app.route("/movers")
     def movers():

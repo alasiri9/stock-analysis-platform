@@ -80,6 +80,20 @@ def _auto_refresh(app):
         except Exception as e:  # noqa: BLE001
             print(f"[scheduler] تعذّر تنبيه الاستعداد للانطلاق: {e}")
 
+        # لقطة يومية لمزاج السوق (لرسم نبض السوق التاريخي)
+        try:
+            from models import MarketMoodSnapshot
+            from datetime import date as _date
+            recs, _ = screener.load_records()
+            mood = screener.market_mood(recs)
+            if mood:
+                db.session.merge(MarketMoodSnapshot(
+                    date=_date.today(), bull=mood["bull"], neutral=mood["neutral"],
+                    bear=mood["bear"], bull_pct=mood["bull_pct"]))
+                db.session.commit()
+        except Exception as e:  # noqa: BLE001
+            print(f"[scheduler] تعذّر تسجيل نبض السوق: {e}")
+
         # ختاماً: التقرير الصباحي المجمّع بتلغرام (خامل بلا إعداد، وفشله لا يؤثر)
         try:
             _send_daily_report()

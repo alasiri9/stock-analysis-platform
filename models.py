@@ -150,6 +150,21 @@ class Subscriber(db.Model):
         return f"<Subscriber {self.name} ends={self.end_date}>"
 
 
+class MarketMoodSnapshot(db.Model):
+    """لقطة يومية لمزاج أسهم المنصة (كم صاعد/محايد/هابط) — لرسم نبض السوق عبر الأيام."""
+
+    __tablename__ = "market_mood_snapshot"
+
+    date = db.Column(db.Date, primary_key=True)
+    bull = db.Column(db.Integer, nullable=False)
+    neutral = db.Column(db.Integer, nullable=False)
+    bear = db.Column(db.Integer, nullable=False)
+    bull_pct = db.Column(db.Float, nullable=False)
+
+    def __repr__(self):
+        return f"<MarketMoodSnapshot {self.date} bull%={self.bull_pct:.0f}>"
+
+
 class StockCache(db.Model):
     """تخزين مؤقت لبيانات سهم — نقلّل عدد استدعاءات الـ API (الباقات المجانية محدودة).
 

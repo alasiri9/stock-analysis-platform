@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% set active = 'pulse' %}
+{% block title %}نبض السوق — Algomatix{% endblock %}
+
+{% block content %}
+  <section class="panel">
+    <div class="panel-head">
+      <h2>💓 نبض السوق التاريخي</h2>
+      <p class="panel-sub">نسبة الأسهم الصاعدة من أسهم المنصة عبر الأيام — هل السوق يتحسّن أم يضعف؟ تعليمي فقط.</p>
+    </div>
+
+    {% if chart %}
+      <div class="big-chart {{ 'up' if chart.up else 'down' }}">
+        <div class="big-chart-meta">
+          <span>الآن: <b dir="ltr">{{ "%.0f"|format(chart.last_pct) }}% صاعد</b></span>
+          <span>البداية: <b dir="ltr">{{ "%.0f"|format(chart.first_pct) }}%</b></span>
+          <span>{{ chart.days }} يوم مسجّل</span>
+        </div>
+        <svg viewBox="0 0 {{ chart.width }} {{ chart.height }}" preserveAspectRatio="none" class="big-chart-svg">
+          <defs>
+            <linearGradient id="pulseFill" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="currentColor" stop-opacity="0.25"/>
+              <stop offset="100%" stop-color="currentColor" stop-opacity="0"/>
+            </linearGradient>
+          </defs>
+          <polygon points="{{ chart.area_points }}" fill="url(#pulseFill)"/>
+          <polyline points="{{ chart.points }}" fill="none" stroke="currentColor" stroke-width="2.5"/>
+        </svg>
+        <div class="big-chart-dates" dir="ltr">
+          <span>{{ chart.first_date }}</span>
+          <span>{{ chart.last_date }}</span>
+        </div>
+      </div>
+      <div class="note">📌 الخط الأعلى = سوق صاعد (أغلب الأسهم صاعدة). الخط الأدنى = سوق ضعيف. يُبنى نقطة كل ليلة.</div>
+    {% else %}
+      <div class="empty">💓 نبض السوق يُبنى تدريجياً — يظهر الرسم بعد تسجيل يومين على الأقل من التحديث الليلي.</div>
+    {% endif %}
+  </section>
+{% endblock %}
