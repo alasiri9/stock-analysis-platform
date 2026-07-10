@@ -9,7 +9,7 @@
   <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
   <meta name="theme-color" content="#0d1830">
   <script>(function(){try{if(localStorage.getItem('theme')==='light'){document.documentElement.classList.add('light');}}catch(e){}})();</script>
-  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=20260709w">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=20260710a">
 </head>
 <body>
   <div class="layout">
@@ -43,6 +43,7 @@
         <a href="{{ url_for('learn') }}" class="{{ 'active' if active=='learn' else '' }}"><span class="ic">📚</span> تعلّم<span class="nav-eye" data-tip="قاموس يشرح مصطلحات المنصة بالعربي المبسّط.">👁</span></a>
         <a href="{{ url_for('how') }}" class="{{ 'active' if active=='how' else '' }}"><span class="ic">📘</span> كيف تعمل المنصة<span class="nav-eye" data-tip="شرح منهجية عمل المنصة خطوة بخطوة.">👁</span></a>
         <a href="{{ url_for('settings') }}" class="{{ 'active' if active=='settings' else '' }}"><span class="ic">⚙️</span> الإعدادات<span class="nav-eye" data-tip="المظهر، الترتيب الافتراضي، مبلغ المحاكاة، وإدارة اشتراكات المستخدمين.">👁</span></a>
+        {% if is_admin %}<a href="{{ url_for('health') }}" class="{{ 'active' if active=='health' else '' }}"><span class="ic">🩺</span> صحة المنصة<span class="nav-eye" data-tip="لوحة للمدير: آخر تحديث، نضارة البيانات، تلغرام، المشتركون، وإحصائيات القاعدة.">👁</span></a>{% endif %}
       </nav>
       <button class="theme-toggle" type="button" onclick="toggleTheme()">🌗 تبديل الوضع (فاتح/داكن)</button>
       <a href="{{ url_for('logout') }}" class="nav-logout"><span class="ic">🚪</span> خروج</a>

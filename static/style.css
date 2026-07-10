@@ -640,6 +640,16 @@ a.stat-box:hover { filter: brightness(1.15); transform: translateY(-1px); }
 .how-list { margin: 0 0 12px; padding-inline-start: 22px; }
 .how-list li { color: var(--text); font-size: 17.5px; line-height: 2.1; }
 
+/* لوحة صحة المنصة */
+.health-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; }
+.health-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; border-inline-start: 4px solid var(--border); }
+.health-card.ok { border-inline-start-color: var(--green); }
+.health-card.warn { border-inline-start-color: var(--gold); }
+.health-card.bad { border-inline-start-color: var(--red); }
+.h-label { color: var(--muted); font-size: 13.5px; font-weight: 700; margin-bottom: 6px; }
+.h-value { color: var(--text); font-size: 22px; font-weight: 900; }
+.h-sub { color: var(--muted); font-size: 12px; margin-top: 3px; }
+
 /* صفحة الإعدادات */
 .set-row {
   display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap;

@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% set active = 'health' %}
+{% block title %}صحة المنصة — Algomatix{% endblock %}
+
+{% block content %}
+  <section class="panel">
+    <div class="panel-head">
+      <h2>🩺 صحة المنصة</h2>
+      <p class="panel-sub">نظرة سريعة على حالة منصتك. للمدير فقط — من قاعدة البيانات، بلا استهلاك باقة.</p>
+    </div>
+
+    <div class="health-grid">
+      {# آخر تحديث #}
+      <div class="health-card {{ 'ok' if health.hours_since is not none and health.hours_since <= 30 else 'bad' }}">
+        <div class="h-label">🕐 آخر تحديث ليلي</div>
+        {% if health.hours_since is not none %}
+          <div class="h-value">قبل {{ health.hours_since }} ساعة</div>
+          <div class="h-sub">{{ health.last_update }}</div>
+        {% else %}
+          <div class="h-value">—</div><div class="h-sub">لا يوجد تحديث بعد</div>
+        {% endif %}
+      </div>
+
+      {# نضارة الأسهم #}
+      <div class="health-card {{ 'ok' if health.stocks_fresh == health.stocks_total and health.stocks_total > 0 else ('bad' if health.stocks_total == 0 else 'warn') }}">
+        <div class="h-label">📊 الأسهم المحدّثة</div>
+        <div class="h-value">{{ health.stocks_fresh }} / {{ health.stocks_total }}</div>
+        <div class="h-sub">محدّثة خلال آخر 30 ساعة</div>
+      </div>
+
+      {# تلغرام #}
+      <div class="health-card {{ 'ok' if health.telegram else 'warn' }}">
+        <div class="h-label">📱 تلغرام</div>
+        <div class="h-value">{{ '✅ مفعّل' if health.telegram else '⚠️ غير مفعّل' }}</div>
+        <div class="h-sub">تنبيهات وتقارير</div>
+      </div>
+
+      {# المشتركون #}
+      <div class="health-card {{ 'warn' if health.subs_soon else 'ok' }}">
+        <div class="h-label">👥 المشتركون</div>
+        <div class="h-value">{{ health.subs_active }} نشط</div>
+        <div class="h-sub">من {{ health.subs_total }} · {{ health.subs_soon }} قرب الانتهاء</div>
+      </div>
+
+      {# إحصائيات قاعدة البيانات #}
+      <div class="health-card"><div class="h-label">⚡ الإشارات المسجّلة</div><div class="h-value">{{ health.signals }}</div></div>
+      <div class="health-card"><div class="h-label">🔔 تنبيهات سعرية نشطة</div><div class="h-value">{{ health.alerts }}</div></div>
+      <div class="health-card"><div class="h-label">📈 نقاط أسعار مخزّنة</div><div class="h-value">{{ "{:,}".format(health.price_points) }}</div></div>
+      <div class="health-card"><div class="h-label">📝 ملاحظات محفوظة</div><div class="h-value">{{ health.notes }}</div></div>
+    </div>
+
+    <div class="note" style="margin-top:18px">📌 «آخر تحديث» أخضر يعني البيانات طازجة (خلال 30 ساعة). لو صار أحمر، شغّل «تحديث البيانات» من الرئيسية أو انتظر التحديث الليلي.</div>
+  </section>
+{% endblock %}

@@ -21,7 +21,8 @@ import secrets
 
 from flask import Flask, render_template, request, redirect, url_for, session
 
-from models import db, Watchlist, PortfolioHolding, PriceAlert, StockNote, Subscriber
+from models import (db, Watchlist, PortfolioHolding, PriceAlert, StockNote,
+                    Subscriber, StockCache, Signal, PricePoint)
 from services import analysis
 from services import fmp_client
 from services import radar
@@ -129,7 +130,7 @@ def create_app():
             if sub and sub.is_active():
                 info = {"name": sub.name, "days_left": sub.days_left(),
                         "end_date": sub.end_date.strftime("%Y-%m-%d")}
-        return {"sub_status": info}
+        return {"sub_status": info, "is_admin": is_admin()}
 
     db.init_app(app)
 
@@ -411,6 +412,40 @@ def create_app():
     def how():
         # صفحة تعليمية: كيف تعمل المنصة (محتوى ثابت — بلا استدعاءات API)
         return render_template("how.html")
+
+    @app.route("/health")
+    def health():
+        # لوحة صحة المنصة — للمدير فقط (من قاعدة البيانات، بلا استدعاء API)
+        if not is_admin():
+            return redirect(url_for("settings"))
+        from datetime import datetime, timezone, timedelta
+        now = datetime.now(timezone.utc)
+
+        def _aware(dt):
+            return dt.replace(tzinfo=timezone.utc) if (dt and dt.tzinfo is None) else dt
+
+        screen_rows = StockCache.query.filter(StockCache.ticker.like("screen:%")).all()
+        updates = [_aware(r.updated_at) for r in screen_rows if r.updated_at]
+        last_update = max(updates) if updates else None
+        fresh = sum(1 for u in updates if (now - u) <= timedelta(hours=30))
+        hours_since = round((now - last_update).total_seconds() / 3600, 1) if last_update else None
+
+        subs = Subscriber.query.all()
+        health = {
+            "hours_since": hours_since,
+            "last_update": last_update.strftime("%Y-%m-%d %H:%M") + " UTC" if last_update else None,
+            "stocks_total": len(screen_rows),
+            "stocks_fresh": fresh,
+            "telegram": telegram_client.is_configured(),
+            "subs_total": len(subs),
+            "subs_active": sum(1 for s in subs if s.is_active()),
+            "subs_soon": sum(1 for s in subs if s.is_active() and s.days_left() <= 7),
+            "signals": Signal.query.count(),
+            "alerts": PriceAlert.query.filter_by(active=True).count(),
+            "price_points": PricePoint.query.count(),
+            "notes": StockNote.query.count(),
+        }
+        return render_template("health.html", health=health)
 
     @app.route("/settings")
     def settings():
