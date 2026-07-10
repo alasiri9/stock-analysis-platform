@@ -35,6 +35,43 @@ def _upsert_setting(key, value):
         row.value = value
     else:
         db.session.add(AppSetting(key=key, value=value))
+
+
+# حدّ محاولات الدخول (حماية من التخمين) — في الذاكرة (Procfile يشغّل عاملاً واحداً)
+_LOGIN_MAX_FAILS = 3
+_LOGIN_LOCK_MINUTES = 5
+_login_state = {}  # ip -> {"fails": int, "lock_until": datetime|None}
+
+
+def _client_ip():
+    fwd = request.headers.get("X-Forwarded-For", "")
+    return fwd.split(",")[0].strip() if fwd else (request.remote_addr or "unknown")
+
+
+def _login_locked_minutes():
+    """دقائق القفل المتبقية للآيبي الحالي إن كان مقفولاً، وإلا None."""
+    from datetime import datetime, timezone
+    st = _login_state.get(_client_ip())
+    if st and st.get("lock_until"):
+        rem = (st["lock_until"] - datetime.now(timezone.utc)).total_seconds()
+        if rem > 0:
+            return int(rem // 60) + 1
+        st["lock_until"] = None
+    return None
+
+
+def _record_login_fail():
+    """يسجّل محاولة فاشلة؛ بعد _LOGIN_MAX_FAILS يقفل الآيبي مؤقتاً."""
+    from datetime import datetime, timezone, timedelta
+    st = _login_state.setdefault(_client_ip(), {"fails": 0, "lock_until": None})
+    st["fails"] += 1
+    if st["fails"] >= _LOGIN_MAX_FAILS:
+        st["lock_until"] = datetime.now(timezone.utc) + timedelta(minutes=_LOGIN_LOCK_MINUTES)
+        st["fails"] = 0
+
+
+def _clear_login_fails():
+    _login_state.pop(_client_ip(), None)
 from services import analysis
 from services import fmp_client
 from services import radar
@@ -105,6 +142,10 @@ def create_app():
     def login():
         error = None
         if request.method == "POST":
+            locked = _login_locked_minutes()
+            if locked:
+                return render_template("login.html",
+                                       error=f"محاولات كثيرة. حاول بعد {locked} دقيقة.")
             entered = request.form.get("password", "")
             # 1) المدير: الكلمة المخزّنة بالمنصة (مشفّرة) أو كلمة Railway (مفتاح طوارئ دائم)
             stored = db.session.get(AppSetting, "admin_password_hash")
@@ -112,6 +153,7 @@ def create_app():
             if not admin_ok and app_password and secrets.compare_digest(entered, app_password):
                 admin_ok = True
             if admin_ok:
+                _clear_login_fails()
                 session["authed"] = True
                 session["role"] = "admin"
                 session.permanent = True
@@ -120,6 +162,7 @@ def create_app():
             if entered.strip():
                 sub = Subscriber.query.filter_by(access_code=entered.strip()).first()
                 if sub and sub.is_active():
+                    _clear_login_fails()
                     session["authed"] = True
                     session["role"] = "sub"
                     session["sub_id"] = sub.id
@@ -132,6 +175,10 @@ def create_app():
                     error = "انتهت مدة اشتراكك. تواصل مع صاحب المنصة للتجديد."
             if not error:
                 error = "كلمة المرور أو رمز الاشتراك غير صحيح"
+                _record_login_fail()
+                locked = _login_locked_minutes()
+                if locked:
+                    error = f"محاولات كثيرة. حاول بعد {locked} دقيقة."
         expired = request.args.get("expired")
         return render_template("login.html", error=error, expired=expired)
 
@@ -207,6 +254,9 @@ def create_app():
         # التحقق من رمز تلغرام وتعيين كلمة مرور جديدة
         if not app_password:
             return redirect(url_for("login"))
+        locked = _login_locked_minutes()
+        if locked:
+            return render_template("login.html", error=f"محاولات كثيرة. حاول بعد {locked} دقيقة.")
         from datetime import datetime, timezone
         code = request.form.get("code", "").strip()
         new = request.form.get("new_password", "").strip()
@@ -219,6 +269,7 @@ def create_app():
             except (ValueError, TypeError):
                 valid = False
         if valid and len(new) >= 6:
+            _clear_login_fails()
             _upsert_setting("admin_password_hash", generate_password_hash(new))
             for k in ("reset_code_hash", "reset_code_expiry"):
                 r = db.session.get(AppSetting, k)
@@ -226,6 +277,7 @@ def create_app():
                     db.session.delete(r)
             db.session.commit()
             return render_template("login.html", info="✅ تم تغيير كلمة المرور. سجّل الدخول بها.")
+        _record_login_fail()  # تخمين رمز خاطئ يُحتسب ضمن حدّ المحاولات
         return render_template("login.html", reset_stage=True,
                                error="الرمز غير صحيح أو منتهٍ، أو كلمة المرور قصيرة (6 أحرف على الأقل).")
 
