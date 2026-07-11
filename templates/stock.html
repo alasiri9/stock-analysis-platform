@@ -174,7 +174,7 @@
     {% set p = report.piotroski %}
     {% set ptotal = p.computable or 9 %}
     {% set ppct = (p.score / ptotal * 100) | round | int if ptotal else 0 %}
-    <h2>💎 نقاط الجودة المالية المتحققة
+    <h2>💎 مستوى الجودة المالية المتحققة
       <span class="tech-count {{ 'strong' if ppct >= 60 else '' }}">{{ p.score }} من {{ ptotal }} · {{ ppct }}%</span>
     </h2>
     {% if pio_met %}
