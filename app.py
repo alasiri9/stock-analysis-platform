@@ -24,7 +24,7 @@ from flask import Flask, render_template, request, redirect, url_for, session, R
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_wtf import CSRFProtect
 
-from models import (db, Watchlist, PortfolioHolding, PriceAlert, StockNote,
+from models import (db, Watchlist, PortfolioHolding, PriceAlert,
                     Subscriber, StockCache, Signal, PricePoint, MarketMoodSnapshot,
                     AppSetting, Message)
 
@@ -647,7 +647,6 @@ def create_app():
             "signals": Signal.query.count(),
             "alerts": PriceAlert.query.filter_by(active=True).count(),
             "price_points": PricePoint.query.count(),
-            "notes": StockNote.query.count(),
         }
         return render_template("health.html", health=health)
 
@@ -718,13 +717,6 @@ def create_app():
             db.session.delete(sub)
             db.session.commit()
         return redirect(url_for("settings"))
-
-    @app.route("/notes")
-    def notes():
-        # كل ملاحظات المستخدم على الأسهم (مرتّبة بالأحدث تعديلاً)
-        items = StockNote.query.filter_by(user_id=GUEST_USER).order_by(
-            StockNote.updated_at.desc()).all()
-        return render_template("notes.html", notes=items)
 
     @app.route("/export/scanner.csv")
     def export_scanner():
@@ -944,8 +936,6 @@ def create_app():
                      if r.get("sector") == report["sector"] and r["ticker"] != report["ticker"]]
             peers.sort(key=lambda r: screener.measures_met(r), reverse=True)
             peers = peers[:6]
-        # ملاحظة المستخدم الشخصية على هذا السهم (إن وُجدت)
-        note = StockNote.query.filter_by(user_id=GUEST_USER, ticker=report["ticker"]).first()
         # المؤشرات الفنية المتحققة (الصاعدة فقط) + نسبة التحقق
         inds = report.get("indicators") or []
         met = [b for b in inds if b.get("status") == "bull"]
@@ -956,22 +946,7 @@ def create_app():
         pio_met = [c for c in (pio.get("components") or []) if c.get("passed") is True]
         return render_template("stock.html", report=report, ticker=report["ticker"],
                                scan=scan, summary=summary, peers=peers, tech=tech,
-                               pio_met=pio_met, note=(note.body if note else ""))
-
-    @app.route("/stock/<ticker>/note", methods=["POST"])
-    def stock_note_save(ticker):
-        ticker = ticker.upper().strip()
-        body = request.form.get("note", "").strip()
-        note = StockNote.query.filter_by(user_id=GUEST_USER, ticker=ticker).first()
-        if body:
-            if note:
-                note.body = body
-            else:
-                db.session.add(StockNote(ticker=ticker, user_id=GUEST_USER, body=body))
-        elif note:
-            db.session.delete(note)  # مسح الملاحظة إذا فُرّغت
-        db.session.commit()
-        return redirect(url_for("stock_report", ticker=ticker))
+                               pio_met=pio_met)
 
     # ===================== حاسبة حجم الصفقة =====================
 
