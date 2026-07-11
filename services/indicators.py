@@ -489,12 +489,15 @@ def _obv_trend(rows, lookback=20):
         series.append(obv)
     change = series[-1] - series[-lookback - 1]
     # عتبة بسيطة لتفادي الضجيج: نعتبره محايداً لو التغيّر ضئيل مقابل متوسط الحجم
-    avg_vol = sum(r["volume"] for r in valid[-lookback:]) / lookback
+    total_vol = sum(r["volume"] for r in valid[-lookback:])
+    avg_vol = total_vol / lookback
+    # نسبة قوة التجميع = صافي التغيّر ÷ إجمالي الحجم بالفترة (0–100%)
+    pct = round(abs(change) / total_vol * 100) if total_vol else 0
     if avg_vol <= 0 or abs(change) < avg_vol:
         return {"value": "محايد", "status": "neutral"}
     if change > 0:
-        return {"value": "تجميع", "status": "bull"}
-    return {"value": "تصريف", "status": "bear"}
+        return {"value": f"تجميع {pct}%", "status": "bull"}
+    return {"value": f"تصريف {pct}%", "status": "bear"}
 
 
 def supertrend(rows, period=10, mult=3.0):
