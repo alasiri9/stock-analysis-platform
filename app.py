@@ -904,9 +904,12 @@ def create_app():
         met = [b for b in inds if b.get("status") == "bull"]
         tech = {"met": met, "total": len(inds),
                 "pct": round(len(met) / len(inds) * 100) if inds else 0}
+        # نقاط Piotroski المتحققة (الناجحة فقط)
+        pio = report.get("piotroski") or {}
+        pio_met = [c for c in (pio.get("components") or []) if c.get("passed") is True]
         return render_template("stock.html", report=report, ticker=report["ticker"],
                                scan=scan, summary=summary, peers=peers, tech=tech,
-                               note=(note.body if note else ""))
+                               pio_met=pio_met, note=(note.body if note else ""))
 
     @app.route("/stock/<ticker>/note", methods=["POST"])
     def stock_note_save(ticker):

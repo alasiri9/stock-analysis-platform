@@ -169,20 +169,30 @@
     </div>
   </div>
 
-  {# ===== تفصيل Piotroski ===== #}
+  {# ===== نقاط الجودة المالية المتحققة (الناجحة فقط) ===== #}
   <div class="section">
-    <h2>✅ تفصيل Piotroski (9 نقاط)</h2>
-    <div class="checks">
-      {% for c in report.piotroski.components %}
-        <div class="check {{ 'pass' if c.passed == true else ('fail' if c.passed == false else 'na') }}">
-          <div class="ic">{{ '✓' if c.passed == true else ('✕' if c.passed == false else '—') }}</div>
-          <div>
-            <div>[{{ c.n }}] {{ c.name }}</div>
-            <div class="detail">{{ c.detail }}</div>
+    {% set p = report.piotroski %}
+    {% set ptotal = p.computable or 9 %}
+    {% set ppct = (p.score / ptotal * 100) | round | int if ptotal else 0 %}
+    <h2>💎 نقاط الجودة المالية المتحققة
+      <span class="tech-count {{ 'strong' if ppct >= 60 else '' }}">{{ p.score }} من {{ ptotal }} · {{ ppct }}%</span>
+    </h2>
+    {% if pio_met %}
+      <div class="checks">
+        {% for c in pio_met %}
+          <div class="check pass">
+            <div class="ic">✓</div>
+            <div>
+              <div>[{{ c.n }}] {{ c.name }}</div>
+              <div class="detail">{{ c.detail }}</div>
+            </div>
           </div>
-        </div>
-      {% endfor %}
-    </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="soon">لم تتحقق أي نقطة جودة بعد — تظهر هنا فور تحقّقها.</div>
+    {% endif %}
+    <div class="note">📌 نعرض النقاط المتحققة فقط؛ الباقي مخفي حتى يتحقق. تعليمي — ليست توصية.</div>
   </div>
 
   {# ===== تفصيل Catalyst ===== #}
