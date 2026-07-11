@@ -19,7 +19,7 @@
     <div class="scard-scores">
       <span class="measures-pill" title="درجة النمو (Catalyst) من 100 — كلما زادت كان نمو الشركة أقوى">🚀 نمو {{ r.catalyst | growth_icon }} <b>{{ "%.0f"|format(r.catalyst) if r.catalyst is not none else '—' }}</b></span>
       <span class="dot">·</span>
-      Piotroski {{ r.piotroski | quality_icon }} <b>{{ r.piotroski if r.piotroski is not none else '—' }}</b>/9
+      الجودة {{ r.piotroski | quality_icon }} <b>{{ r.piotroski if r.piotroski is not none else '—' }}</b>/9
       {% set rs = r.get('rel_strength') %}
       {% if rs is not none %}
         <span class="rs-pill {{ 'pos' if rs >= 0 else 'neg' }}" title="تفوّق السهم على مؤشر السوق (SPY) خلال آخر 3 أشهر">

@@ -24,7 +24,7 @@
         <div class="cg-card">
           <div class="cg-ticker"><a href="{{ url_for('stock_report', ticker=s.ticker) }}">{{ s.ticker }}</a></div>
           <div class="cg-gauges">
-            {{ gauge(s.piotroski.score, 9, 'Piotroski', 'sm') }}
+            {{ gauge(s.piotroski.score, 9, 'الجودة', 'sm') }}
             {{ gauge(s.catalyst.score, 100, 'النمو', 'sm') }}
           </div>
         </div>
@@ -42,8 +42,8 @@
         <tr><td class="muted">الشركة</td>{% for s in summaries %}<td>{{ s.name or '—' }}</td>{% endfor %}</tr>
         <tr><td class="muted">السعر</td>{% for s in summaries %}<td dir="ltr">{{ cell(s.price, ' $', 2) }}</td>{% endfor %}</tr>
         <tr><td class="muted">التغيّر %</td>{% for s in summaries %}<td dir="ltr">{{ cell(s.change_percent, '%', 2) }}</td>{% endfor %}</tr>
-        <tr><td class="muted">Piotroski</td>{% for s in summaries %}<td><b>{{ s.piotroski.score }}</b> / 9</td>{% endfor %}</tr>
-        <tr><td class="muted">Catalyst</td>{% for s in summaries %}<td><b>{{ cell(s.catalyst.score, '', 0) }}</b> / 100</td>{% endfor %}</tr>
+        <tr><td class="muted">الجودة المالية (Piotroski)</td>{% for s in summaries %}<td><b>{{ s.piotroski.score }}</b> / 9</td>{% endfor %}</tr>
+        <tr><td class="muted">النمو (Catalyst)</td>{% for s in summaries %}<td><b>{{ cell(s.catalyst.score, '', 0) }}</b> / 100</td>{% endfor %}</tr>
         <tr><td class="muted">ROE</td>{% for s in summaries %}<td dir="ltr">{{ cell(s.metrics.roe, '%') }}</td>{% endfor %}</tr>
         <tr><td class="muted">ROA</td>{% for s in summaries %}<td dir="ltr">{{ cell(s.metrics.roa, '%') }}</td>{% endfor %}</tr>
         <tr><td class="muted">هامش التشغيل</td>{% for s in summaries %}<td dir="ltr">{{ cell(s.metrics.op_margin, '%') }}</td>{% endfor %}</tr>

@@ -123,14 +123,14 @@
       {% endif %}
       <div class="score-card">
         {% if report.piotroski.score >= 8 %}<div class="badge-gem">💎 جوهرة</div>{% endif %}
-        <div class="cap">Piotroski Score <a class="help-q" href="{{ url_for('learn') }}#piotroski" title="اشرح لي هذا المصطلح">؟</a></div>
+        <div class="cap">الجودة المالية (Piotroski) <a class="help-q" href="{{ url_for('learn') }}#piotroski" title="اشرح لي هذا المصطلح">؟</a></div>
         {{ gauge(report.piotroski.score, 9, '', 'lg') }}
         {% if report.piotroski.computable < 9 %}
           <div class="cap">أمكن حساب {{ report.piotroski.computable }} نقاط فقط</div>
         {% endif %}
       </div>
       <div class="score-card">
-        <div class="cap">Catalyst Score <a class="help-q" href="{{ url_for('learn') }}#catalyst" title="اشرح لي هذا المصطلح">؟</a></div>
+        <div class="cap">النمو (Catalyst) <a class="help-q" href="{{ url_for('learn') }}#catalyst" title="اشرح لي هذا المصطلح">؟</a></div>
         {{ gauge(report.catalyst.score, 100, '', 'lg') }}
         <div class="cap">📊 مقياس مساعد — اجتهادي للإرشاد</div>
       </div>
