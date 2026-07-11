@@ -146,7 +146,7 @@
     {% if tech.met %}
       <div class="tech-badges">
         {% for b in tech.met %}
-          <span class="tbadge bull">{{ b.label }}<span class="tval">{{ b.value }}</span></span>
+          <span class="tbadge bull">{% if b.label != 'تراكم' %}{{ b.label }}{% endif %}<span class="tval">{{ b.value }}</span></span>
         {% endfor %}
       </div>
     {% else %}
