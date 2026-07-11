@@ -11,14 +11,18 @@
 
 {% block content %}
 {% if report is none %}
-  <div class="empty">
-    {% if in_universe %}
-      🔍 بيانات <b>{{ ticker }}</b> غير متاحة مؤقتاً.<br>
-      السهم ضمن قائمة المنصة ✅ — لكن غالباً حصة مصدر البيانات (FMP) انتهت اليوم (250 طلب/يوم). تتصفّر منتصف الليل، فحاول لاحقاً.
-    {% else %}
-      🔍 لم نعثر على بيانات للسهم <b>{{ ticker }}</b>.<br>
-      تأكّد من رمز السهم (أحرف إنجليزية، مثل AAPL) أو حاول لاحقاً.
-    {% endif %}
+  <div class="report-modal-overlay">
+    <div class="report-modal">
+      <div class="report-modal-icon">{{ '⏳' if in_universe else '🔍' }}</div>
+      {% if in_universe %}
+        <h3>بيانات {{ ticker }} قيد التحديث</h3>
+        <p>هذا السهم ضمن قائمة المنصة ✅، لكن بياناته التفصيلية تُحدَّث الآن. جرّب بعد قليل — أو تصفّح باقي المنصة، كل شي جاهز.</p>
+      {% else %}
+        <h3>لم نعثر على السهم {{ ticker }}</h3>
+        <p>تأكّد من رمز السهم (أحرف إنجليزية، مثل AAPL).</p>
+      {% endif %}
+      <a class="btn" href="{{ url_for('index') }}">🏠 العودة للرئيسية</a>
+    </div>
   </div>
 {% else %}
 

@@ -659,6 +659,21 @@ a.stat-box:hover { filter: brightness(1.15); transform: translateY(-1px); }
 .h-value { color: var(--text); font-size: 22px; font-weight: 900; }
 .h-sub { color: var(--muted); font-size: 12px; margin-top: 3px; }
 
+/* مربع حواري: تعذّر بيانات السهم */
+.report-modal-overlay {
+  position: fixed; inset: 0; z-index: 200; padding: 20px;
+  background: rgba(0,0,0,.55); display: flex; align-items: center; justify-content: center;
+}
+.report-modal {
+  background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 30px 26px; max-width: 440px; width: 100%; text-align: center;
+  box-shadow: 0 24px 70px rgba(0,0,0,.55);
+}
+.report-modal-icon { font-size: 46px; margin-bottom: 8px; }
+.report-modal h3 { color: var(--text); font-size: 21px; font-weight: 900; margin: 0 0 12px; }
+.report-modal p { color: var(--muted); font-size: 15px; line-height: 1.9; margin: 0 0 20px; }
+.report-modal .btn { display: inline-block; }
+
 /* شارة نسبة تحقّق المؤشرات الفنية (صفحة السهم) */
 .tech-count {
   font-size: 14px; font-weight: 900; color: var(--muted);

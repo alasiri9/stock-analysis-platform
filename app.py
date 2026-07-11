@@ -882,9 +882,42 @@ def create_app():
 
     @app.route("/stock/<ticker>")
     def stock_report(ticker):
-        report = analysis.build_stock_report(ticker)
+        # تخزين تقرير السهم (12 ساعة) لتقليل طلبات FMP والصمود وقت انتهاء الحصة.
+        # التحليل الثقيل من الكاش، والسعر اللحظي يُجلب منفصلاً (طلب خفيف) ليبقى حديثاً.
+        import json as _json
+        from datetime import datetime as _dt, timezone as _tz, timedelta as _td
+        rkey = "report:" + ticker.upper()
+        now = _dt.now(_tz.utc)
+        report = None
+        cached = db.session.get(StockCache, rkey)
+        if cached:
+            up = cached.updated_at
+            up = up.replace(tzinfo=_tz.utc) if up.tzinfo is None else up
+            if (now - up) < _td(hours=12):
+                try:
+                    report = _json.loads(cached.data_json)
+                except Exception:  # noqa: BLE001
+                    report = None
+                if report is not None:  # سعر لحظي حديث (فشله لا يُسقط التقرير المخزّن)
+                    try:
+                        q = fmp_client.get_quote(ticker)
+                        if q and q.get("price") is not None:
+                            report["price"] = q.get("price")
+                            report["change"] = q.get("change")
+                            report["change_percent"] = q.get("change_percent")
+                    except Exception:  # noqa: BLE001
+                        pass
+        if report is None:  # لا كاش صالح: نبني التقرير كاملاً ونخزّنه
+            report = analysis.build_stock_report(ticker)
+            if report is not None:
+                try:
+                    db.session.merge(StockCache(
+                        ticker=rkey, data_json=_json.dumps(report, ensure_ascii=False), updated_at=now))
+                    db.session.commit()
+                except Exception:  # noqa: BLE001
+                    db.session.rollback()
         if report is None:
-            # لا نخترع بيانات: نوضّح أن السهم غير متاح — ونميّز أسهم المنصة (سبب مؤقت غالباً)
+            # لا كاش ولا جلب: نوضّح أن السهم غير متاح — ونميّز أسهم المنصة (سبب مؤقت غالباً)
             in_universe = ticker.upper() in screener.UNIVERSE
             return render_template("stock.html", report=None,
                                    ticker=ticker.upper(), in_universe=in_universe)
