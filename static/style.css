@@ -659,6 +659,14 @@ a.stat-box:hover { filter: brightness(1.15); transform: translateY(-1px); }
 .h-value { color: var(--text); font-size: 22px; font-weight: 900; }
 .h-sub { color: var(--muted); font-size: 12px; margin-top: 3px; }
 
+/* شارة نسبة تحقّق المؤشرات الفنية (صفحة السهم) */
+.tech-count {
+  font-size: 14px; font-weight: 900; color: var(--muted);
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 20px; padding: 3px 12px; margin-inline-start: 8px; vertical-align: middle;
+}
+.tech-count.strong { color: var(--green); border-color: rgba(34,197,94,.5); background: rgba(34,197,94,.12); }
+
 /* حالة الأمان (الإعدادات) */
 .sec-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 8px; }
 .sec-row {

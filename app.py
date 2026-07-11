@@ -899,8 +899,13 @@ def create_app():
             peers = peers[:6]
         # ملاحظة المستخدم الشخصية على هذا السهم (إن وُجدت)
         note = StockNote.query.filter_by(user_id=GUEST_USER, ticker=report["ticker"]).first()
+        # المؤشرات الفنية المتحققة (الصاعدة فقط) + نسبة التحقق
+        inds = report.get("indicators") or []
+        met = [b for b in inds if b.get("status") == "bull"]
+        tech = {"met": met, "total": len(inds),
+                "pct": round(len(met) / len(inds) * 100) if inds else 0}
         return render_template("stock.html", report=report, ticker=report["ticker"],
-                               scan=scan, summary=summary, peers=peers,
+                               scan=scan, summary=summary, peers=peers, tech=tech,
                                note=(note.body if note else ""))
 
     @app.route("/stock/<ticker>/note", methods=["POST"])

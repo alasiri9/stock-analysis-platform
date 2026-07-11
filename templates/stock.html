@@ -137,16 +137,22 @@
     </div>
   </div>
 
-  {# ===== المؤشرات الفنية ===== #}
+  {# ===== المؤشرات الفنية المتحققة (الصاعدة فقط) ===== #}
   {% if report.indicators %}
   <div class="section">
-    <h2>📐 المؤشرات الفنية</h2>
-    <div class="tech-badges">
-      {% for b in report.indicators %}
-        <span class="tbadge {{ b.status }}">{{ b.label }}<span class="tval">{{ b.value }}</span></span>
-      {% endfor %}
-    </div>
-    <div class="note">📌 مؤشرات وصفية محسوبة من الأسعار التاريخية (FMP) — تعليمية فقط، ليست توصية.</div>
+    <h2>🎯 المؤشرات الفنية المتحققة
+      <span class="tech-count {{ 'strong' if tech.pct >= 60 else '' }}">{{ tech.met|length }} من {{ tech.total }} · {{ tech.pct }}%</span>
+    </h2>
+    {% if tech.met %}
+      <div class="tech-badges">
+        {% for b in tech.met %}
+          <span class="tbadge bull">{{ b.label }}<span class="tval">{{ b.value }}</span></span>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="soon">لم يتحقق أي مؤشر فني بعد — تظهر المؤشرات هنا فور تحقّقها.</div>
+    {% endif %}
+    <div class="note">📌 نعرض المؤشرات المتحققة فقط؛ الباقي مخفي حتى يتحقق. محسوبة من الأسعار التاريخية (FMP) — تعليمي، ليست توصية.</div>
   </div>
   {% endif %}
 
