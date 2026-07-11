@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% set active = 'messages' %}
+{% block title %}الرسائل — Algomatix{% endblock %}
+
+{% block content %}
+  <section class="panel">
+    <div class="panel-head">
+      <h2>📨 الرسائل</h2>
+      <p class="panel-sub">رسائل من إدارة المنصة — تجد هنا كل ما وصلك، حتى ما أغلقته أو فاتك.</p>
+    </div>
+
+    {% if messages %}
+      <div class="msg-list">
+        {% for m in messages %}
+          <div class="msg-card">
+            <div class="msg-body">📢 {{ m.body }}</div>
+            <div class="msg-foot">
+              <span class="msg-date" dir="ltr">{{ m.created_at.strftime('%Y-%m-%d %H:%M') }}</span>
+              {% if is_admin %}
+                <form action="{{ url_for('messages_delete') }}" method="post" style="margin:0">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                  <input type="hidden" name="id" value="{{ m.id }}">
+                  <button class="btn-del" type="submit">حذف</button>
+                </form>
+              {% endif %}
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="empty">لا توجد رسائل بعد.</div>
+    {% endif %}
+  </section>
+
+  <script>
+    // فتح الصندوق = اعتبار كل الرسائل مقروءة → تصفير العلامة
+    try {
+      var latest = {{ messages[0].id if messages else 0 }};
+      if (latest) { localStorage.setItem('lastReadMsgId', latest); }
+      var b = document.getElementById('msg-badge'); if (b) { b.style.display = 'none'; }
+    } catch (e) {}
+  </script>
+{% endblock %}

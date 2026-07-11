@@ -167,7 +167,7 @@ class MarketMoodSnapshot(db.Model):
 
 
 class AppSetting(db.Model):
-    """إعدادات عامة للمنصة (مفتاح/قيمة) — مثل إعلان المدير لكل المستخدمين."""
+    """إعدادات عامة للمنصة (مفتاح/قيمة) — مثل إعدادات الاستعادة وكلمة المرور."""
 
     __tablename__ = "app_setting"
 
@@ -176,6 +176,19 @@ class AppSetting(db.Model):
 
     def __repr__(self):
         return f"<AppSetting {self.key}>"
+
+
+class Message(db.Model):
+    """رسالة من المدير لكل المستخدمين — تُحفظ في صندوق الرسائل (Inbox)."""
+
+    __tablename__ = "message"
+
+    id = db.Column(db.Integer, primary_key=True)
+    body = db.Column(db.Text, nullable=False)
+    created_at = db.Column(db.DateTime(timezone=True), nullable=False, default=_utcnow)
+
+    def __repr__(self):
+        return f"<Message {self.id}>"
 
 
 class StockCache(db.Model):

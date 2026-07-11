@@ -75,13 +75,13 @@
         <button class="btn" type="submit">💾 تغيير كلمة المرور</button>
       </form>
 
-      <h3 class="learn-group">📢 إعلان للمستخدمين</h3>{% endif %}
+      <h3 class="learn-group">📨 إرسال رسالة للمستخدمين</h3>{% endif %}
     {% if is_admin %}
-      <p class="set-sub" style="margin-bottom:12px">اكتب رسالة تظهر كبانر لكل من يفتح المنصة. امسح النص لإلغاء الإعلان.</p>
+      <p class="set-sub" style="margin-bottom:12px">اكتب رسالة تصل لكل المستخدمين (تظهر كمربع منبثق مرة واحدة + تُحفظ في <a href="{{ url_for('messages') }}">📨 صندوق الرسائل</a> ليرجعوا لها).</p>
       <form action="{{ url_for('announcement_save') }}" method="post">
   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-        <textarea name="announcement" class="note-area" rows="2" placeholder="مثال: أضفنا صفحة نبض السوق — جرّبوها! أو: السوق متقلّب اليوم، توخّوا الحذر.">{{ announcement or '' }}</textarea>
-        <button class="btn" type="submit" style="margin-top:10px">💾 حفظ الإعلان</button>
+        <textarea name="announcement" class="note-area" rows="2" placeholder="مثال: أضفنا صفحة نبض السوق — جرّبوها! أو: السوق متقلّب اليوم، توخّوا الحذر." required></textarea>
+        <button class="btn" type="submit" style="margin-top:10px">📨 إرسال الرسالة</button>
       </form>
 
       <h3 class="learn-group">👥 اشتراكات المستخدمين</h3>

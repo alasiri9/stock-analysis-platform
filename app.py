@@ -26,7 +26,7 @@ from flask_wtf import CSRFProtect
 
 from models import (db, Watchlist, PortfolioHolding, PriceAlert, StockNote,
                     Subscriber, StockCache, Signal, PricePoint, MarketMoodSnapshot,
-                    AppSetting)
+                    AppSetting, Message)
 
 
 def _upsert_setting(key, value):
@@ -212,29 +212,41 @@ def create_app():
             if sub and sub.is_active():
                 info = {"name": sub.name, "days_left": sub.days_left(),
                         "end_date": sub.end_date.strftime("%Y-%m-%d")}
-        # إعلان المدير (يظهر لكل المستخدمين إن وُجد)
-        ann = db.session.get(AppSetting, "announcement")
-        announcement = ann.value if (ann and ann.value.strip()) else None
+        # رسائل المدير (صندوق الرسائل): أحدث رسالة للمنبثق + معرّفات للعلامة
+        msgs = Message.query.order_by(Message.id.desc()).limit(30).all()
+        latest_message = {"id": msgs[0].id, "body": msgs[0].body} if msgs else None
+        msg_ids = [m.id for m in msgs]
         # هل الاستعادة عبر تلغرام مفعّلة؟ (لإظهار زر «نسيت كلمة المرور»)
         recovery_on = telegram_client.is_configured() and _get_setting("recovery_off") != "1"
-        return {"sub_status": info, "is_admin": is_admin(),
-                "announcement": announcement, "recovery_on": recovery_on}
+        return {"sub_status": info, "is_admin": is_admin(), "recovery_on": recovery_on,
+                "latest_message": latest_message, "msg_ids": msg_ids}
 
     @app.route("/announcement/save", methods=["POST"])
     def announcement_save():
+        # إرسال رسالة جديدة لكل المستخدمين (تُحفظ في صندوق الرسائل) — للمدير فقط
         if not is_admin():
             return redirect(url_for("settings"))
         text = request.form.get("announcement", "").strip()
-        row = db.session.get(AppSetting, "announcement")
         if text:
-            if row:
-                row.value = text
-            else:
-                db.session.add(AppSetting(key="announcement", value=text))
-        elif row:
-            db.session.delete(row)  # مسح النص يلغي الإعلان
-        db.session.commit()
+            db.session.add(Message(body=text))
+            db.session.commit()
         return redirect(url_for("settings"))
+
+    @app.route("/messages")
+    def messages():
+        # صندوق الرسائل: كل رسائل المدير (الأحدث أولاً) — يجد المستخدم ما أغلقه أو فاته
+        msgs = Message.query.order_by(Message.id.desc()).limit(100).all()
+        return render_template("messages.html", messages=msgs)
+
+    @app.route("/messages/delete", methods=["POST"])
+    def messages_delete():
+        if not is_admin():
+            return redirect(url_for("messages"))
+        m = db.session.get(Message, request.form.get("id"))
+        if m:
+            db.session.delete(m)
+            db.session.commit()
+        return redirect(url_for("messages"))
 
     @app.route("/recovery/toggle", methods=["POST"])
     def recovery_toggle():

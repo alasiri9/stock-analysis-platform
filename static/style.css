@@ -659,6 +659,19 @@ a.stat-box:hover { filter: brightness(1.15); transform: translateY(-1px); }
 .h-value { color: var(--text); font-size: 22px; font-weight: 900; }
 .h-sub { color: var(--muted); font-size: 12px; margin-top: 3px; }
 
+/* علامة عدد الرسائل غير المقروءة (بجانب «الرسائل» بالقائمة) */
+.msg-badge {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 20px; height: 20px; padding: 0 6px; border-radius: 999px;
+  background: var(--red); color: #fff; font-size: 12px; font-weight: 900;
+}
+/* صفحة صندوق الرسائل */
+.msg-list { display: flex; flex-direction: column; gap: 10px; }
+.msg-card { background: var(--card); border: 1px solid var(--border); border-inline-start: 4px solid var(--accent); border-radius: var(--radius); padding: 14px 16px; }
+.msg-body { color: var(--text); font-size: 15px; line-height: 1.8; white-space: pre-wrap; }
+.msg-foot { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; }
+.msg-date { color: var(--muted); font-size: 12px; }
+
 /* تنبيهات منبثقة (إعلان / قرب انتهاء الاشتراك) */
 .notif-overlay {
   position: fixed; inset: 0; z-index: 250; padding: 20px;
