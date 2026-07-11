@@ -884,8 +884,10 @@ def create_app():
     def stock_report(ticker):
         report = analysis.build_stock_report(ticker)
         if report is None:
-            # لا نخترع بيانات: نوضّح أن السهم غير متاح
-            return render_template("stock.html", report=None, ticker=ticker.upper())
+            # لا نخترع بيانات: نوضّح أن السهم غير متاح — ونميّز أسهم المنصة (سبب مؤقت غالباً)
+            in_universe = ticker.upper() in screener.UNIVERSE
+            return render_template("stock.html", report=None,
+                                   ticker=ticker.upper(), in_universe=in_universe)
         # سجل الماسح لنفس السهم (لعرض قوة التأكيد والملخّص الذكي) — None لو خارج قائمة المنصة
         records, _ = screener.load_records()
         scan = next((r for r in records if r["ticker"] == report["ticker"]), None)
