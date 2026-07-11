@@ -659,6 +659,25 @@ a.stat-box:hover { filter: brightness(1.15); transform: translateY(-1px); }
 .h-value { color: var(--text); font-size: 22px; font-weight: 900; }
 .h-sub { color: var(--muted); font-size: 12px; margin-top: 3px; }
 
+/* تنبيهات منبثقة (إعلان / قرب انتهاء الاشتراك) */
+.notif-overlay {
+  position: fixed; inset: 0; z-index: 250; padding: 20px;
+  background: rgba(0,0,0,.55); display: flex; align-items: center; justify-content: center;
+}
+.notif-box {
+  background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 26px 24px; max-width: 460px; width: 100%; text-align: center;
+  box-shadow: 0 24px 70px rgba(0,0,0,.55);
+}
+.notif-icon { font-size: 40px; margin-bottom: 10px; }
+.notif-item {
+  background: rgba(56,189,248,.14); border: 1px solid rgba(56,189,248,.45);
+  color: var(--accent); font-weight: 800; font-size: 15px; line-height: 1.8;
+  border-radius: var(--radius); padding: 13px 16px; margin-bottom: 12px;
+}
+.notif-item.warn { background: rgba(245,196,81,.14); border-color: rgba(245,196,81,.5); color: var(--gold); }
+.notif-box .btn { display: inline-block; margin-top: 4px; }
+
 /* مربع حواري: تعذّر بيانات السهم */
 .report-modal-overlay {
   position: fixed; inset: 0; z-index: 200; padding: 20px;

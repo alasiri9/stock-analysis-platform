@@ -9,7 +9,7 @@
   <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
   <meta name="theme-color" content="#0d1830">
   <script>(function(){try{if(localStorage.getItem('theme')==='light'){document.documentElement.classList.add('light');}}catch(e){}})();</script>
-  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=20260711b">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=20260711c">
 </head>
 <body>
   <div class="layout">
@@ -53,15 +53,39 @@
       </div>
     </aside>
     <main class="content">
-      {% if announcement %}
-        <div class="announce-banner">📢 {{ announcement }}</div>
-      {% endif %}
-      {% if sub_status and sub_status.days_left <= 7 %}
-        <div class="sub-banner">⏳ اشتراكك ينتهي {{ 'اليوم' if sub_status.days_left == 0 else ('غداً' if sub_status.days_left == 1 else 'بعد ' ~ sub_status.days_left ~ ' يوم') }} ({{ sub_status.end_date }}) — للتجديد تواصل مع صاحب المنصة.</div>
-      {% endif %}
       {% block content %}{% endblock %}
     </main>
   </div>
+
+  {# تنبيهات منبثقة (إعلان المدير + قرب انتهاء الاشتراك) — تظهر مرة واحدة #}
+  {% if announcement or (sub_status and sub_status.days_left <= 7) %}
+    <div class="notif-overlay" id="notif-modal" style="display:none"
+         data-key="{{ announcement or '' }}|{{ sub_status.end_date if sub_status else '' }}|{{ (sub_status.days_left <= 7) if sub_status else '' }}">
+      <div class="notif-box">
+        <div class="notif-icon">🔔</div>
+        {% if announcement %}
+          <div class="notif-item">📢 {{ announcement }}</div>
+        {% endif %}
+        {% if sub_status and sub_status.days_left <= 7 %}
+          <div class="notif-item warn">⏳ اشتراكك ينتهي {{ 'اليوم' if sub_status.days_left == 0 else ('غداً' if sub_status.days_left == 1 else 'بعد ' ~ sub_status.days_left ~ ' يوم') }} ({{ sub_status.end_date }}) — للتجديد تواصل مع صاحب المنصة.</div>
+        {% endif %}
+        <button class="btn" type="button" onclick="dismissNotif()">حسناً، فهمت 👍</button>
+      </div>
+    </div>
+    <script>
+      (function () {
+        var m = document.getElementById('notif-modal');
+        if (!m) return;
+        var key = 'notif_' + (m.getAttribute('data-key') || '');
+        try { if (localStorage.getItem(key) === '1') return; } catch (e) {}
+        m.style.display = 'flex';
+        window.dismissNotif = function () {
+          m.style.display = 'none';
+          try { localStorage.setItem(key, '1'); } catch (e) {}
+        };
+      })();
+    </script>
+  {% endif %}
 
   {# قائمة اقتراح رموز الأسهم (تظهر أثناء الكتابة في خانات البحث) #}
   <datalist id="universe-list">
