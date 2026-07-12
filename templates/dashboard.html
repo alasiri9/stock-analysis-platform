@@ -12,7 +12,7 @@
     <div class="health-grid">
       <div class="health-card">
         <div class="h-label">🧠 محفظتي</div>
-        <div class="h-value">{{ pf.count }} مقتنى</div>
+        <div class="h-value">{{ pf.count }} سهم</div>
         <div class="h-sub" dir="ltr">{{ "%.2f $"|format(pf.value) if pf.value is not none else '—' }}</div>
       </div>
       <div class="health-card {{ 'ok' if pf.pnl is not none and pf.pnl >= 0 else ('bad' if pf.pnl is not none else '') }}">
