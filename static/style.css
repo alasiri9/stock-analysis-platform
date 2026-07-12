@@ -294,17 +294,17 @@ a.stat-box:hover { filter: brightness(1.15); transform: translateY(-1px); }
 
 /* ---------- كروت الماسح (4 أعمدة: رتبة | معلومات | شارات | درجة) ---------- */
 /* إطار خارجي يلفّ كل الكروت من الخارج (داير ما دار) */
-.screener-cards { display: flex; flex-direction: column; gap: 10px; border: 5px solid var(--border); border-radius: var(--radius); padding: 42px; background: rgba(6,10,26,.22); }
+.screener-cards { display: flex; flex-direction: column; gap: 10px; border: 6px solid var(--border); border-radius: var(--radius); padding: 50px; background: rgba(6,10,26,.22); }
 .scard {
   display: block;
   background: rgba(6,10,26,.4); border: 2px solid rgba(255,255,255,.35);
-  border-radius: 12px; padding: 36px 14px; color: var(--text);
+  border-radius: 12px; padding: 54px 14px; color: var(--text);
   transition: border-color .15s, transform .05s;
 }
 /* المحتوى الداخلي: العدّاد أقصى اليسار، المعلومات أقصى اليمين، والوسط يتمدّد ليملأ ما بينهما */
 .scard-inner {
   display: flex; flex-wrap: wrap; align-items: center; gap: 18px; width: 100%;
-  max-width: 1000px; margin-inline: auto;  /* تصغير العرض الأفقي: حصر المحتوى وتمركزه (1000 هو الأدنى الآمن قبل تكسّر الأعمدة) */
+  max-width: 820px; margin-inline: auto;  /* تصغير العرض الأفقي: حصر المحتوى وتمركزه (بعد تضييق عمود المعلومات) */
 }
 .scard:hover { border-color: #2f3b58; transform: translateY(-1px); }
 .scard.gem { border-color: rgba(245,196,81,.55); box-shadow: 0 0 0 1px rgba(245,196,81,.15); background: linear-gradient(90deg, rgba(245,196,81,.12), rgba(6,10,26,.4) 45%); }
@@ -312,7 +312,7 @@ a.stat-box:hover { filter: brightness(1.15); transform: translateY(-1px); }
 .scard-rank { width: 22px; text-align: center; font-size: 21px; font-weight: 900; color: var(--muted); flex-shrink: 0; }
 
 .scard-lead { display: flex; align-items: center; gap: 14px; min-width: 0; }
-.scard-info { flex: 0 1 auto; min-width: 0; }
+.scard-info { flex: 0 1 auto; min-width: 0; max-width: 300px; }
 .scard-top { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .scard-ticker { font-size: 21px; font-weight: 900; }
 .scard-price { color: var(--muted); font-size: 17px; }
