@@ -1,5 +1,6 @@
 {# بطاقة سهم مشتركة — تُستخدم في الرئيسية والجواهر المخفية والقادة المستقبليون. تتوقّع r و rank من السياق المحيط. #}
 {% from "_gauge.html" import gauge %}
+{% from "_techmeter.html" import techmeter %}
 {% set is_gem = r.piotroski is not none and r.piotroski >= 8 %}
 {% set mcount = measures_met(r) %}
 <a class="scard {{ 'gem' if is_gem }} {{ 'strong' if mcount >= 10 }}" href="{{ url_for('stock_report', ticker=r.ticker) }}">
@@ -67,7 +68,15 @@
   </div>
 
   <div class="scard-score">
-    {{ gauge(mcount, 16, 'قوة التأكيد', 'sm') }}
+    <div class="scard-gauge">{{ gauge(mcount, 16, 'قوة التأكيد', 'sm') }}</div>
+    {% set tilt = tech_tilt(r) %}
+    {% if tilt %}
+      <div class="scard-meter">
+        {{ techmeter(tilt.frac) }}
+        <div class="scard-meter-label {{ tilt.kind }}">{{ tilt.label }}</div>
+        <div class="scard-meter-sub">الإشارات الفنية</div>
+      </div>
+    {% endif %}
   </div>
   </div>
 </a>

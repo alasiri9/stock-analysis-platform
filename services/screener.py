@@ -100,6 +100,32 @@ def measures_met(record):
     return count
 
 
+def tech_tilt(record):
+    """ميل الإشارات الفنية للسهم (تعليمي) — لميزان نصف الدائرة على البطاقة.
+
+    يُرجع dict {frac (0..1)، label تعليمي مختصر، kind} أو None لو لا مؤشرات.
+    frac = (الإيجابية + نصف المحايدة) ÷ الإجمالي. تعليمي — ليس توصية شراء/بيع.
+    """
+    inds = record.get("indicators") or []
+    if not inds:
+        return None
+    bull = sum(1 for b in inds if b.get("status") == "bull")
+    bear = sum(1 for b in inds if b.get("status") == "bear")
+    neutral = len(inds) - bull - bear
+    frac = (bull + 0.5 * neutral) / len(inds)
+    if frac >= 0.70:
+        label, kind = "إيجابي قوي", "pos2"
+    elif frac >= 0.56:
+        label, kind = "إيجابي", "pos1"
+    elif frac > 0.44:
+        label, kind = "محايد", "neu"
+    elif frac > 0.30:
+        label, kind = "سلبي", "neg1"
+    else:
+        label, kind = "سلبي قوي", "neg2"
+    return {"frac": frac, "label": label, "kind": kind}
+
+
 def early_launch_candidates(records=None, min_strategies=3):
     """مرشّحو "قبل الانطلاق": أسهم في مرحلة مبكرة ولم تصعد بعد، مرتّبة بقوة التأكيد.
 

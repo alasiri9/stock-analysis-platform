@@ -379,6 +379,7 @@ def create_app():
     app.jinja_env.globals["is_golden"] = screener.is_golden
     app.jinja_env.globals["measures_met"] = screener.measures_met
     app.jinja_env.globals["bullish_reasons"] = screener.bullish_reasons
+    app.jinja_env.globals["tech_tilt"] = screener.tech_tilt
     app.jinja_env.globals["UNIVERSE"] = screener.UNIVERSE  # لاقتراح الرموز في البحث
 
     @app.template_filter("ts_ago")

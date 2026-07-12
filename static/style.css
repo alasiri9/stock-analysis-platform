@@ -345,11 +345,21 @@ a.stat-box:hover { filter: brightness(1.15); transform: translateY(-1px); }
 }
 .scard-earn.soon { color: var(--red); background: rgba(34,197,94,.14); border-color: rgba(34,197,94,.45); }
 
-.scard-score { text-align: center; flex-shrink: 0; margin-left: 34px; }
+.scard-score { display: flex; align-items: center; gap: 16px; text-align: center; flex-shrink: 0; margin-left: 34px; }
 /* عدّاد أكبر للبطاقة (كان 84px) + مُزاح قليلاً للداخل (يمين) */
 .scard-score .gauge-sm { width: 134px; }
 .scard-score .gauge-num { font-size: 25px; }
 .scard-score .gauge-label { font-size: 14px; }
+/* ميزان الإشارات الفنية بجوار عدّاد قوة التأكيد على البطاقة */
+.scard-meter { width: 134px; flex-shrink: 0; }
+.scard-meter .tmeter-svg { width: 100%; }
+.scard-meter-label { font-weight: 900; font-size: 16px; margin-top: 3px; line-height: 1; }
+.scard-meter-label.pos2 { color: var(--green); }
+.scard-meter-label.pos1 { color: #84cc16; }
+.scard-meter-label.neu { color: var(--muted); }
+.scard-meter-label.neg1 { color: var(--gold); }
+.scard-meter-label.neg2 { color: var(--red); }
+.scard-meter-sub { font-size: 12.5px; color: var(--muted); margin-top: 3px; }
 
 @media (max-width: 900px) {
   .scard-inner { flex-direction: column; align-items: stretch; }
@@ -857,9 +867,9 @@ a.stat-box:hover { filter: brightness(1.15); transform: translateY(-1px); }
 .gauge-sm { width: 84px; }
 .gauge-lg { width: 150px; margin: 0 auto; }
 .gauge { width: 100%; height: auto; display: block; }
-.g-zone-r { fill: none; stroke: var(--red); stroke-width: 8; stroke-linecap: butt; }
-.g-zone-y { fill: none; stroke: var(--gold); stroke-width: 8; stroke-linecap: butt; }
-.g-zone-g { fill: none; stroke: var(--green); stroke-width: 8; stroke-linecap: butt; }
+.g-zone-r { fill: none; stroke: var(--red); stroke-width: 5; stroke-linecap: butt; }
+.g-zone-y { fill: none; stroke: var(--gold); stroke-width: 5; stroke-linecap: butt; }
+.g-zone-g { fill: none; stroke: var(--green); stroke-width: 5; stroke-linecap: butt; }
 .g-hub { fill: var(--text); }
 .gauge-needle {
   stroke: var(--text); stroke-width: 3; stroke-linecap: round;
@@ -878,7 +888,7 @@ a.stat-box:hover { filter: brightness(1.15); transform: translateY(-1px); }
 .tmeter-section { text-align: center; }
 .tmeter-wrap { max-width: 280px; margin: 0 auto; }
 .tmeter-svg { width: 100%; height: auto; display: block; }
-.tz { fill: none; stroke-width: 9; stroke-linecap: butt; }
+.tz { fill: none; stroke-width: 5; stroke-linecap: butt; }
 .tz1 { stroke: var(--red); }
 .tz2 { stroke: var(--gold); }
 .tz3 { stroke: var(--muted); }
