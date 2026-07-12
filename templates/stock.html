@@ -136,6 +136,21 @@
     </div>
   </div>
 
+  {# ===== ميزان الإشارات الفنية الحي (تعليمي) ===== #}
+  {% if meter %}
+    {% from "_techmeter.html" import techmeter %}
+    <div class="section tmeter-section">
+      <h2>🌡️ ميزان الإشارات الفنية</h2>
+      <div class="tmeter-wrap">
+        {{ techmeter(meter.frac) }}
+        <div class="tmeter-ends"><span>سلبي</span><span>محايد</span><span>إيجابي</span></div>
+        <div class="tmeter-state {{ meter.kind }}">{{ meter.label }}</div>
+        <div class="tmeter-counts">{{ meter.bull }} إيجابي · {{ meter.neutral }} محايد · {{ meter.bear }} سلبي</div>
+      </div>
+      <div class="note">📌 يميل المؤشر حيّاً حسب مؤشراتك الفنية (كم مؤشراً إيجابياً مقابل سلبي). وصف تعليمي لميل السهم الفني — <b>ليس توصية شراء أو بيع</b>.</div>
+    </div>
+  {% endif %}
+
   {# ===== المؤشرات الفنية المتحققة (الصاعدة فقط) ===== #}
   {% if report.indicators %}
   <div class="section">

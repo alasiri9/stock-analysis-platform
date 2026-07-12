@@ -1,0 +1,16 @@
+{# ميزان الإشارات الفنية — نصف دائرة بـ5 مناطق (سلبي→محايد→إيجابي) وإبرة متحركة.
+   frac من 0 (كل المؤشرات سلبية = أقصى اليسار) إلى 1 (كلها إيجابية = أقصى اليمين).
+   تعليمي فقط — يصف ميل المؤشرات، ليس توصية شراء أو بيع. #}
+{% macro techmeter(frac) %}
+  {%- set f = 0 if frac < 0 else (1 if frac > 1 else frac) -%}
+  {%- set angle = -90 + f * 180 -%}
+  <svg class="tmeter-svg" viewBox="0 0 100 62" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+    <path class="tz tz1" d="M10,50 A40,40 0 0 1 17.64,26.49"/>
+    <path class="tz tz2" d="M17.64,26.49 A40,40 0 0 1 37.64,11.96"/>
+    <path class="tz tz3" d="M37.64,11.96 A40,40 0 0 1 62.36,11.96"/>
+    <path class="tz tz4" d="M62.36,11.96 A40,40 0 0 1 82.36,26.49"/>
+    <path class="tz tz5" d="M82.36,26.49 A40,40 0 0 1 90,50"/>
+    <line class="tmeter-needle" x1="50" y1="50" x2="50" y2="15" style="--angle: {{ '%.1f'|format(angle) }}deg"/>
+    <circle class="tmeter-hub" cx="50" cy="50" r="4.5"/>
+  </svg>
+{% endmacro %}

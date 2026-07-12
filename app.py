@@ -1044,12 +1044,29 @@ def create_app():
         met = [b for b in inds if b.get("status") == "bull"]
         tech = {"met": met, "total": len(inds),
                 "pct": round(len(met) / len(inds) * 100) if inds else 0}
+        # ميزان الإشارات الفنية (تعليمي): يميل حسب المؤشرات الإيجابية مقابل السلبية
+        bull = len(met)
+        bear = sum(1 for b in inds if b.get("status") == "bear")
+        neutral = len(inds) - bull - bear
+        frac = (bull + 0.5 * neutral) / len(inds) if inds else 0.5
+        if frac >= 0.70:
+            t_label, t_kind = "ميل إيجابي قوي", "pos2"
+        elif frac >= 0.56:
+            t_label, t_kind = "ميل إيجابي", "pos1"
+        elif frac > 0.44:
+            t_label, t_kind = "محايد", "neu"
+        elif frac > 0.30:
+            t_label, t_kind = "ميل سلبي", "neg1"
+        else:
+            t_label, t_kind = "ميل سلبي قوي", "neg2"
+        meter = {"frac": frac, "label": t_label, "kind": t_kind,
+                 "bull": bull, "bear": bear, "neutral": neutral} if inds else None
         # نقاط Piotroski المتحققة (الناجحة فقط)
         pio = report.get("piotroski") or {}
         pio_met = [c for c in (pio.get("components") or []) if c.get("passed") is True]
         return render_template("stock.html", report=report, ticker=report["ticker"],
                                scan=scan, summary=summary, peers=peers, tech=tech,
-                               pio_met=pio_met)
+                               pio_met=pio_met, meter=meter)
 
     # ===================== حاسبة حجم الصفقة =====================
 
