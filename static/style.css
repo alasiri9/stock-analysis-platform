@@ -304,7 +304,7 @@ a.stat-box:hover { filter: brightness(1.15); transform: translateY(-1px); }
 /* المحتوى الداخلي: العدّاد أقصى اليسار، المعلومات أقصى اليمين، والوسط يتمدّد ليملأ ما بينهما */
 .scard-inner {
   display: flex; flex-wrap: wrap; align-items: center; gap: 18px; width: 100%;
-  max-width: 820px; margin-inline: auto;  /* تصغير العرض الأفقي: حصر المحتوى وتمركزه (بعد تضييق عمود المعلومات) */
+  max-width: 900px; margin-inline: auto;  /* حصر المحتوى وتمركزه (توسعة بسيطة: العدّاد لليسار والمعلومات لليمين) */
 }
 .scard:hover { border-color: #2f3b58; transform: translateY(-1px); }
 .scard.gem { border-color: rgba(245,196,81,.55); box-shadow: 0 0 0 1px rgba(245,196,81,.15); background: linear-gradient(90deg, rgba(245,196,81,.12), rgba(6,10,26,.4) 45%); }
