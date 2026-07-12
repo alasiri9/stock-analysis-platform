@@ -41,16 +41,17 @@
   {% set ind = {} %}
   {% for b in (r.indicators or []) %}{% set _ = ind.update({b.label: b.status}) %}{% endfor %}
   <div class="scard-mid">
-    <div class="scard-badges">
-      {% for cat, key in [('حجم','الحجم'), ('RS','RSI'), ('MACD','MACD'), ('EMA','EMA'), ('اختراق','اختراق'), ('ADX','ADX'), ('قمة','قمة'), ('انضغاط','انضغاط'), ('تقاطع','تقاطع')] %}
-        <span class="cat-pill {{ 'on' if key and ind.get(key) == 'bull' }}">{{ cat }}</span>
-      {% endfor %}
-    </div>
+    {# المربع الأخضر (الإشارة) فوق مربعات المؤشرات #}
     {% if is_golden(r) %}
       <div class="scard-golden">🥇 إشارة ذهبية — 3 عوامل مجتمعة</div>
     {% elif r.catalyst is not none and r.catalyst >= 80 %}
       <div class="scard-ready">🎯 انفجار قوي — جاهز للانطلاق</div>
     {% endif %}
+    <div class="scard-badges">
+      {% for cat, key in [('حجم','الحجم'), ('RS','RSI'), ('MACD','MACD'), ('EMA','EMA'), ('اختراق','اختراق'), ('ADX','ADX'), ('قمة','قمة'), ('انضغاط','انضغاط'), ('تقاطع','تقاطع')] %}
+        <span class="cat-pill {{ 'on' if key and ind.get(key) == 'bull' }}">{{ cat }}</span>
+      {% endfor %}
+    </div>
     {% set dte = r.get('days_to_earnings') %}
     {% if dte is not none %}
       <div class="scard-earn {{ 'soon' if dte <= 7 }}">📅 أرباح {{ 'اليوم' if dte == 0 else ('بعد يوم' if dte == 1 else 'بعد ' ~ dte ~ ' يوم') }}</div>

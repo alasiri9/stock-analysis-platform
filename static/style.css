@@ -300,10 +300,9 @@ a.stat-box:hover { filter: brightness(1.15); transform: translateY(-1px); }
   border-radius: 12px; padding: 12px 14px; color: var(--text);
   transition: border-color .15s, transform .05s;
 }
-/* المحتوى الداخلي: عرض محدود ومتمركز حتى لا تتباعد المعلومات على الشاشات العريضة */
+/* المحتوى الداخلي: العدّاد أقصى اليسار، المعلومات أقصى اليمين، والوسط يتمدّد ليملأ ما بينهما */
 .scard-inner {
-  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 14px;
-  max-width: 960px; margin-inline: auto; width: 100%;
+  display: flex; flex-wrap: wrap; align-items: center; gap: 18px; width: 100%;
 }
 .scard:hover { border-color: #2f3b58; transform: translateY(-1px); }
 .scard.gem { border-color: rgba(245,196,81,.55); box-shadow: 0 0 0 1px rgba(245,196,81,.15); background: linear-gradient(90deg, rgba(245,196,81,.12), rgba(6,10,26,.4) 45%); }
@@ -324,8 +323,8 @@ a.stat-box:hover { filter: brightness(1.15); transform: translateY(-1px); }
 .rs-pill.neg { color: var(--red); background: var(--red-dim); }
 .measures-pill { font-size: 13px; font-weight: 900; color: var(--gold); background: rgba(245,196,81,.14); border: 1px solid rgba(245,196,81,.4); padding: 2px 9px; border-radius: 999px; }
 
-.scard-mid { display: flex; flex-direction: column; gap: 7px; width: 196px; flex-shrink: 1; flex-basis: 196px; min-width: 150px; }
-.scard-badges { display: flex; flex-wrap: wrap; gap: 5px; justify-content: flex-start; }
+.scard-mid { display: flex; flex-direction: column; align-items: center; gap: 7px; flex: 1 1 auto; min-width: 200px; }
+.scard-badges { display: flex; flex-wrap: wrap; gap: 5px; justify-content: center; }
 .cat-pill {
   font-size: 13px; padding: 3px 9px; border-radius: 20px;
   background: var(--card); border: 1px solid var(--border); color: var(--muted);
@@ -344,7 +343,11 @@ a.stat-box:hover { filter: brightness(1.15); transform: translateY(-1px); }
 }
 .scard-earn.soon { color: var(--red); background: rgba(34,197,94,.14); border-color: rgba(34,197,94,.45); }
 
-.scard-score { text-align: center; flex-shrink: 0; min-width: 58px; }
+.scard-score { text-align: center; flex-shrink: 0; }
+/* عدّاد أكبر للبطاقة (كان 84px) */
+.scard-score .gauge-sm { width: 116px; }
+.scard-score .gauge-num { font-size: 24px; }
+.scard-score .gauge-label { font-size: 13.5px; }
 
 @media (max-width: 900px) {
   .scard-inner { flex-direction: column; align-items: stretch; }
@@ -585,7 +588,7 @@ a.stat-box:hover { filter: brightness(1.15); transform: translateY(-1px); }
 .learn-term-ex { color: var(--muted); font-size: 13px; margin-top: 8px; font-style: italic; }
 
 /* رسم مصغّر داخل بطاقة السهم المشتركة */
-.scard-spark { width: 100%; height: 30px; display: block; margin-top: 8px; opacity: .85; }
+.scard-spark { width: 100%; max-width: 300px; height: 30px; display: block; margin-top: 8px; opacity: .85; }
 .scard-spark.up { color: var(--green); }
 .scard-spark.down { color: var(--red); }
 
