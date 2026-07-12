@@ -343,18 +343,18 @@ a.stat-box:hover { filter: brightness(1.15); transform: translateY(-1px); }
 }
 .scard-earn.soon { color: var(--red); background: rgba(34,197,94,.14); border-color: rgba(34,197,94,.45); }
 
-.scard-score { text-align: center; flex-shrink: 0; }
-/* عدّاد أكبر للبطاقة (كان 84px) */
-.scard-score .gauge-sm { width: 116px; }
-.scard-score .gauge-num { font-size: 24px; }
-.scard-score .gauge-label { font-size: 13.5px; }
+.scard-score { text-align: center; flex-shrink: 0; margin-left: 34px; }
+/* عدّاد أكبر للبطاقة (كان 84px) + مُزاح قليلاً للداخل (يمين) */
+.scard-score .gauge-sm { width: 150px; }
+.scard-score .gauge-num { font-size: 27px; }
+.scard-score .gauge-label { font-size: 14px; }
 
 @media (max-width: 900px) {
   .scard-inner { flex-direction: column; align-items: stretch; }
   .scard-mid { display: block; width: 100%; }
   .scard-badges { width: 100%; }
   .scard-ready { display: table; margin: 10px auto 0; }
-  .scard-score { width: 100%; }
+  .scard-score { width: 100%; margin-left: 0; }
 }
 .scard-big { font-size: 39px; font-weight: 900; line-height: 1; color: var(--green); text-shadow: 0 0 18px rgba(34,197,94,.25); }
 .scard-status { color: var(--green); opacity: .8; font-size: 13px; margin-top: 5px; }
