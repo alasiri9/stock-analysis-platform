@@ -409,6 +409,7 @@ def create_app():
             "squeeze_breakout": "💣 انفجار وشيك (انضغاط + اختراق)",
             "golden_cross": "🌟 تقاطع ذهبي (SMA50/200)",
             "trend_pullback": "🎯 ارتداد الترند (شراء الانخفاض)",
+            "prelaunch_ready": "🔎 جاهز للانطلاق",
         }.get(signal_type, signal_type)
 
     @app.template_filter("quality_icon")
