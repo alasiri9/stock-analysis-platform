@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% set active = 'business' %}
+{% block title %}لوحة أعمالي — Algomatix{% endblock %}
+
+{% block content %}
+  <section class="panel">
+    <div class="panel-head">
+      <h2>📊 لوحة أعمالي</h2>
+      <p class="panel-sub">نظرة سريعة على اشتراكاتك ودخلك المتوقّع. للمدير فقط.</p>
+    </div>
+
+    <div class="health-grid">
+      <div class="health-card ok">
+        <div class="h-label">👥 مشتركون نشطون</div>
+        <div class="h-value">{{ biz.active }}</div>
+        <div class="h-sub">من {{ biz.total }} إجمالاً</div>
+      </div>
+      <div class="health-card {{ 'warn' if biz.expiring else 'ok' }}">
+        <div class="h-label">⏳ ينتهون هذا الأسبوع</div>
+        <div class="h-value">{{ biz.expiring|length }}</div>
+        <div class="h-sub">خلال 7 أيام</div>
+      </div>
+      <div class="health-card {{ 'bad' if biz.expired else '' }}">
+        <div class="h-label">⛔ اشتراكات منتهية</div>
+        <div class="h-value">{{ biz.expired }}</div>
+      </div>
+      <div class="health-card">
+        <div class="h-label">💰 الدخل الشهري المتوقّع</div>
+        <div class="h-value" dir="ltr">{{ "%.0f $"|format(biz.income) if biz.income is not none else '—' }}</div>
+        <div class="h-sub">{% if biz.price %}{{ biz.active }} × {{ "%.0f $"|format(biz.price) }}{% else %}حدّد السعر بالأسفل{% endif %}</div>
+      </div>
+    </div>
+
+    <h3 class="learn-group">💵 سعر الاشتراك الشهري</h3>
+    <p class="set-sub" style="margin-bottom:12px">أدخل سعر الاشتراك لكل مشترك شهرياً — نحسب لك الدخل المتوقّع تلقائياً.</p>
+    <form class="filters" action="{{ url_for('business_price') }}" method="post">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="filter">
+        <label>السعر ($ شهرياً)</label>
+        <input type="number" name="price" min="0" step="1" dir="ltr"
+               value="{{ "%.0f"|format(biz.price) if biz.price else '' }}" placeholder="مثال: 50">
+      </div>
+      <button class="btn" type="submit">💾 حفظ السعر</button>
+    </form>
+
+    {% if biz.expiring %}
+      <h3 class="learn-group">⏳ تواصل معهم للتجديد</h3>
+      <table class="insider">
+        <thead><tr><th>المشترك</th><th>ينتهي في</th><th>المتبقي</th></tr></thead>
+        <tbody>
+          {% for s in biz.expiring %}
+            <tr>
+              <td>{{ s.name }}</td>
+              <td dir="ltr">{{ s.end_date.strftime('%Y-%m-%d') }}</td>
+              <td><span class="pill {{ 'sell' if s.days_left() <= 2 else 'warn' }}">{{ s.days_left() }} يوم</span></td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% endif %}
+
+    <div class="note" style="margin-top:16px">📌 الدخل المتوقّع = عدد المشتركين النشطين × السعر الشهري — تقدير تقريبي يساعدك على متابعة نمو منصتك. يوصلك أيضاً تذكير تلغرام قبل انتهاء أي اشتراك بيومين.</div>
+  </section>
+{% endblock %}

@@ -671,6 +671,87 @@ def create_app():
         }
         return render_template("health.html", health=health)
 
+    @app.route("/dashboard")
+    def dashboard():
+        # لوحة شخصية تجمع بيانات المستخدم الحالي في مكان واحد (من الكاش، بلا API)
+        uid = current_user_id()
+        records, _ = screener.load_records()
+        price_by = {r["ticker"]: r.get("price") for r in records}
+
+        # المحفظة — ملخص سريع
+        holdings = PortfolioHolding.query.filter_by(user_id=uid).all()
+        pf_cost = pf_value = 0.0
+        pf_complete = True
+        for h in holdings:
+            pf_cost += h.shares * h.buy_price
+            p = price_by.get(h.ticker)
+            if p is None:
+                pf_complete = False
+            else:
+                pf_value += h.shares * p
+        pf = {"count": len(holdings),
+              "cost": pf_cost if holdings else None,
+              "value": pf_value if holdings and pf_complete else None}
+        if pf["value"] is not None and pf_cost:
+            pf["pnl"] = pf["value"] - pf_cost
+            pf["pnl_pct"] = pf["pnl"] / pf_cost * 100.0
+        else:
+            pf["pnl"] = pf["pnl_pct"] = None
+
+        # قائمة المراقبة — مع العائد منذ الإضافة
+        watch = (Watchlist.query.filter_by(user_id=uid)
+                 .order_by(Watchlist.added_at.desc()).all())
+        watch_rows = []
+        for w in watch:
+            cur = price_by.get(w.ticker)
+            ret = ((cur - w.added_price) / w.added_price * 100.0
+                   if cur is not None and w.added_price else None)
+            watch_rows.append({"ticker": w.ticker, "current": cur, "return_pct": ret})
+
+        alerts_active = PriceAlert.query.filter_by(user_id=uid, active=True).count()
+        latest_signals = screener.recent_signals(limit=6)
+        return render_template("dashboard.html", pf=pf, watch=watch_rows,
+                               alerts_active=alerts_active, signals=latest_signals,
+                               price_by=price_by)
+
+    @app.route("/business")
+    def business():
+        # لوحة أعمال المدير: مؤشرات الاشتراكات + الدخل الشهري المتوقّع (للمدير فقط)
+        if not is_admin():
+            return redirect(url_for("settings"))
+        subs = Subscriber.query.all()
+        active = [s for s in subs if s.is_active()]
+        expiring = sorted((s for s in active if s.days_left() <= 7),
+                          key=lambda s: s.days_left())
+        try:
+            price = float(_get_setting("sub_price") or 0)
+        except (TypeError, ValueError):
+            price = 0.0
+        biz = {
+            "total": len(subs),
+            "active": len(active),
+            "expiring": expiring,
+            "expired": sum(1 for s in subs if not s.is_active()),
+            "price": price,
+            "income": len(active) * price if price else None,
+        }
+        return render_template("business.html", biz=biz)
+
+    @app.route("/business/price", methods=["POST"])
+    def business_price():
+        # حفظ سعر الاشتراك الشهري (لحساب الدخل المتوقّع) — للمدير فقط
+        if not is_admin():
+            return redirect(url_for("settings"))
+        raw = request.form.get("price", "").strip()
+        try:
+            v = float(raw)
+            if v >= 0:
+                _upsert_setting("sub_price", str(v))
+                db.session.commit()
+        except (TypeError, ValueError):
+            db.session.rollback()
+        return redirect(url_for("business"))
+
     @app.route("/settings")
     def settings():
         # إعدادات المنصة (المظهر/الترتيب/مبلغ المحاكاة تُحفظ في المتصفح — localStorage)
@@ -1093,6 +1174,26 @@ def create_app():
         quote = fmp_client.get_quote(ticker)
         return quote.get("price") if quote else None
 
+    def _holding_plan_status(buy_price, current, atr):
+        """حالة تعليمية لمقتنى: قرب سعره الحالي من الهدف/الوقف المحسوبَين من سعر شرائه.
+
+        نفس مضاعفات خطة ATR في المنصة: الهدف = الشراء + 3×ATR، الوقف = الشراء − 1.5×ATR.
+        يُرجع dict {kind, label} أو None لو نقصت البيانات. تعليمي فقط — لا توصية.
+        """
+        if not atr or current is None or not buy_price:
+            return None
+        target = buy_price + 3.0 * atr
+        stop = buy_price - 1.5 * atr
+        if current >= target:
+            return {"kind": "target", "label": "🎯 بلغ الهدف التعليمي"}
+        if current <= stop:
+            return {"kind": "stop", "label": "🛑 بلغ الوقف التعليمي"}
+        if current >= buy_price + 2.0 * atr:
+            return {"kind": "near-target", "label": "🎯 يقترب من الهدف"}
+        if current <= buy_price - atr:
+            return {"kind": "near-stop", "label": "🛑 يقترب من الوقف"}
+        return None
+
     @app.route("/portfolio")
     def portfolio():
         items = (
@@ -1101,6 +1202,7 @@ def create_app():
         )
         records, _ = screener.load_records()
         cache_prices = {r["ticker"]: r.get("price") for r in records}
+        atr_by = {r["ticker"]: r.get("atr") for r in records}
 
         rows = []
         total_cost = total_value = 0.0
@@ -1120,6 +1222,8 @@ def create_app():
                 "id": item.id, "ticker": item.ticker, "shares": item.shares,
                 "buy_price": item.buy_price, "current": current,
                 "cost": cost, "value": value, "pnl": pnl, "pnl_pct": pnl_pct,
+                # حالة تعليمية: قرب السعر من الهدف/الوقف (بنفس مضاعفات خطة ATR: هدف +3، وقف −1.5)
+                "plan": _holding_plan_status(item.buy_price, current, atr_by.get(item.ticker)),
             })
 
         # الملخص: None ≠ 0 — لو سهم بلا سعر حالي لا نعرض إجمالياً مضلّلاً

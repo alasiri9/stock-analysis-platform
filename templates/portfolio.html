@@ -96,6 +96,7 @@
             <th>التكلفة</th>
             <th>القيمة الحالية</th>
             <th>الربح / الخسارة</th>
+            <th>حالة تعليمية</th>
             <th></th>
           </tr>
         </thead>
@@ -114,6 +115,11 @@
                 {% else %}—{% endif %}
               </td>
               <td>
+                {% if r.plan %}
+                  <span class="pill {{ 'buy' if 'target' in r.plan.kind else 'sell' }}">{{ r.plan.label }}</span>
+                {% else %}<span class="muted">—</span>{% endif %}
+              </td>
+              <td>
                 <form action="{{ url_for('portfolio_remove') }}" method="post" style="margin:0">
   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                   <input type="hidden" name="id" value="{{ r.id }}">
@@ -124,6 +130,7 @@
           {% endfor %}
         </tbody>
       </table>
+      <div class="note" style="margin-top:14px">🎯 «الحالة التعليمية» تقارن السعر الحالي بهدف/وقف محسوبَين من سعر شرائك وتذبذب السهم (ATR): الهدف = الشراء + 3×ATR، الوقف = الشراء − 1.5×ATR. تعليمي فقط لتنبيهك للحظة المراجعة — وليس توصية بيع أو شراء.</div>
     {% else %}
       <div class="empty">
         محفظتك فارغة — أضف أول عملية شراء من النموذج أعلاه وتابع أداءها هنا.

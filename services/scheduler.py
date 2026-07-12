@@ -80,9 +80,17 @@ def _auto_refresh(app):
         except Exception as e:  # noqa: BLE001
             print(f"[scheduler] تعذّر تنبيه الاستعداد للانطلاق: {e}")
 
+        # تذكير المدير بالمشتركين الذين تنتهي اشتراكاتهم قريباً (للتجديد)
+        try:
+            n = _notify_expiring_subs()
+            if n:
+                print(f"[scheduler] تذكير تجديد: {n} مشترك قرب الانتهاء")
+        except Exception as e:  # noqa: BLE001
+            print(f"[scheduler] تعذّر إرسال تذكير التجديد: {e}")
+
         # لقطة يومية لمزاج السوق (لرسم نبض السوق التاريخي)
         try:
-            from models import MarketMoodSnapshot
+            from models import db, MarketMoodSnapshot
             from datetime import date as _date
             recs, _ = screener.load_records()
             mood = screener.market_mood(recs)
@@ -238,6 +246,31 @@ def _send_weekly_report():
     lines.append("https://algomatix-production.up.railway.app")
     sent = telegram_client.send_message("\n".join(lines))
     print(f"[scheduler] التقرير الأسبوعي: {'أُرسل ✅' if sent else 'فشل الإرسال'}")
+
+
+def _notify_expiring_subs():
+    """ينبّه المدير بتلغرام بالمشتركين الذين تنتهي اشتراكاتهم خلال يومين (للتجديد).
+
+    يُستدعى داخل app_context من التحديث الليلي. يُرجع عدد المشتركين المنبَّه عنهم.
+    """
+    if not telegram_client.is_configured():
+        return 0
+    from models import Subscriber
+    subs = Subscriber.query.all()
+    soon = sorted((s for s in subs if s.is_active() and 0 <= s.days_left() <= 2),
+                  key=lambda s: s.days_left())
+    if not soon:
+        return 0
+    lines = ["⏳ <b>تذكير تجديد اشتراكات</b>", "",
+             "مشتركون تنتهي اشتراكاتهم قريباً — تواصل معهم للتجديد:"]
+    for s in soon:
+        d = s.days_left()
+        when = "اليوم" if d == 0 else ("غداً" if d == 1 else f"بعد {d} أيام")
+        lines.append(f"• {s.name} — {when} ({s.end_date:%Y-%m-%d})")
+    lines.append("")
+    lines.append("https://algomatix-production.up.railway.app")
+    telegram_client.send_message("\n".join(lines))
+    return len(soon)
 
 
 def init_scheduler(app):

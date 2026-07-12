@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% set active = 'dashboard' %}
+{% block title %}لوحتي — Algomatix{% endblock %}
+
+{% block content %}
+  <section class="panel">
+    <div class="panel-head">
+      <h2>🏠 لوحتي</h2>
+      <p class="panel-sub">كل ما يخصّك في مكان واحد: محفظتك، متابعاتك، تنبيهاتك، وأحدث الإشارات.</p>
+    </div>
+
+    <div class="health-grid">
+      <div class="health-card">
+        <div class="h-label">🧠 محفظتي</div>
+        <div class="h-value">{{ pf.count }} مقتنى</div>
+        <div class="h-sub" dir="ltr">{{ "%.2f $"|format(pf.value) if pf.value is not none else '—' }}</div>
+      </div>
+      <div class="health-card {{ 'ok' if pf.pnl is not none and pf.pnl >= 0 else ('bad' if pf.pnl is not none else '') }}">
+        <div class="h-label">📈 ربح/خسارة المحفظة</div>
+        <div class="h-value" dir="ltr">{{ "%+.1f"|format(pf.pnl_pct) ~ '%' if pf.pnl is not none else '—' }}</div>
+        <div class="h-sub" dir="ltr">{{ "%+.2f $"|format(pf.pnl) if pf.pnl is not none else 'يظهر بعد تحديث الأسعار' }}</div>
+      </div>
+      <div class="health-card">
+        <div class="h-label">👁 قائمة مراقبتي</div>
+        <div class="h-value">{{ watch|length }} سهم</div>
+      </div>
+      <div class="health-card">
+        <div class="h-label">🔔 تنبيهاتي النشطة</div>
+        <div class="h-value">{{ alerts_active }}</div>
+      </div>
+    </div>
+
+    <div class="set-links" style="margin-top:16px">
+      <a class="preset" href="{{ url_for('portfolio') }}">🧠 المحفظة</a>
+      <a class="preset" href="{{ url_for('watchlist') }}">👁 قائمة المراقبة</a>
+      <a class="preset" href="{{ url_for('alerts') }}">🔔 التنبيهات</a>
+      <a class="preset" href="{{ url_for('index') }}#scanner">🔍 الاستعداد للانطلاق</a>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="panel-head"><h2>👁 قائمة مراقبتي</h2></div>
+    {% if watch %}
+      <table class="insider">
+        <thead><tr><th>السهم</th><th>السعر الحالي</th><th>العائد منذ الإضافة</th></tr></thead>
+        <tbody>
+          {% for w in watch %}
+            <tr>
+              <td><a href="{{ url_for('stock_report', ticker=w.ticker) }}"><b>{{ w.ticker }}</b></a></td>
+              <td dir="ltr">{{ "%.2f $"|format(w.current) if w.current is not none else '—' }}</td>
+              <td dir="ltr">
+                {% if w.return_pct is not none %}
+                  <span class="pill {{ 'buy' if w.return_pct >= 0 else 'sell' }}">{{ "%+.1f"|format(w.return_pct) }}%</span>
+                {% else %}—{% endif %}
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <div class="empty">لا أسهم في قائمتك بعد — أضف من <a href="{{ url_for('watchlist') }}">قائمة المراقبة</a>.</div>
+    {% endif %}
+  </section>
+
+  <section class="panel">
+    <div class="panel-head"><h2>⚡ أحدث الإشارات</h2></div>
+    {% if signals %}
+      <table class="insider">
+        <thead><tr><th>السهم</th><th>نوع الإشارة</th><th>السعر</th><th>التاريخ</th></tr></thead>
+        <tbody>
+          {% for s in signals %}
+            <tr>
+              <td><a href="{{ url_for('stock_report', ticker=s.ticker) }}"><b>{{ s.ticker }}</b></a></td>
+              <td>{{ s.signal_type | signal_name }}</td>
+              <td dir="ltr">{{ "%.2f $"|format(s.price_at_signal) if s.price_at_signal is not none else '—' }}</td>
+              <td dir="ltr">{{ s.triggered_at.strftime('%Y-%m-%d') if s.triggered_at else '—' }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <div class="empty">لا إشارات مسجّلة بعد.</div>
+    {% endif %}
+  </section>
+{% endblock %}
