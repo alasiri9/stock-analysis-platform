@@ -3,6 +3,7 @@
 {% set is_gem = r.piotroski is not none and r.piotroski >= 8 %}
 {% set mcount = measures_met(r) %}
 <a class="scard {{ 'gem' if is_gem }} {{ 'strong' if mcount >= 10 }}" href="{{ url_for('stock_report', ticker=r.ticker) }}">
+  <div class="scard-lead">
   <div class="scard-rank">{{ rank }}</div>
 
   <div class="scard-info">
@@ -32,6 +33,7 @@
         <span title="عدد الأسهم الحرة المتاحة للتداول — كلما قلّت كان السهم أسرع حركة">🔓 {{ "%.2f"|format(fl / 1e9) }} مليار حرة</span>
       {% endif %}
     </div>
+  </div>
   </div>
 
   {# شارات فنية (9) — كلها محسوبة فعلياً وتُضاء خضراء حسب المؤشرات #}

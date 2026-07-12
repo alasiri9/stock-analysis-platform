@@ -295,7 +295,7 @@ a.stat-box:hover { filter: brightness(1.15); transform: translateY(-1px); }
 /* ---------- كروت الماسح (4 أعمدة: رتبة | معلومات | شارات | درجة) ---------- */
 .screener-cards { display: flex; flex-direction: column; gap: 10px; }
 .scard {
-  display: flex; flex-wrap: wrap; align-items: center; gap: 14px;
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 14px;
   background: rgba(6,10,26,.4); border: 2px solid rgba(255,255,255,.35);
   border-radius: 12px; padding: 12px 14px; color: var(--text);
   transition: border-color .15s, transform .05s;
@@ -305,7 +305,8 @@ a.stat-box:hover { filter: brightness(1.15); transform: translateY(-1px); }
 
 .scard-rank { width: 22px; text-align: center; font-size: 21px; font-weight: 900; color: var(--muted); flex-shrink: 0; }
 
-.scard-info { flex: 1 1 220px; min-width: 0; }
+.scard-lead { display: flex; align-items: center; gap: 14px; min-width: 0; }
+.scard-info { flex: 0 1 auto; min-width: 0; }
 .scard-top { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .scard-ticker { font-size: 21px; font-weight: 900; }
 .scard-price { color: var(--muted); font-size: 17px; }
@@ -338,7 +339,7 @@ a.stat-box:hover { filter: brightness(1.15); transform: translateY(-1px); }
 }
 .scard-earn.soon { color: var(--red); background: rgba(34,197,94,.14); border-color: rgba(34,197,94,.45); }
 
-.scard-score { text-align: center; flex-shrink: 0; min-width: 58px; margin-inline-start: auto; }
+.scard-score { text-align: center; flex-shrink: 0; min-width: 58px; }
 
 @media (max-width: 900px) {
   .scard { flex-direction: column; align-items: stretch; }
