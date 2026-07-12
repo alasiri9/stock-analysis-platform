@@ -95,8 +95,10 @@ from services import news_client
 from services import screener
 from services import telegram_client
 
-# مستخدم افتراضي وحيد (لا يوجد تسجيل دخول بعد)
-GUEST_USER = "guest"
+# هوية المستخدم لبياناته الخاصة (قائمة المراقبة/التنبيهات/المحفظة)
+# المدير (وصاحب المنصة في الوضع المحلي) = "admin"، وكل مشترك = "sub:<رقمه>".
+GUEST_USER = "guest"   # قديم — بيانات ما قبل الفصل (تُهاجَر إلى admin عند الإقلاع)
+ADMIN_USER = "admin"
 
 load_dotenv()
 
@@ -136,6 +138,15 @@ def create_app():
     def is_admin():
         """المدير = صاحب المنصة (كلمة المرور الرئيسية)، أو الوضع المحلي بلا كلمة مرور."""
         return (not app_password) or session.get("role") == "admin"
+
+    def current_user_id():
+        """هوية المستخدم الحالي لبياناته الخاصة — لفصل قائمة المراقبة/التنبيهات/المحفظة.
+
+        كل مشترك يرى بياناته وحده (sub:<رقمه>)؛ المدير (والوضع المحلي) يستخدم admin.
+        """
+        if session.get("role") == "sub" and session.get("sub_id"):
+            return f"sub:{session['sub_id']}"
+        return ADMIN_USER
 
     @app.before_request
     def _require_login():
@@ -343,6 +354,16 @@ def create_app():
                 db.session.execute(_sql(stmt))
                 db.session.commit()
             except Exception:  # noqa: BLE001 — العمود موجود أصلاً: تجاهل
+                db.session.rollback()
+        # هجرة الخصوصية: البيانات القديمة كانت تحت مستخدم مشترك "guest"،
+        # وكلها فعلياً بيانات المدير (أحمد) — ننقلها إلى "admin" مرة واحدة.
+        # بعدها كل مشترك يبني بياناته الخاصة (sub:<رقمه>). آمنة التكرار (0 صفوف بعد أول مرة).
+        for tbl in ("watchlist", "price_alert", "portfolio_holding"):
+            try:
+                db.session.execute(
+                    _sql(f"UPDATE {tbl} SET user_id='admin' WHERE user_id='guest'"))
+                db.session.commit()
+            except Exception:  # noqa: BLE001 — الجدول غير موجود بعد أو لا صفوف: تجاهل
                 db.session.rollback()
         # تنظيف الإشارات المكررة (آمن ورخيص — يصحح ما خلّفته نسخة قديمة كانت تكرر يومياً)
         try:
@@ -975,7 +996,7 @@ def create_app():
 
     @app.route("/watchlist")
     def watchlist():
-        items = Watchlist.query.filter_by(user_id=GUEST_USER).order_by(Watchlist.added_at.desc()).all()
+        items = Watchlist.query.filter_by(user_id=current_user_id()).order_by(Watchlist.added_at.desc()).all()
         # السعر الحالي من كاش الماسح أولاً (فوري وبلا استهلاك حصة) — نفس نهج المحفظة
         records, _ = screener.load_records()
         cache_prices = {r["ticker"]: r.get("price") for r in records}
@@ -1001,12 +1022,12 @@ def create_app():
     def watchlist_add():
         ticker = request.form.get("ticker", "").strip().upper()
         if ticker:
-            exists = Watchlist.query.filter_by(user_id=GUEST_USER, ticker=ticker).first()
+            exists = Watchlist.query.filter_by(user_id=current_user_id(), ticker=ticker).first()
             if not exists:
                 # نسجّل سعر الإضافة من السعر اللحظي (قد يكون None لو لم يتوفّر)
                 quote = fmp_client.get_quote(ticker)
                 added_price = quote.get("price") if quote else None
-                db.session.add(Watchlist(ticker=ticker, user_id=GUEST_USER, added_price=added_price))
+                db.session.add(Watchlist(ticker=ticker, user_id=current_user_id(), added_price=added_price))
                 db.session.commit()
         # نرجع للصفحة التي جاء منها الطلب (المتابعة أو صفحة السهم)
         return redirect(request.referrer or url_for("watchlist"))
@@ -1014,7 +1035,7 @@ def create_app():
     @app.route("/watchlist/remove", methods=["POST"])
     def watchlist_remove():
         item_id = request.form.get("id")
-        item = Watchlist.query.filter_by(id=item_id, user_id=GUEST_USER).first()
+        item = Watchlist.query.filter_by(id=item_id, user_id=current_user_id()).first()
         if item:
             db.session.delete(item)
             db.session.commit()
@@ -1024,7 +1045,7 @@ def create_app():
 
     @app.route("/alerts")
     def alerts():
-        items = PriceAlert.query.filter_by(user_id=GUEST_USER).order_by(
+        items = PriceAlert.query.filter_by(user_id=current_user_id()).order_by(
             PriceAlert.active.desc(), PriceAlert.created_at.desc()).all()
         # السعر الحالي من كاش الماسح (فوري وبلا استهلاك حصة)
         records, _ = screener.load_records()
@@ -1050,14 +1071,14 @@ def create_app():
         # نقبل فقط مدخلات صحيحة (سهم + اتجاه معروف + سعر موجب)
         if ticker and direction in ("below", "above") and target is not None and target > 0:
             db.session.add(PriceAlert(
-                ticker=ticker, direction=direction, target_price=target, user_id=GUEST_USER))
+                ticker=ticker, direction=direction, target_price=target, user_id=current_user_id()))
             db.session.commit()
         return redirect(url_for("alerts"))
 
     @app.route("/alerts/remove", methods=["POST"])
     def alerts_remove():
         item_id = request.form.get("id")
-        item = PriceAlert.query.filter_by(id=item_id, user_id=GUEST_USER).first()
+        item = PriceAlert.query.filter_by(id=item_id, user_id=current_user_id()).first()
         if item:
             db.session.delete(item)
             db.session.commit()
@@ -1075,7 +1096,7 @@ def create_app():
     @app.route("/portfolio")
     def portfolio():
         items = (
-            PortfolioHolding.query.filter_by(user_id=GUEST_USER)
+            PortfolioHolding.query.filter_by(user_id=current_user_id())
             .order_by(PortfolioHolding.added_at.desc()).all()
         )
         records, _ = screener.load_records()
@@ -1113,8 +1134,10 @@ def create_app():
         else:
             summary["total_pnl"] = None
             summary["total_pnl_pct"] = None
+        # منحنى الأداء التاريخي من اللقطات الليلية = محفظة المدير (المرجعية).
+        # المشترك يرى محفظته وأرقامها الحالية، لكن بلا منحنى تاريخي خاص به.
         from services import portfolio as portfolio_svc
-        chart = portfolio_svc.performance_chart()
+        chart = portfolio_svc.performance_chart() if is_admin() else None
         return render_template("portfolio.html", rows=rows, summary=summary, chart=chart)
 
     @app.route("/portfolio/add", methods=["POST"])
@@ -1127,7 +1150,7 @@ def create_app():
             shares = buy_price = 0
         if ticker and shares > 0 and buy_price > 0:
             db.session.add(PortfolioHolding(
-                ticker=ticker, shares=shares, buy_price=buy_price, user_id=GUEST_USER,
+                ticker=ticker, shares=shares, buy_price=buy_price, user_id=current_user_id(),
             ))
             db.session.commit()
         return redirect(url_for("portfolio"))
@@ -1135,7 +1158,7 @@ def create_app():
     @app.route("/portfolio/remove", methods=["POST"])
     def portfolio_remove():
         item_id = request.form.get("id")
-        item = PortfolioHolding.query.filter_by(id=item_id, user_id=GUEST_USER).first()
+        item = PortfolioHolding.query.filter_by(id=item_id, user_id=current_user_id()).first()
         if item:
             db.session.delete(item)
             db.session.commit()

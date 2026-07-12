@@ -175,8 +175,8 @@ def _send_daily_report():
             when = "اليوم" if dte == 0 else ("غداً" if dte == 1 else f"بعد {dte} أيام")
             lines.append(f"• {r['ticker']} — {when}")
 
-    # ملخص المحفظة (لو فيها مقتنيات)
-    holdings = PortfolioHolding.query.all()
+    # ملخص المحفظة (محفظة المدير — المرجعية؛ التقرير يصل تلغرام المدير)
+    holdings = PortfolioHolding.query.filter_by(user_id="admin").all()
     if holdings:
         price_by = {r["ticker"]: r.get("price") for r in records}
         cost = value = 0.0

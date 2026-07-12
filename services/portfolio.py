@@ -14,11 +14,13 @@ from models import db, PortfolioHolding, PortfolioSnapshot
 from services import screener
 
 
-def valuation():
-    """يقيّم المحفظة من كاش الماسح. يُرجع dict:
+def valuation(user_id="admin"):
+    """يقيّم محفظة مستخدم من كاش الماسح. يُرجع dict:
     {count, total_cost, total_value (None لو سعر أي مقتنى مفقود), complete}
+
+    الافتراضي محفظة المدير (admin) — هي المرجعية للقطات الليلية والتقرير.
     """
-    holdings = PortfolioHolding.query.all()
+    holdings = PortfolioHolding.query.filter_by(user_id=user_id).all()
     if not holdings:
         return {"count": 0, "total_cost": None, "total_value": None, "complete": False}
 
