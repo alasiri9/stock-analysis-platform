@@ -867,9 +867,9 @@ a.stat-box:hover { filter: brightness(1.15); transform: translateY(-1px); }
 .gauge-sm { width: 84px; }
 .gauge-lg { width: 150px; margin: 0 auto; }
 .gauge { width: 100%; height: auto; display: block; }
-.g-zone-r { fill: none; stroke: var(--red); stroke-width: 5; stroke-linecap: butt; }
-.g-zone-y { fill: none; stroke: var(--gold); stroke-width: 5; stroke-linecap: butt; }
-.g-zone-g { fill: none; stroke: var(--green); stroke-width: 5; stroke-linecap: butt; }
+.g-zone-r { fill: none; stroke: var(--red); stroke-width: 3; stroke-linecap: butt; }
+.g-zone-y { fill: none; stroke: var(--gold); stroke-width: 3; stroke-linecap: butt; }
+.g-zone-g { fill: none; stroke: var(--green); stroke-width: 3; stroke-linecap: butt; }
 .g-hub { fill: var(--text); }
 .gauge-needle {
   stroke: var(--text); stroke-width: 3; stroke-linecap: round;
@@ -888,7 +888,7 @@ a.stat-box:hover { filter: brightness(1.15); transform: translateY(-1px); }
 .tmeter-section { text-align: center; }
 .tmeter-wrap { max-width: 280px; margin: 0 auto; }
 .tmeter-svg { width: 100%; height: auto; display: block; }
-.tz { fill: none; stroke-width: 5; stroke-linecap: butt; }
+.tz { fill: none; stroke-width: 3; stroke-linecap: butt; }
 .tz1 { stroke: var(--red); }
 .tz2 { stroke: var(--gold); }
 .tz3 { stroke: var(--muted); }
