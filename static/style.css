@@ -294,17 +294,17 @@ a.stat-box:hover { filter: brightness(1.15); transform: translateY(-1px); }
 
 /* ---------- كروت الماسح (4 أعمدة: رتبة | معلومات | شارات | درجة) ---------- */
 /* إطار خارجي يلفّ كل الكروت من الخارج (داير ما دار) */
-.screener-cards { display: flex; flex-direction: column; gap: 10px; border: 4px solid var(--border); border-radius: var(--radius); padding: 34px; background: rgba(6,10,26,.22); }
+.screener-cards { display: flex; flex-direction: column; gap: 10px; border: 5px solid var(--border); border-radius: var(--radius); padding: 42px; background: rgba(6,10,26,.22); }
 .scard {
   display: block;
   background: rgba(6,10,26,.4); border: 2px solid rgba(255,255,255,.35);
-  border-radius: 12px; padding: 28px 14px; color: var(--text);
+  border-radius: 12px; padding: 36px 14px; color: var(--text);
   transition: border-color .15s, transform .05s;
 }
 /* المحتوى الداخلي: العدّاد أقصى اليسار، المعلومات أقصى اليمين، والوسط يتمدّد ليملأ ما بينهما */
 .scard-inner {
   display: flex; flex-wrap: wrap; align-items: center; gap: 18px; width: 100%;
-  max-width: 1000px; margin-inline: auto;  /* تصغير العرض الأفقي: حصر المحتوى وتمركزه (آمن على الشاشات الأضيق) */
+  max-width: 1000px; margin-inline: auto;  /* تصغير العرض الأفقي: حصر المحتوى وتمركزه (1000 هو الأدنى الآمن قبل تكسّر الأعمدة) */
 }
 .scard:hover { border-color: #2f3b58; transform: translateY(-1px); }
 .scard.gem { border-color: rgba(245,196,81,.55); box-shadow: 0 0 0 1px rgba(245,196,81,.15); background: linear-gradient(90deg, rgba(245,196,81,.12), rgba(6,10,26,.4) 45%); }
