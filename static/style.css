@@ -293,11 +293,12 @@ a.stat-box:hover { filter: brightness(1.15); transform: translateY(-1px); }
 .scanner-bar { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; flex-wrap: wrap; }
 
 /* ---------- كروت الماسح (4 أعمدة: رتبة | معلومات | شارات | درجة) ---------- */
-.screener-cards { display: flex; flex-direction: column; gap: 10px; }
+/* إطار خارجي يلفّ كل الكروت من الخارج (داير ما دار) */
+.screener-cards { display: flex; flex-direction: column; gap: 10px; border: 1px solid var(--border); border-radius: var(--radius); padding: 12px; background: rgba(6,10,26,.22); }
 .scard {
   display: block;
   background: rgba(6,10,26,.4); border: 2px solid rgba(255,255,255,.35);
-  border-radius: 12px; padding: 12px 14px; color: var(--text);
+  border-radius: 12px; padding: 9px 14px; color: var(--text);
   transition: border-color .15s, transform .05s;
 }
 /* المحتوى الداخلي: العدّاد أقصى اليسار، المعلومات أقصى اليمين، والوسط يتمدّد ليملأ ما بينهما */
@@ -323,7 +324,7 @@ a.stat-box:hover { filter: brightness(1.15); transform: translateY(-1px); }
 .rs-pill.neg { color: var(--red); background: var(--red-dim); }
 .measures-pill { font-size: 13px; font-weight: 900; color: var(--gold); background: rgba(245,196,81,.14); border: 1px solid rgba(245,196,81,.4); padding: 2px 9px; border-radius: 999px; }
 
-.scard-mid { display: flex; flex-direction: column; align-items: center; gap: 7px; flex: 1 1 auto; min-width: 200px; }
+.scard-mid { display: flex; flex-direction: column; align-items: center; gap: 4px; flex: 1 1 auto; min-width: 200px; }
 .scard-badges { display: flex; flex-wrap: wrap; gap: 5px; justify-content: center; }
 .cat-pill {
   font-size: 13px; padding: 3px 9px; border-radius: 20px;
@@ -345,8 +346,8 @@ a.stat-box:hover { filter: brightness(1.15); transform: translateY(-1px); }
 
 .scard-score { text-align: center; flex-shrink: 0; margin-left: 34px; }
 /* عدّاد أكبر للبطاقة (كان 84px) + مُزاح قليلاً للداخل (يمين) */
-.scard-score .gauge-sm { width: 150px; }
-.scard-score .gauge-num { font-size: 27px; }
+.scard-score .gauge-sm { width: 134px; }
+.scard-score .gauge-num { font-size: 25px; }
 .scard-score .gauge-label { font-size: 14px; }
 
 @media (max-width: 900px) {
@@ -588,7 +589,7 @@ a.stat-box:hover { filter: brightness(1.15); transform: translateY(-1px); }
 .learn-term-ex { color: var(--muted); font-size: 13px; margin-top: 8px; font-style: italic; }
 
 /* رسم مصغّر داخل بطاقة السهم المشتركة */
-.scard-spark { width: 100%; max-width: 300px; height: 30px; display: block; margin-top: 8px; opacity: .85; }
+.scard-spark { width: 100%; max-width: 300px; height: 24px; display: block; margin-top: 4px; opacity: .85; }
 .scard-spark.up { color: var(--green); }
 .scard-spark.down { color: var(--red); }
 
