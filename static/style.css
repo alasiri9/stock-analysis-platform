@@ -294,17 +294,17 @@ a.stat-box:hover { filter: brightness(1.15); transform: translateY(-1px); }
 
 /* ---------- كروت الماسح (4 أعمدة: رتبة | معلومات | شارات | درجة) ---------- */
 /* إطار خارجي يلفّ كل الكروت من الخارج (داير ما دار) */
-.screener-cards { display: flex; flex-direction: column; gap: 10px; border: 2px solid var(--border); border-radius: var(--radius); padding: 18px; background: rgba(6,10,26,.22); }
+.screener-cards { display: flex; flex-direction: column; gap: 10px; border: 3px solid var(--border); border-radius: var(--radius); padding: 26px; background: rgba(6,10,26,.22); }
 .scard {
   display: block;
   background: rgba(6,10,26,.4); border: 2px solid rgba(255,255,255,.35);
-  border-radius: 12px; padding: 13px 14px; color: var(--text);
+  border-radius: 12px; padding: 20px 14px; color: var(--text);
   transition: border-color .15s, transform .05s;
 }
 /* المحتوى الداخلي: العدّاد أقصى اليسار، المعلومات أقصى اليمين، والوسط يتمدّد ليملأ ما بينهما */
 .scard-inner {
   display: flex; flex-wrap: wrap; align-items: center; gap: 18px; width: 100%;
-  padding-inline: 44px;  /* إدخال المحتوى من اليمين واليسار (تصغير العرض الأفقي) */
+  max-width: 1120px; margin-inline: auto;  /* تصغير العرض الأفقي: حصر المحتوى وتمركزه (آمن على الشاشات الأضيق) */
 }
 .scard:hover { border-color: #2f3b58; transform: translateY(-1px); }
 .scard.gem { border-color: rgba(245,196,81,.55); box-shadow: 0 0 0 1px rgba(245,196,81,.15); background: linear-gradient(90deg, rgba(245,196,81,.12), rgba(6,10,26,.4) 45%); }
@@ -325,7 +325,7 @@ a.stat-box:hover { filter: brightness(1.15); transform: translateY(-1px); }
 .rs-pill.neg { color: var(--red); background: var(--red-dim); }
 .measures-pill { font-size: 13px; font-weight: 900; color: var(--gold); background: rgba(245,196,81,.14); border: 1px solid rgba(245,196,81,.4); padding: 2px 9px; border-radius: 999px; }
 
-.scard-mid { display: flex; flex-direction: column; align-items: center; gap: 4px; flex: 1 1 auto; min-width: 200px; }
+.scard-mid { display: flex; flex-direction: column; align-items: center; gap: 4px; flex: 1 1 220px; min-width: 200px; }
 .scard-badges { display: flex; flex-wrap: wrap; gap: 5px; justify-content: center; }
 .cat-pill {
   font-size: 13px; padding: 3px 9px; border-radius: 20px;
@@ -352,7 +352,7 @@ a.stat-box:hover { filter: brightness(1.15); transform: translateY(-1px); }
 .scard-score .gauge-label { font-size: 14px; }
 
 @media (max-width: 900px) {
-  .scard-inner { flex-direction: column; align-items: stretch; padding-inline: 0; }
+  .scard-inner { flex-direction: column; align-items: stretch; }
   .scard-mid { display: block; width: 100%; }
   .scard-badges { width: 100%; }
   .scard-ready { display: table; margin: 10px auto 0; }
