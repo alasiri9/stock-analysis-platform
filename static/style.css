@@ -295,10 +295,15 @@ a.stat-box:hover { filter: brightness(1.15); transform: translateY(-1px); }
 /* ---------- كروت الماسح (4 أعمدة: رتبة | معلومات | شارات | درجة) ---------- */
 .screener-cards { display: flex; flex-direction: column; gap: 10px; }
 .scard {
-  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 14px;
+  display: block;
   background: rgba(6,10,26,.4); border: 2px solid rgba(255,255,255,.35);
   border-radius: 12px; padding: 12px 14px; color: var(--text);
   transition: border-color .15s, transform .05s;
+}
+/* المحتوى الداخلي: عرض محدود ومتمركز حتى لا تتباعد المعلومات على الشاشات العريضة */
+.scard-inner {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 14px;
+  max-width: 960px; margin-inline: auto; width: 100%;
 }
 .scard:hover { border-color: #2f3b58; transform: translateY(-1px); }
 .scard.gem { border-color: rgba(245,196,81,.55); box-shadow: 0 0 0 1px rgba(245,196,81,.15); background: linear-gradient(90deg, rgba(245,196,81,.12), rgba(6,10,26,.4) 45%); }
@@ -342,7 +347,7 @@ a.stat-box:hover { filter: brightness(1.15); transform: translateY(-1px); }
 .scard-score { text-align: center; flex-shrink: 0; min-width: 58px; }
 
 @media (max-width: 900px) {
-  .scard { flex-direction: column; align-items: stretch; }
+  .scard-inner { flex-direction: column; align-items: stretch; }
   .scard-mid { display: block; width: 100%; }
   .scard-badges { width: 100%; }
   .scard-ready { display: table; margin: 10px auto 0; }

@@ -3,6 +3,7 @@
 {% set is_gem = r.piotroski is not none and r.piotroski >= 8 %}
 {% set mcount = measures_met(r) %}
 <a class="scard {{ 'gem' if is_gem }} {{ 'strong' if mcount >= 10 }}" href="{{ url_for('stock_report', ticker=r.ticker) }}">
+  <div class="scard-inner">
   <div class="scard-lead">
   <div class="scard-rank">{{ rank }}</div>
 
@@ -67,5 +68,6 @@
 
   <div class="scard-score">
     {{ gauge(mcount, 16, 'قوة التأكيد', 'sm') }}
+  </div>
   </div>
 </a>
