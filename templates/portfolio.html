@@ -123,7 +123,7 @@
                 <form action="{{ url_for('portfolio_remove') }}" method="post" style="margin:0">
   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                   <input type="hidden" name="id" value="{{ r.id }}">
-                  <button class="btn-del" type="submit">حذف</button>
+                  <button class="btn-del" type="submit" title="حذف">🗑️</button>
                 </form>
               </td>
             </tr>
