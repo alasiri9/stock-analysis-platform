@@ -24,6 +24,52 @@ BASE_URL = "https://financialmodelingprep.com/stable"
 # مهلة الاتصال بالثواني — حتى لا يعلّق البرنامج لو الخادم بطيء
 TIMEOUT = 8
 
+# حدّ باقة FMP المجانية اليومي (عدد الطلبات) — لعرضه في لوحة «صحة المنصة»
+DAILY_LIMIT = 250
+
+
+def _usage_key(day=None):
+    """مفتاح عدّاد طلبات اليوم في جدول AppSetting (يوم UTC — نفس توقيت تصفير حصّة FMP)."""
+    from datetime import datetime, timezone
+    day = day or datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    return "fmp_calls:" + day
+
+
+def _record_call():
+    """يزيد عدّاد طلبات FMP لليوم الحالي بواحد — تشخيصي فقط للوحة صحة المنصة.
+
+    - يستخدم جلسة قاعدة بيانات منفصلة حتى لا يتداخل مع معاملة المتصل (لا يلتزم بياناته).
+    - أي فشل (لا سياق تطبيق، لا قاعدة بيانات...) يُتجاهل بصمت: العدّاد مساعد
+      ويجب ألّا يؤثر إطلاقاً على جلب البيانات الحقيقي.
+    """
+    try:
+        from sqlalchemy.orm import Session
+        from models import db, AppSetting
+        with Session(db.engine) as s:
+            row = s.get(AppSetting, _usage_key())
+            if row is None:
+                s.add(AppSetting(key=_usage_key(), value="1"))
+            else:
+                try:
+                    row.value = str(int(row.value) + 1)
+                except (TypeError, ValueError):
+                    row.value = "1"
+            s.commit()
+    except Exception:
+        pass
+
+
+def get_today_usage():
+    """عدد طلبات FMP المُنفَّذة اليوم (UTC)، أو None لو تعذّرت القراءة."""
+    try:
+        from sqlalchemy.orm import Session
+        from models import db, AppSetting
+        with Session(db.engine) as s:
+            row = s.get(AppSetting, _usage_key())
+            return int(row.value) if row and row.value else 0
+    except Exception:
+        return None
+
 
 def _get(endpoint, params=None):
     """دالة مساعدة: تنفّذ طلب GET لنقطة نهاية FMP وتُرجع JSON أو None عند الفشل.
@@ -44,6 +90,9 @@ def _get(endpoint, params=None):
     except requests.RequestException as e:
         print(f"[FMP] فشل الاتصال بـ {endpoint}: {e}")
         return None
+
+    # وصلنا خادم FMP فعلاً (بأي حالة) → نحسبه ضمن استهلاك اليوم (عدّاد صحة المنصة)
+    _record_call()
 
     if resp.status_code != 200:
         print(f"[FMP] {endpoint} رجّع حالة {resp.status_code}: {resp.text[:200]}")

@@ -21,6 +21,18 @@
         {% endif %}
       </div>
 
+      {# استهلاك باقة FMP اليوم — أخضر <60% · أصفر 60–90% · أحمر ≥90% #}
+      {% set _u = health.fmp_used %}
+      <div class="health-card {{ '' if _u is none else ('bad' if _u >= health.fmp_limit * 0.9 else ('warn' if _u >= health.fmp_limit * 0.6 else 'ok')) }}">
+        <div class="h-label">🔌 استهلاك FMP اليوم</div>
+        {% if _u is none %}
+          <div class="h-value">—</div><div class="h-sub">تعذّرت القراءة</div>
+        {% else %}
+          <div class="h-value">{{ _u }} / {{ health.fmp_limit }}</div>
+          <div class="h-sub">طلب اليوم · يتصفّر 00:00 UTC</div>
+        {% endif %}
+      </div>
+
       {# نضارة الأسهم #}
       <div class="health-card {{ 'ok' if health.stocks_fresh == health.stocks_total and health.stocks_total > 0 else ('bad' if health.stocks_total == 0 else 'warn') }}">
         <div class="h-label">📊 الأسهم المحدّثة</div>

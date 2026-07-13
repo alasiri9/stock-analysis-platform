@@ -678,6 +678,8 @@ def create_app():
             "signals": Signal.query.count(),
             "alerts": PriceAlert.query.filter_by(active=True).count(),
             "price_points": PricePoint.query.count(),
+            "fmp_used": fmp_client.get_today_usage(),   # طلبات FMP المُستهلكة اليوم (UTC)
+            "fmp_limit": fmp_client.DAILY_LIMIT,        # حدّ الباقة المجانية (250)
         }
         return render_template("health.html", health=health)
 
