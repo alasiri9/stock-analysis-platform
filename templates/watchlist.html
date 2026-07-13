@@ -1,9 +1,9 @@
 {% extends "base.html" %}
 {% set active = 'watchlist' %}
-{% block title %}قائمة المتابعة{% endblock %}
+{% block title %}قائمة المراقبة{% endblock %}
 
 {% block content %}
-  <h1 class="page-title">⭐ قائمة المتابعة</h1>
+  <h1 class="page-title">👁 قائمة المراقبة</h1>
   <p class="page-sub">تتبّع عائد الأسهم منذ لحظة إضافتها — تعليمي فقط، لا توصية.</p>
 
   <form class="search" action="{{ url_for('watchlist_add') }}" method="post">
