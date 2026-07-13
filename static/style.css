@@ -609,7 +609,8 @@ a.stat-box:hover { filter: brightness(1.15); transform: translateY(-1px); }
 .learn-term-ex { color: var(--muted); font-size: 13px; margin-top: 8px; font-style: italic; }
 
 /* رسم مصغّر داخل بطاقة السهم المشتركة */
-.scard-spark { width: 100%; max-width: 300px; height: 24px; display: block; margin-top: 4px; opacity: .85; }
+.scard-spark-row { display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%; margin-top: 4px; }
+.scard-spark { width: 100%; max-width: 280px; height: 24px; display: block; opacity: .85; }
 .scard-spark.up { color: var(--green); }
 .scard-spark.down { color: var(--red); }
 
