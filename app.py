@@ -165,6 +165,14 @@ def create_app():
             return None
         return redirect(url_for("login"))
 
+    @app.after_request
+    def _no_store_html(resp):
+        """منع تخزين صفحات HTML الديناميكية حتى تُحدَّث الأرقام عند الرجوع بزر المتصفح.
+        الملفات الثابتة (CSS/JS/صور) لا تتأثر — تُخزّن بالكاش وتُكسر عبر ?v."""
+        if resp.mimetype == "text/html":
+            resp.headers["Cache-Control"] = "no-store, max-age=0, must-revalidate"
+        return resp
+
     @app.route("/login", methods=["GET", "POST"])
     def login():
         error = None
