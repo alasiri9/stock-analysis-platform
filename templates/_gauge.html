@@ -1,7 +1,7 @@
 {# عدّاد نصف دائري (سبيدومتر) بإبرة متحركة — value من 0 إلى maxval.
    الألوان: أحمر (منخفض) → أصفر (متوسط) → أخضر (مرتفع). الإبرة تتحرّك حياً عند التحميل.
    size: 'sm' للبطاقة، 'lg' لصفحة السهم. label اختياري (يُخفى لو فارغاً). #}
-{% macro gauge(value, maxval, label='', size='sm') %}
+{% macro gauge(value, maxval, label='', size='sm', tip='') %}
   {%- set v = value if value is not none else 0 -%}
   {%- set frac = (v / maxval) if maxval else 0 -%}
   {%- set frac = 0 if frac < 0 else (1 if frac > 1 else frac) -%}
@@ -15,6 +15,6 @@
       <circle class="g-hub" cx="50" cy="50" r="4.5"/>
     </svg>
     <div class="gauge-num">{{ value|round|int if value is not none else '—' }}<span class="gauge-max">/{{ maxval }}</span></div>
-    {% if label %}<div class="gauge-label">{{ label }}</div>{% endif %}
+    {% if label %}<div class="gauge-label">{{ label }}{% if tip %} <span class="help" data-tip="{{ tip }}">؟</span>{% endif %}</div>{% endif %}
   </div>
 {% endmacro %}

@@ -68,13 +68,13 @@
   </div>
 
   <div class="scard-score">
-    <div class="scard-gauge">{{ gauge(mcount, 16, 'قوة التأكيد', 'sm') }}</div>
+    <div class="scard-gauge">{{ gauge(mcount, 16, 'قوة التأكيد', 'sm', 'قوة التأكيد: تجمع كل الأدلة على السهم (المؤشرات الفنية + الجودة المالية + النمو + السيولة + القوة مقابل السوق) كرقم من 16. كل ما زاد، زادت الأدلة الإيجابية المجتمعة. نظرة شاملة — تعليمية لا توصية.') }}</div>
     {% set tilt = tech_tilt(r) %}
     {% if tilt %}
       <div class="scard-meter">
         {{ techmeter(tilt.frac) }}
         <div class="scard-meter-label {{ tilt.kind }}">{{ tilt.label }}</div>
-        <div class="scard-meter-sub">الإشارات الفنية</div>
+        <div class="scard-meter-sub">الإشارات الفنية <span class="help" data-tip="الإشارات الفنية: ميل المؤشرات الفنية التسعة فقط (MACD, RSI, EMA, ADX...) — إيجابي/محايد/سلبي. تحليل فني بحت لحركة السعر. تعليمي لا توصية شراء أو بيع.">؟</span></div>
       </div>
     {% endif %}
   </div>
