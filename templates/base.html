@@ -122,7 +122,15 @@
       tip.className = 'nav-tip';
       document.body.appendChild(tip);
       function show(eye) {
-        tip.textContent = eye.getAttribute('data-tip') || '';
+        var text = eye.getAttribute('data-tip') || '';
+        var accent = eye.getAttribute('data-tip-accent');
+        if (accent) {
+          // لوّن كلمة «تنبيه» بلون العنصر المُشار إليه (أصفر/أحمر...)
+          var esc = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+          tip.innerHTML = esc.replace('تنبيه', '<b style="color:' + accent + '">تنبيه</b>');
+        } else {
+          tip.textContent = text;
+        }
         tip.classList.add('show');
         var r = eye.getBoundingClientRect();
         var tw = tip.offsetWidth, th = tip.offsetHeight;

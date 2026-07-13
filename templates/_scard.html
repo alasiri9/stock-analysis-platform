@@ -57,7 +57,7 @@
     {% endif %}
     {% set dte = r.get('days_to_earnings') %}
     {% if dte is not none %}
-      <div class="scard-earn {{ 'soon' if dte <= 7 }}">📅 أرباح {{ 'اليوم' if dte == 0 else ('بعد يوم' if dte == 1 else 'بعد ' ~ dte ~ ' يوم') }} <span class="help" data-tip="تنبيه: قرب إعلان الأرباح يتسبب في حركة سعرية متقلّبة للسهم صعوداً أو نزولاً. اللون الأصفر يعني أكثر من 7 أيام، واللون الأحمر خلال 7 أيام.">؟</span></div>
+      <div class="scard-earn {{ 'soon' if dte <= 7 }}">📅 أرباح {{ 'اليوم' if dte == 0 else ('بعد يوم' if dte == 1 else 'بعد ' ~ dte ~ ' يوم') }} <span class="help" data-tip-accent="{{ 'var(--red)' if dte <= 7 else 'var(--gold)' }}" data-tip="تنبيه: قرب إعلان الأرباح يتسبب في حركة سعرية متقلّبة للسهم صعوداً أو نزولاً. اللون الأصفر يعني أكثر من 7 أيام، واللون الأحمر خلال 7 أيام.">؟</span></div>
     {% endif %}
     {% if r.get('spark_points') %}
       <div class="scard-spark-row">
