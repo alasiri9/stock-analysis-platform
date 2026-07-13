@@ -57,7 +57,7 @@
     {% endif %}
     {% set dte = r.get('days_to_earnings') %}
     {% if dte is not none %}
-      <div class="scard-earn {{ 'soon' if dte <= 7 }}">📅 أرباح {{ 'اليوم' if dte == 0 else ('بعد يوم' if dte == 1 else 'بعد ' ~ dte ~ ' يوم') }} <span class="help" data-tip="موعد إعلان الأرباح القادم. الأرباح تحرّك السهم بقوة (صعوداً أو هبوطاً) — انتبه للتقلّب قربها.">؟</span></div>
+      <div class="scard-earn {{ 'soon' if dte <= 7 }}">📅 أرباح {{ 'اليوم' if dte == 0 else ('بعد يوم' if dte == 1 else 'بعد ' ~ dte ~ ' يوم') }} <span class="help" data-tip="موعد إعلان أرباح الشركة القادم. يوم الأرباح يتحرّك السهم بقوة (صعوداً أو هبوطاً). اللون حسب قرب الموعد: 🟡 أصفر = بعيد (أكثر من 7 أيام، تذكير) · 🔴 أحمر = قريب (خلال 7 أيام أو أقل، توقّع تقلّباً عالياً فانتبه). تعليمي لا توصية.">؟</span></div>
     {% endif %}
     {% if r.get('spark_points') %}
       <div class="scard-spark-row">
