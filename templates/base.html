@@ -112,6 +112,10 @@
       if (badge && unread > 0) { badge.textContent = unread; badge.style.display = ''; }
     })();
 
+    // عند الرجوع بزر المتصفح (Back): أعد تحميل الصفحة لتحديث الأرقام
+    // (يتفادى عرض نسخة قديمة من ذاكرة المتصفح bfcache بعد حذف/إضافة عنصر)
+    window.addEventListener('pageshow', function (e) { if (e.persisted) { location.reload(); } });
+
     // تلميح تفاعلي لعناصر القائمة (يظهر عند تمرير الماوس على العين، ويختفي عند إزالته)
     (function () {
       var tip = document.createElement('div');
