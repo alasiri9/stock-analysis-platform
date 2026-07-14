@@ -60,10 +60,10 @@
   {# أزرار فلترة جاهزة — نقرة واحدة تطبّق فلتراً شائعاً (بلا كتابة أرقام) #}
   <div class="presets">
     <span class="presets-label">فلاتر سريعة:</span>
-    <a class="preset" href="{{ url_for('index', piotroski_min=8, catalyst_min=80) }}">💎 جواهر النمو</a>
-    <a class="preset" href="{{ url_for('index', catalyst_min=80) }}">⚡ نمو قوي</a>
-    <a class="preset" href="{{ url_for('index', not_risen=1) }}">🔎 لسا ما صعد</a>
-    <a class="preset" href="{{ url_for('index', price_max=100) }}">💰 أقل من 100$</a>
+    <a class="preset" href="{{ url_for('index', piotroski_min=8, catalyst_min=80) }}">💎 جواهر النمو <span class="help" data-tip="شرطان معاً: الجودة المالية (Piotroski) ≥ 8 والنمو (Catalyst) ≥ 80 — أقوى وأندر فلتر.">2</span></a>
+    <a class="preset" href="{{ url_for('index', catalyst_min=80) }}">⚡ نمو قوي <span class="help" data-tip="شرط واحد: النمو (Catalyst) ≥ 80.">1</span></a>
+    <a class="preset" href="{{ url_for('index', not_risen=1) }}">🔎 لسا ما صعد <span class="help" data-tip="شرط واحد: السهم لم يرتفع أكثر من 12% مؤخراً — فرصة مبكرة.">1</span></a>
+    <a class="preset" href="{{ url_for('index', price_max=100) }}">💰 أقل من 100$ <span class="help" data-tip="شرط واحد: سعر السهم أقل من 100 دولار.">1</span></a>
     <a class="preset clear" href="{{ url_for('index') }}">🔄 مسح الكل</a>
   </div>
 
@@ -223,8 +223,8 @@
 
       {# صناديق إحصائية — الجواهر تفلتر على الجواهر فقط، والجميع تعرض الكل #}
       <div class="stat-row tight">
-        <a class="stat-box gem-box {{ 'active-filter' if filters.piotroski_min == 8 }}" href="{{ url_for('index', piotroski_min=8) }}"><div class="label">💎 الجواهر</div><div class="value">{{ stats.gems }}</div></a>
-        <a class="stat-box strong-box {{ 'active-filter' if filters.catalyst_min == 80 }}" href="{{ url_for('index', catalyst_min=80) }}"><div class="label">⚡ إشارة قوية</div><div class="value">{{ stats.strong }}</div></a>
+        <a class="stat-box gem-box {{ 'active-filter' if filters.piotroski_min == 8 }}" href="{{ url_for('index', piotroski_min=8) }}"><div class="label">💎 الجواهر <span class="help" data-tip="شرط واحد: الجودة المالية (Piotroski) ≥ 8. يختلف عن زر «جواهر النمو» الذي يشترط الجودة والنمو معاً.">1</span></div><div class="value">{{ stats.gems }}</div></a>
+        <a class="stat-box strong-box {{ 'active-filter' if filters.catalyst_min == 80 }}" href="{{ url_for('index', catalyst_min=80) }}"><div class="label">⚡ إشارة قوية <span class="help" data-tip="شرط واحد: النمو (Catalyst) ≥ 80.">1</span></div><div class="value">{{ stats.strong }}</div></a>
         <a class="stat-box total-box {{ 'active-filter' if filters.piotroski_min != 8 }}" href="{{ url_for('index') }}"><div class="label">👁 الجميع</div><div class="value">{{ stats.total }}</div></a>
       </div>
 
