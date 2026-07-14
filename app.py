@@ -89,6 +89,7 @@ def _record_login_fail():
 def _clear_login_fails():
     _login_state.pop(_client_ip(), None)
 from services import analysis
+from services import crypto
 from services import fmp_client
 from services import radar
 from services import news_client
@@ -797,7 +798,8 @@ def create_app():
         sub = db.session.get(Subscriber, session.get("sub_id"))
         if sub:
             key = request.form.get("fmp_api_key", "").strip()
-            sub.fmp_api_key = key or None  # تفريغ الخانة يحذف المفتاح
+            # نخزّنه مشفّراً (طبقة أمان)؛ تفريغ الخانة يحذف المفتاح
+            sub.fmp_api_key = crypto.encrypt(key) if key else None
             db.session.commit()
         return redirect(url_for("settings"))
 
@@ -1033,7 +1035,8 @@ def create_app():
         _sub_key = None
         if _is_sub:
             _sub = db.session.get(Subscriber, session.get("sub_id"))
-            _sub_key = (_sub.fmp_api_key or None) if _sub else None
+            # المفتاح مخزّن مشفّراً — نفكّه لحظة الاستخدام فقط
+            _sub_key = crypto.decrypt(_sub.fmp_api_key) if (_sub and _sub.fmp_api_key) else None
         _do_live = (not _is_sub) or bool(_sub_key)  # المدير دائماً، أو مشترك له مفتاح
         cached = db.session.get(StockCache, rkey)
         if cached:
