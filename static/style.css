@@ -180,6 +180,10 @@ a.stat-box:hover { filter: brightness(1.15); transform: translateY(-1px); }
 .mood-pct { margin-right: auto; font-size: 16px; font-weight: 900; color: var(--green); }
 .mood-banner.mood-bear .mood-pct { color: var(--red); }
 .mood-banner.mood-neutral .mood-pct { color: var(--gold); }
+/* كلمة اتجاه السوق (صاعد/هابط/عرضي) بلون معناها — بار السوق فقط */
+.market-dir .mood-label b { color: var(--green); }
+.market-dir.mood-bear .mood-label b { color: var(--red); }
+.market-dir.mood-neutral .mood-label b { color: var(--gold); }
 .mood-bar {
   display: flex; height: 12px; border-radius: 6px; overflow: hidden;
   margin: 12px 0 8px; background: var(--card);
