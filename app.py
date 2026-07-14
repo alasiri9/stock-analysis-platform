@@ -518,13 +518,22 @@ def create_app():
             "gems": sum(1 for r in records if r.get("piotroski") is not None and r["piotroski"] >= 8),
             "strong": sum(1 for r in records if r.get("catalyst") is not None and r["catalyst"] >= 80),
         }
+        # عدّاد حيّ لكل فلتر سريع — بإعادة استخدام نفس دالة الفلترة (يطابق النتائج تماماً، بلا منطق جديد)
+        counts = {
+            "total": len(records),
+            "quality": len(screener.filter_records(records, piotroski_min=8)),
+            "growth": len(screener.filter_records(records, catalyst_min=80)),
+            "gems": len(screener.filter_records(records, piotroski_min=8, catalyst_min=80)),
+            "not_risen": len(screener.filter_records(records, recent_gain_max=screener.EARLY_MAX_RECENT_GAIN)),
+            "under100": len(screener.filter_records(records, price_max=100)),
+        }
         launched, perf = screener.launched_stocks()
         mood = screener.market_mood(records)  # مزاج أسهم المنصة (نفس السجلّات — بلا قراءة مكررة)
         market_dir = screener.market_direction()  # اتجاه السوق الأمريكي (S&P 500)
         return render_template(
             "index.html",
             results=results, sectors=sectors, latest=latest,
-            filters=filters, total=len(records), stats=stats,
+            filters=filters, total=len(records), stats=stats, counts=counts,
             signals=screener.recent_signals(),
             launched=launched, perf=perf, mood=mood, market_dir=market_dir,
             sort=sort,
