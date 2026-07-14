@@ -180,10 +180,10 @@ a.stat-box:hover { filter: brightness(1.15); transform: translateY(-1px); }
 .mood-pct { margin-right: auto; font-size: 16px; font-weight: 900; color: var(--green); }
 .mood-banner.mood-bear .mood-pct { color: var(--red); }
 .mood-banner.mood-neutral .mood-pct { color: var(--gold); }
-/* كلمة اتجاه السوق (صاعد/هابط/عرضي) بلون معناها — بار السوق فقط */
-.market-dir .mood-label b { color: var(--green); }
-.market-dir.mood-bear .mood-label b { color: var(--red); }
-.market-dir.mood-neutral .mood-label b { color: var(--muted); }
+/* كلمة كل بار بلون معناها (صاعد/إيجابي=أخضر · هابط/سلبي=أحمر · عرضي/متوازن=رمادي) */
+.mood-banner .mood-label b { color: var(--green); }
+.mood-banner.mood-bear .mood-label b { color: var(--red); }
+.mood-banner.mood-neutral .mood-label b { color: var(--muted); }
 .mood-bar {
   display: flex; height: 12px; border-radius: 6px; overflow: hidden;
   margin: 12px 0 8px; background: var(--card);
@@ -191,7 +191,6 @@ a.stat-box:hover { filter: brightness(1.15); transform: translateY(-1px); }
 .mood-seg.bull { background: var(--green); }
 .mood-seg.neutral { background: var(--muted); }
 .mood-seg.bear { background: var(--red); }
-.mood-legend { display: flex; gap: 18px; flex-wrap: wrap; color: var(--muted); font-size: 14px; }
 .market-dir { margin-bottom: 12px; }
 .mkt-sub { color: var(--muted); font-size: 14px; font-weight: 400; }
 
@@ -879,15 +878,6 @@ a.stat-box:hover { filter: brightness(1.15); transform: translateY(-1px); }
 .dir-bar-fill.pos { background: var(--green); border-radius: 0 6px 6px 0; }
 .dir-bar-fill.neg { background: var(--red); border-radius: 6px 0 0 6px; }
 .dir-bar-center { position: absolute; left: 50%; top: -1px; bottom: -1px; width: 2px; background: var(--muted); transform: translateX(-50%); }
-.dir-bar-ends { display: flex; justify-content: space-between; color: var(--muted); font-size: 12px; margin-top: 4px; }
-/* الكلمات الثلاث تفاعلية: المطابقة لحالة السوق تتوهّج بلونها، والباقيتان تخفتان */
-.dir-bar-ends span { opacity: .4; font-weight: 700; transition: opacity .3s, color .3s; }
-.market-dir.mood-bear .dir-bar-ends span:nth-child(1),
-.market-dir.mood-neutral .dir-bar-ends span:nth-child(2),
-.market-dir.mood-bull .dir-bar-ends span:nth-child(3) { opacity: 1; font-weight: 900; }
-.market-dir.mood-bear .dir-bar-ends span:nth-child(1) { color: var(--red); }
-.market-dir.mood-bull .dir-bar-ends span:nth-child(3) { color: var(--green); }
-.market-dir.mood-neutral .dir-bar-ends span:nth-child(2) { color: var(--text); }
 
 /* عدّاد نصف دائري (سبيدومتر) بإبرة متحركة */
 .gauge-wrap { text-align: center; }

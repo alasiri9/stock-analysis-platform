@@ -31,7 +31,6 @@
           <div class="dir-bar-fill {{ 'pos' if ch >= 0 else 'neg' }}" style="width: {{ '%.1f'|format(w) }}%; {{ 'left:50%' if ch >= 0 else 'right:50%' }}"></div>
           <div class="dir-bar-center"></div>
         </div>
-        <div class="dir-bar-ends" dir="ltr"><span>هابط</span><span>بلا تغيّر</span><span>صاعد</span></div>
       {% endif %}
     </div>
   {% endif %}
@@ -48,11 +47,6 @@
         <span class="mood-seg bull" style="width:{{ mood.bull / mood.total * 100 }}%"></span>
         <span class="mood-seg neutral" style="width:{{ mood.neutral / mood.total * 100 }}%"></span>
         <span class="mood-seg bear" style="width:{{ mood.bear / mood.total * 100 }}%"></span>
-      </div>
-      <div class="mood-legend">
-        <span>🟢 {{ mood.bull }} صاعد</span>
-        <span>⚪ {{ mood.neutral }} محايد</span>
-        <span>🔴 {{ mood.bear }} هابط</span>
       </div>
     </div>
   {% endif %}
