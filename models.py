@@ -119,6 +119,9 @@ class Subscriber(db.Model):
     end_date = db.Column(db.Date, nullable=False)
     created_at = db.Column(db.DateTime(timezone=True), nullable=False, default=_utcnow)
     last_login = db.Column(db.DateTime(timezone=True), nullable=True)  # آخر دخول للمشترك
+    # مفتاح FMP الخاص بالمشترك (اختياري) — لو أدخله يرى الأسعار اللحظية على حصّته هو
+    # (لا على حصّة المنصة). None = بلا مفتاح → يرى سعر آخر تحديث ليلي.
+    fmp_api_key = db.Column(db.String(128), nullable=True)
 
     def is_active(self, today=None):
         """هل الاشتراك ساري (لم ينتهِ بعد)؟"""

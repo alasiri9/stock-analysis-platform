@@ -39,6 +39,42 @@
       <a class="preset" href="{{ url_for('portfolio') }}">🧠 المحفظة</a>
     </div>
 
+    {# الأسعار اللحظية — للمشترك فقط (مفتاح FMP الخاص، اختياري) #}
+    {% if is_sub %}
+      <h3 class="learn-group">⚡ الأسعار اللحظية</h3>
+      <p class="set-sub" style="margin-bottom:10px">
+        افتراضياً ترى سعر آخر تحديث. للأسعار اللحظية مجاناً، أضف مفتاح FMP الخاص بك (اختياري) —
+        فتُحسب طلباتك على حسابك أنت.
+        الحالة الآن:
+        {% if sub_key_set %}<span class="pill buy">✅ مفعّل — أسعارك لحظية</span>
+        {% else %}<span class="pill warn">غير مضبوط — تشاهد سعر آخر تحديث</span>{% endif %}
+      </p>
+
+      <details style="margin:4px 0 6px">
+        <summary style="cursor:pointer;font-weight:600;padding:6px 0">❓ كيف أحصل على مفتاح FMP مجاناً؟ (اضغط للشرح)</summary>
+        <ol class="set-sub" style="line-height:1.9;margin:8px 0 0;padding-inline-start:22px">
+          <li>افتح موقع FMP بالزر بالأسفل، وسجّل حساباً مجانياً (بريد + كلمة مرور).</li>
+          <li>بعد الدخول افتح صفحة <b>Dashboard</b> — ستجد مفتاحك (API Key) جاهزاً.</li>
+          <li>انسخ المفتاح والصقه في الخانة بالأسفل ثم احفظ.</li>
+        </ol>
+        <p class="set-sub" style="margin:8px 0">🎁 مجاني تماماً · 250 طلباً يومياً تكفيك · اختياري (بدونه ترى سعر آخر تحديث).</p>
+        <a class="btn" href="https://site.financialmodelingprep.com/register" target="_blank" rel="noopener">🌐 فتح موقع FMP للتسجيل</a>
+      </details>
+
+      <form action="{{ url_for('subscriber_fmp_key') }}" method="post" class="filters" style="margin-top:12px">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="filter">
+          <label>مفتاح FMP الخاص بك</label>
+          <input type="text" name="fmp_api_key" dir="ltr" autocomplete="off"
+                 placeholder="{{ 'محفوظ — الصق مفتاحاً جديداً للتغيير' if sub_key_set else 'الصق المفتاح هنا' }}">
+        </div>
+        <button class="btn" type="submit">💾 حفظ</button>
+      </form>
+      {% if sub_key_set %}
+        <p class="set-sub" style="margin-top:8px">لحذف المفتاح والعودة لسعر آخر تحديث: اترك الخانة فارغة واضغط حفظ.</p>
+      {% endif %}
+    {% endif %}
+
     {# حالة الأمان — للمدير فقط #}
     {% if is_admin and security %}
       <h3 class="learn-group">🛡️ حالة الأمان</h3>

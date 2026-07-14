@@ -42,6 +42,12 @@
           ({{ show(report.change_percent, '%') }})
         </div>
       {% endif %}
+      {% if price_cached %}
+        <div class="muted" style="font-size:.82rem;margin:2px 0 6px">
+          🕐 سعر آخر تحديث ({{ price_time }}). للأسعار اللحظية أضف مفتاحك المجاني من
+          <a href="{{ url_for('settings') }}">الإعدادات</a>.
+        </div>
+      {% endif %}
       <form action="{{ url_for('watchlist_add') }}" method="post" style="margin:0">
   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <input type="hidden" name="ticker" value="{{ report.ticker }}">

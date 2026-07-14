@@ -71,18 +71,19 @@ def get_today_usage():
         return None
 
 
-def _get(endpoint, params=None):
+def _get(endpoint, params=None, api_key=None):
     """دالة مساعدة: تنفّذ طلب GET لنقطة نهاية FMP وتُرجع JSON أو None عند الفشل.
 
-    - تضيف apikey تلقائياً.
+    - api_key: مفتاح مخصّص (مثل مفتاح مشترك). None = مفتاح المنصة (FMP_API_KEY).
     - ترجع None (لا تخترع بيانات) عند أي خطأ، وتطبع سبب الخطأ في الترمنال.
     """
-    if not FMP_API_KEY:
-        print("[FMP] خطأ: FMP_API_KEY غير موجود في .env")
+    key = api_key or FMP_API_KEY
+    if not key:
+        print("[FMP] خطأ: لا مفتاح FMP متاح (لا مخصّص ولا FMP_API_KEY)")
         return None
 
     params = dict(params or {})
-    params["apikey"] = FMP_API_KEY
+    params["apikey"] = key
     url = f"{BASE_URL}/{endpoint}"
 
     try:
@@ -91,8 +92,10 @@ def _get(endpoint, params=None):
         print(f"[FMP] فشل الاتصال بـ {endpoint}: {e}")
         return None
 
-    # وصلنا خادم FMP فعلاً (بأي حالة) → نحسبه ضمن استهلاك اليوم (عدّاد صحة المنصة)
-    _record_call()
+    # نحسب الطلب على عدّاد استهلاك المنصة فقط لو استُخدم مفتاح المنصة.
+    # طلبات المشتركين بمفاتيحهم الخاصة تُحسب على حصصهم هم، لا على أحمد.
+    if not api_key:
+        _record_call()
 
     if resp.status_code != 200:
         print(f"[FMP] {endpoint} رجّع حالة {resp.status_code}: {resp.text[:200]}")
@@ -105,10 +108,11 @@ def _get(endpoint, params=None):
         return None
 
 
-def get_quote(ticker):
+def get_quote(ticker, api_key=None):
     """السعر اللحظي والتغيّر اليومي للسهم.
 
     endpoint: /stable/quote?symbol=AAPL  → يُرجع قائمة فيها عنصر واحد (dict).
+    api_key: مفتاح مخصّص (مثل مفتاح مشترك). None = مفتاح المنصة.
 
     وحدات الحقول المُرجعة (مهم — Unit Guard):
     - price           : السعر بالدولار (رقم عادي، مثال 195.12)
@@ -117,7 +121,7 @@ def get_quote(ticker):
 
     يُرجع dict مبسّط، وأي حقل غير موجود يكون None (وليس 0).
     """
-    data = _get("quote", {"symbol": ticker})
+    data = _get("quote", {"symbol": ticker}, api_key=api_key)
     if not data:  # None أو قائمة فارغة = لا بيانات
         return None
 

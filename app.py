@@ -357,7 +357,8 @@ def create_app():
         db.create_all()  # ينشئ الجداول لو ما كانت موجودة
         # هجرة خفيفة: أعمدة أُضيفت لجداول موجودة مسبقاً (create_all لا يعدّل الجداول القائمة)
         from sqlalchemy import text as _sql
-        for stmt in ("ALTER TABLE subscriber ADD COLUMN last_login TIMESTAMP",):
+        for stmt in ("ALTER TABLE subscriber ADD COLUMN last_login TIMESTAMP",
+                     "ALTER TABLE subscriber ADD COLUMN fmp_api_key VARCHAR(128)"):
             try:
                 db.session.execute(_sql(stmt))
                 db.session.commit()
@@ -779,8 +780,26 @@ def create_app():
                 "recovery_on": tg and _get_setting("recovery_off") != "1",
                 "recovery_off": _get_setting("recovery_off") == "1",
             }
+        # حالة مفتاح FMP الخاص بالمشترك الحالي (لعرض قسم الأسعار اللحظية له فقط)
+        is_sub = session.get("role") == "sub"
+        sub_key_set = False
+        if is_sub:
+            _s = db.session.get(Subscriber, session.get("sub_id"))
+            sub_key_set = bool(_s and _s.fmp_api_key)
         return render_template("settings.html", is_admin=is_admin(), subscribers=subs,
-                               security=security)
+                               security=security, is_sub=is_sub, sub_key_set=sub_key_set)
+
+    @app.route("/subscriber/fmp-key", methods=["POST"])
+    def subscriber_fmp_key():
+        # المشترك يحفظ/يمسح مفتاح FMP الخاص به (للأسعار اللحظية على حصّته هو)
+        if session.get("role") != "sub":
+            return redirect(url_for("settings"))
+        sub = db.session.get(Subscriber, session.get("sub_id"))
+        if sub:
+            key = request.form.get("fmp_api_key", "").strip()
+            sub.fmp_api_key = key or None  # تفريغ الخانة يحذف المفتاح
+            db.session.commit()
+        return redirect(url_for("settings"))
 
     @app.route("/subscribers/add", methods=["POST"])
     def subscribers_add():
@@ -1007,6 +1026,15 @@ def create_app():
         rkey = "report:" + ticker.upper()
         now = _dt.now(_tz.utc)
         report = None
+        price_cached = False   # هل السعر المعروض من آخر تحديث مخزّن (مشترك بلا مفتاح)؟
+        price_time = None
+        # مفتاح المشترك (إن وُجد) لجلب سعر لحظي على حصّته هو؛ المدير يستخدم مفتاح المنصة.
+        _is_sub = session.get("role") == "sub"
+        _sub_key = None
+        if _is_sub:
+            _sub = db.session.get(Subscriber, session.get("sub_id"))
+            _sub_key = (_sub.fmp_api_key or None) if _sub else None
+        _do_live = (not _is_sub) or bool(_sub_key)  # المدير دائماً، أو مشترك له مفتاح
         cached = db.session.get(StockCache, rkey)
         if cached:
             up = cached.updated_at
@@ -1016,15 +1044,19 @@ def create_app():
                     report = _json.loads(cached.data_json)
                 except Exception:  # noqa: BLE001
                     report = None
-                if report is not None:  # سعر لحظي حديث (فشله لا يُسقط التقرير المخزّن)
-                    try:
-                        q = fmp_client.get_quote(ticker)
-                        if q and q.get("price") is not None:
-                            report["price"] = q.get("price")
-                            report["change"] = q.get("change")
-                            report["change_percent"] = q.get("change_percent")
-                    except Exception:  # noqa: BLE001
-                        pass
+                if report is not None:
+                    if _do_live:  # سعر لحظي حديث (فشله لا يُسقط التقرير المخزّن)
+                        try:
+                            q = fmp_client.get_quote(ticker, api_key=_sub_key)
+                            if q and q.get("price") is not None:
+                                report["price"] = q.get("price")
+                                report["change"] = q.get("change")
+                                report["change_percent"] = q.get("change_percent")
+                        except Exception:  # noqa: BLE001
+                            pass
+                    else:  # مشترك بلا مفتاح → نُبقي السعر المخزّن ونوضّح تاريخه (بلا استهلاك حصّة أحمد)
+                        price_cached = True
+                        price_time = up.strftime("%Y-%m-%d %H:%M") + " UTC"
         if report is None:  # لا كاش صالح: نبني التقرير كاملاً ونخزّنه
             report = analysis.build_stock_report(ticker)
             if report is not None:
@@ -1077,7 +1109,8 @@ def create_app():
         pio_met = [c for c in (pio.get("components") or []) if c.get("passed") is True]
         return render_template("stock.html", report=report, ticker=report["ticker"],
                                scan=scan, summary=summary, peers=peers, tech=tech,
-                               pio_met=pio_met, meter=meter)
+                               pio_met=pio_met, meter=meter,
+                               price_cached=price_cached, price_time=price_time)
 
     # ===================== حاسبة حجم الصفقة =====================
 
