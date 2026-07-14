@@ -880,6 +880,14 @@ a.stat-box:hover { filter: brightness(1.15); transform: translateY(-1px); }
 .dir-bar-fill.neg { background: var(--red); border-radius: 6px 0 0 6px; }
 .dir-bar-center { position: absolute; left: 50%; top: -1px; bottom: -1px; width: 2px; background: var(--muted); transform: translateX(-50%); }
 .dir-bar-ends { display: flex; justify-content: space-between; color: var(--muted); font-size: 12px; margin-top: 4px; }
+/* الكلمات الثلاث تفاعلية: المطابقة لحالة السوق تتوهّج بلونها، والباقيتان تخفتان */
+.dir-bar-ends span { opacity: .4; font-weight: 700; transition: opacity .3s, color .3s; }
+.market-dir.mood-bear .dir-bar-ends span:nth-child(1),
+.market-dir.mood-neutral .dir-bar-ends span:nth-child(2),
+.market-dir.mood-bull .dir-bar-ends span:nth-child(3) { opacity: 1; font-weight: 900; }
+.market-dir.mood-bear .dir-bar-ends span:nth-child(1) { color: var(--red); }
+.market-dir.mood-bull .dir-bar-ends span:nth-child(3) { color: var(--green); }
+.market-dir.mood-neutral .dir-bar-ends span:nth-child(2) { color: var(--text); }
 
 /* عدّاد نصف دائري (سبيدومتر) بإبرة متحركة */
 .gauge-wrap { text-align: center; }
