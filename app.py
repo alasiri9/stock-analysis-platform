@@ -527,13 +527,21 @@ def create_app():
             "not_risen": len(screener.filter_records(records, recent_gain_max=screener.EARLY_MAX_RECENT_GAIN)),
             "under100": len(screener.filter_records(records, price_max=100)),
         }
+        # الأسهم المستعدّة للانطلاق — سجلاتها الكاملة (نعرضها بنفس بطاقة _scard تماماً).
+        # نعيد استخدام منطق «قبل الانطلاق» الموجود، ثم نأخذ السجل الكامل لكل رمز (لا نسخة مبسّطة)
+        # بحيث تُحسب البطاقة بكل معطياتها وشروطها الداخلية كما هي. مستقلّ عن الفلاتر.
+        _ready_cands = screener.early_launch_candidates(records)
+        _rec_by_ticker = {r["ticker"]: r for r in records}
+        ready = [_rec_by_ticker[c["ticker"]] for c in _ready_cands if c.get("ticker") in _rec_by_ticker]
+        screener.attach_sparklines(ready)  # رسم مصغّر لبطاقاتها (كبقية البطاقات)
+
         launched, perf = screener.launched_stocks()
         mood = screener.market_mood(records)  # مزاج أسهم المنصة (نفس السجلّات — بلا قراءة مكررة)
         market_dir = screener.market_direction()  # اتجاه السوق الأمريكي (S&P 500)
         return render_template(
             "index.html",
             results=results, sectors=sectors, latest=latest,
-            filters=filters, total=len(records), stats=stats, counts=counts,
+            filters=filters, total=len(records), stats=stats, counts=counts, ready=ready,
             signals=screener.recent_signals(),
             launched=launched, perf=perf, mood=mood, market_dir=market_dir,
             sort=sort,
