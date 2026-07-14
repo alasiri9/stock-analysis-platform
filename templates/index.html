@@ -63,7 +63,7 @@
     <a class="preset" href="{{ url_for('index') }}">👁 الكل <span class="pcount">{{ counts.total }}</span></a>
     <a class="preset" href="{{ url_for('index', piotroski_min=8) }}">💎 جودة عالية <span class="pcount">{{ counts.quality }}</span> <span class="help" data-tip="شرط واحد: الجودة المالية (Piotroski) ≥ 8.">1</span></a>
     <a class="preset" href="{{ url_for('index', catalyst_min=80) }}">⚡ نمو قوي <span class="pcount">{{ counts.growth }}</span> <span class="help" data-tip="شرط واحد: النمو (Catalyst) ≥ 80.">1</span></a>
-    <a class="preset" href="{{ url_for('index', piotroski_min=8, catalyst_min=80) }}">💎⚡ جواهر النمو <span class="pcount">{{ counts.gems }}</span> <span class="help" data-tip="شرطان معاً: الجودة (Piotroski) ≥ 8 والنمو (Catalyst) ≥ 80 — أقوى وأندر فلتر.">2</span></a>
+    <a class="preset" href="{{ url_for('index', piotroski_min=8, catalyst_min=80) }}">💎 جواهر النمو <span class="pcount">{{ counts.gems }}</span> <span class="help" data-tip="شرطان معاً: الجودة (Piotroski) ≥ 8 والنمو (Catalyst) ≥ 80 — أقوى وأندر فلتر.">2</span></a>
     <a class="preset" href="{{ url_for('index', not_risen=1) }}">🔎 لسا ما صعد <span class="pcount">{{ counts.not_risen }}</span> <span class="help" data-tip="شرط واحد: السهم لم يرتفع أكثر من 12% مؤخراً — فرصة مبكرة.">1</span></a>
     <a class="preset" href="{{ url_for('index', price_max=100) }}">💰 أقل من 100$ <span class="pcount">{{ counts.under100 }}</span> <span class="help" data-tip="شرط واحد: سعر السهم أقل من 100 دولار.">1</span></a>
   </div>
