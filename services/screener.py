@@ -433,47 +433,6 @@ def _save_price_history(ticker, candles, days=60):
         db.session.merge(PricePoint(ticker=ticker, date=day, price=close))
 
 
-def get_price_series(ticker, limit=60):
-    """يُرجع أسعار إغلاق السهم مرتّبة من الأقدم للأحدث (للرسم المصغّر)."""
-    rows = (
-        PricePoint.query
-        .filter_by(ticker=ticker)
-        .order_by(PricePoint.date.desc())
-        .limit(limit)
-        .all()
-    )
-    rows.reverse()
-    return [r.price for r in rows if r.price is not None]
-
-
-def attach_sparklines(records):
-    """يضيف نقاط الرسم المصغّر (spark_points/spark_up) لكل سجل معروض — من جدول الأسعار، بلا استدعاء API.
-
-    يُستدعى فقط على القائمة المعروضة (نتائج مُفلترة) لتفادي أي حِمل زائد.
-    """
-    for r in records:
-        prices = get_price_series(r["ticker"])
-        r["spark_points"] = _sparkline_points(prices)
-        r["spark_up"] = (prices[-1] >= prices[0]) if len(prices) >= 2 else None
-    return records
-
-
-def _sparkline_points(prices, width=100, height=32, pad=3):
-    """يبني نقاط SVG polyline لمسار سعري (رسم مصغّر). يُرجع '' لو البيانات غير كافية."""
-    if not prices or len(prices) < 2:
-        return ""
-    lo, hi = min(prices), max(prices)
-    span = (hi - lo) or 1.0
-    n = len(prices)
-    step = (width - 2 * pad) / (n - 1)
-    points = []
-    for i, p in enumerate(prices):
-        x = pad + i * step
-        y = pad + (height - 2 * pad) * (1 - (p - lo) / span)
-        points.append(f"{x:.1f},{y:.1f}")
-    return " ".join(points)
-
-
 def check_price_alerts():
     """يفحص التنبيهات السعرية النشطة مقابل آخر الأسعار (من الكاش — بلا استدعاء API).
 
@@ -503,42 +462,6 @@ def check_price_alerts():
     if fired:
         db.session.commit()
     return fired
-
-
-def backfill_price_history(time_budget=20):
-    """يملأ price_point للأسهم المخزّنة مسبقاً بدون إعادة بناء سجلّها كاملاً.
-
-    استدعاء واحد فقط لكل سهم (historical-price-eod) بدل 5-6 استدعاءات (quote/profile/financials)
-    التي يحتاجها refresh_cache — يوفّر حصة الـ API عندما يكون الهدف فقط تعبئة الرسم البياني
-    لأسهم بياناتها الأساسية محدّثة أصلاً لكن رسمها لسا فاضٍ (مثلاً بعد إضافة الميزة حديثاً).
-    يتخطّى أي سهم له نقطة سعر مسجّلة اليوم بالفعل. يُرجع عدد الأسهم المحدّثة.
-    """
-    start = time.monotonic()
-    today = date_cls.today()
-    records, _ = load_records()
-    updated = 0
-    for r in records:
-        if time.monotonic() - start > time_budget:
-            break
-
-        ticker = r["ticker"]
-        has_today = PricePoint.query.filter_by(ticker=ticker, date=today).first()
-        if has_today:
-            continue
-
-        try:
-            candles = fmp_client.get_historical_prices(ticker, limit=120)
-            if not candles:
-                continue
-            _save_price_history(ticker, candles)
-            db.session.commit()
-            updated += 1
-        except Exception as e:  # noqa: BLE001
-            print(f"[screener] تعذّر تحديث تاريخ الأسعار لـ {ticker}: {e}")
-            db.session.rollback()
-            continue
-
-    return updated
 
 
 # رمز مؤشر السوق للمقارنة المعيارية (متاح بباقة FMP المجانية — مُختبر)
@@ -787,7 +710,6 @@ def launched_stocks(limit=6):
             triggered_at = triggered_at.replace(tzinfo=timezone.utc)
         days_elapsed = (now - triggered_at).days
         days_list.append(days_elapsed)
-        prices = get_price_series(s.ticker)
         rows.append({
             "ticker": s.ticker,
             "name": name_by_ticker.get(s.ticker),
@@ -797,9 +719,6 @@ def launched_stocks(limit=6):
             "return_pct": ret,
             "date": s.triggered_at,
             "days_elapsed": days_elapsed,
-            "spark_points": _sparkline_points(prices),
-            "spark_up": (prices[-1] >= prices[0]) if len(prices) >= 2 else None,
-            "spark_days": len(prices),
         })
         if len(rows) >= limit:
             break

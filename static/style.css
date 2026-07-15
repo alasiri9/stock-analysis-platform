@@ -279,9 +279,6 @@ a.stat-box:hover { filter: brightness(1.15); transform: translateY(-1px); }
 .lcard.up .lcard-ret { color: var(--green); }
 .lcard.down .lcard-ret { color: var(--red); }
 .lcard-sub { color: var(--muted); font-size: 16px; margin-top: 2px; }
-.lcard-spark { width: 100%; height: 220px; margin-top: 20px; display: block; }
-.lcard-spark.up { color: var(--green); }
-.lcard-spark.down { color: var(--red); }
 .lcard-tag-pill {
   font-size: 15px; font-weight: 900; margin-top: 12px; padding: 8px 12px;
   border-radius: 8px; text-align: center;
@@ -616,11 +613,6 @@ a.stat-box:hover { filter: brightness(1.15); transform: translateY(-1px); }
 .learn-term-desc { color: var(--text); font-size: 14px; line-height: 1.7; }
 .learn-term-ex { color: var(--muted); font-size: 13px; margin-top: 8px; font-style: italic; }
 
-/* رسم مصغّر داخل بطاقة السهم المشتركة */
-.scard-spark-row { display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%; margin-top: 4px; }
-.scard-spark { width: 100%; max-width: 280px; height: 24px; display: block; opacity: .85; }
-.scard-spark.up { color: var(--green); }
-.scard-spark.down { color: var(--red); }
 
 /* صندوق أدوات التحديث — منفصل عن لوحة الفلاتر */
 .tools-box {

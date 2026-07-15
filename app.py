@@ -507,7 +507,6 @@ def create_app():
             sort = "confidence"
             results.sort(key=lambda r: screener.measures_met(r), reverse=True)
 
-        screener.attach_sparklines(results)  # رسم مصغّر لكل بطاقة (من جدول الأسعار — بلا API)
         # نمرّر قيمة الملايين وحالة الشيك بوكس للواجهة (لإبقائها بالخانة)
         filters["float_max_millions"] = float_max_millions
         filters["not_risen"] = not_risen
@@ -533,7 +532,6 @@ def create_app():
         _ready_cands = screener.early_launch_candidates(records)
         _rec_by_ticker = {r["ticker"]: r for r in records}
         ready = [_rec_by_ticker[c["ticker"]] for c in _ready_cands if c.get("ticker") in _rec_by_ticker]
-        screener.attach_sparklines(ready)  # رسم مصغّر لبطاقاتها (كبقية البطاقات)
 
         launched, perf = screener.launched_stocks()
         mood = screener.market_mood(records)  # مزاج أسهم المنصة (نفس السجلّات — بلا قراءة مكررة)
@@ -552,7 +550,6 @@ def create_app():
         # الجواهر المخفية = نفس فلتر Piotroski>=8 من الماسح، بصفحة مستقلة
         records, latest = screener.load_records()
         results = screener.filter_records(records, piotroski_min=8)
-        screener.attach_sparklines(results)
         return render_template("gems.html", results=results, latest=latest, total=len(records))
 
     @app.route("/leaders")
@@ -560,7 +557,6 @@ def create_app():
         # القادة المستقبليون = أعلى 10 أسهم حسب Catalyst (بيانات الماسح نفسها، ترتيب مختلف)
         records, latest = screener.load_records()
         results = screener.filter_records(records)[:10]
-        screener.attach_sparklines(results)
         return render_template("leaders.html", results=results, latest=latest, total=len(records))
 
     @app.route("/prelaunch")
@@ -1017,15 +1013,6 @@ def create_app():
             screener.refresh_cache()
         except Exception as e:  # noqa: BLE001
             print(f"[app] خطأ أثناء تحديث الماسح: {e}")
-        return redirect(url_for("index"))
-
-    @app.route("/screener/backfill-history", methods=["POST"])
-    def screener_backfill_history():
-        # تعبئة الرسم البياني (price_point) للأسهم المخزّنة أصلاً — استدعاء واحد لكل سهم فقط.
-        try:
-            screener.backfill_price_history()
-        except Exception as e:  # noqa: BLE001
-            print(f"[app] خطأ أثناء تعبئة تاريخ الأسعار: {e}")
         return redirect(url_for("index"))
 
     @app.route("/stock")
