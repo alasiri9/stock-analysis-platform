@@ -154,11 +154,6 @@
               {% if l.return_pct is not none %}{{ '+' if l.return_pct >= 0 else '' }}{{ "%.1f"|format(l.return_pct) }}%{% else %}—{% endif %}
             </div>
             <div class="lcard-sub">منذ الإشارة · {{ l.days_elapsed }} يوم</div>
-            {% if l.spark_points %}
-              <svg class="lcard-spark {{ 'up' if l.spark_up else 'down' }}" viewBox="0 0 100 32" preserveAspectRatio="none">
-                <polyline points="{{ l.spark_points }}" fill="none" stroke="currentColor" stroke-width="2"/>
-              </svg>
-            {% endif %}
             {% if l.return_pct is not none %}
               {% if l.return_pct >= 40 %}
                 <div class="lcard-tag-pill up">🚀 انفجار قوي تحقق</div>

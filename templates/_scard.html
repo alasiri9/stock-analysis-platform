@@ -59,14 +59,6 @@
     {% if dte is not none %}
       <div class="scard-earn {{ 'soon' if dte <= 7 }}">📅 أرباح {{ 'اليوم' if dte == 0 else ('بعد يوم' if dte == 1 else 'بعد ' ~ dte ~ ' يوم') }} <span class="help" data-tip-accent="{{ 'var(--red)' if dte <= 7 else 'var(--gold)' }}" data-tip="تنبيه: قرب إعلان الأرباح يتسبب في حركة سعرية متقلّبة للسهم صعوداً أو نزولاً. اللون الأصفر يعني أكثر من 7 أيام، واللون الأحمر خلال 7 أيام.">؟</span></div>
     {% endif %}
-    {% if r.get('spark_points') %}
-      <div class="scard-spark-row">
-        <svg class="scard-spark {{ 'up' if r.spark_up else 'down' }}" viewBox="0 0 100 32" preserveAspectRatio="none">
-          <polyline points="{{ r.spark_points }}" fill="none" stroke="currentColor" stroke-width="2"/>
-        </svg>
-        <span class="help" data-tip="الرسم المصغّر: مسار سعر السهم خلال آخر ~3 أشهر. أخضر = صاعد، أحمر = هابط. لمحة سريعة عن الاتجاه.">؟</span>
-      </div>
-    {% endif %}
     {% set reasons = bullish_reasons(r) %}
     {% if reasons %}
       <div class="scard-why">💡 {{ reasons[:3] | join(' + ') }} <span class="help" data-tip="سبب الترشّح: أقوى 3 عوامل جعلت الماسح يرشّح هذا السهم. لمحة عن نقاط قوته.">؟</span></div>
