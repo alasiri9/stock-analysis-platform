@@ -40,16 +40,20 @@
   </div>
   </div>
 
-  {# شارات فنية (9) — كلها محسوبة فعلياً وتُضاء خضراء حسب المؤشرات #}
+  {# المؤشرات الفنية المتحقّقة (الإيجابية) فقط — تظهر تلقائياً عند تحقّقها، والبقية لا تظهر حتى تتحقّق #}
   {% set ind = {} %}
   {% for b in (r.indicators or []) %}{% set _ = ind.update({b.label: b.status}) %}{% endfor %}
+  {% set met_cats = [] %}
+  {% for cat, key in [('حجم','الحجم'), ('RS','RSI'), ('MACD','MACD'), ('EMA','EMA'), ('اختراق','اختراق'), ('ADX','ADX'), ('قمة','قمة'), ('انضغاط','انضغاط'), ('تقاطع','تقاطع')] %}
+    {% if ind.get(key) == 'bull' %}{% set _ = met_cats.append(cat) %}{% endif %}
+  {% endfor %}
   <div class="scard-mid">
+    {% if met_cats %}
     <div class="scard-badges">
-      {% for cat, key in [('حجم','الحجم'), ('RS','RSI'), ('MACD','MACD'), ('EMA','EMA'), ('اختراق','اختراق'), ('ADX','ADX'), ('قمة','قمة'), ('انضغاط','انضغاط'), ('تقاطع','تقاطع')] %}
-        <span class="cat-pill {{ 'on' if key and ind.get(key) == 'bull' }}">{{ cat }}</span>
-      {% endfor %}
-      <span class="help" data-tip="المؤشرات الفنية التسعة: كل مربع مؤشر (حجم/RS/MACD/EMA/اختراق/ADX/قمة/انضغاط/تقاطع). يضيء أخضر إذا كان إيجابياً للسهم. تحليل فني لحركة السعر — شرح كل مؤشر في صفحة «تعلّم».">؟</span>
+      {% for cat in met_cats %}<span class="cat-pill on">{{ cat }}</span>{% endfor %}
+      <span class="help" data-tip="المؤشرات الفنية المتحقّقة (الإيجابية) لهذا السهم فقط — تظهر تلقائياً عند تحقّقها، والبقية لا تظهر حتى تتحقّق. شرح كل مؤشر في صفحة «تعلّم».">؟</span>
     </div>
+    {% endif %}
     {% if is_golden(r) %}
       <div class="scard-golden">🥇 إشارة ذهبية — 3 عوامل مجتمعة <span class="help" data-tip="إشارة ذهبية: اجتمعت 3 عوامل قوية معاً (جودة مالية + سيولة داخلة + اختراق سعري). أقوى إشارات الماسح. تعليمي لا توصية.">؟</span></div>
     {% elif r.catalyst is not none and r.catalyst >= 80 %}
