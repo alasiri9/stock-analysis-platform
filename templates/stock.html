@@ -51,7 +51,7 @@
       <form action="{{ url_for('watchlist_add') }}" method="post" style="margin:0">
   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <input type="hidden" name="ticker" value="{{ report.ticker }}">
-        <button class="btn-add" type="submit">⭐ أضف للمتابعة</button>
+        <button class="btn-add" type="submit">⭐ أضف للمراقبة</button>
       </form>
       <button class="btn-add" type="button" onclick="shareStock(this)">🔗 مشاركة</button>
       <button class="btn-add no-print" type="button" onclick="window.print()">🖨️ طباعة</button>
