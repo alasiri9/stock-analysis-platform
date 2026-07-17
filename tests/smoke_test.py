@@ -49,7 +49,7 @@ PAGES = [
     "/health", "/dashboard", "/business", "/settings", "/pulse", "/movers",
     "/earnings", "/daily-report", "/radar", "/news", "/flow", "/performance",
     "/calculator", "/compare", "/watchlist", "/alerts", "/portfolio",
-    "/stock", "/stock/AAPL", "/messages", "/export/scanner.csv", "/login",
+    "/stock", "/stock/AAPL", "/messages", "/export/scanner.xlsx", "/login",
 ]
 
 OK_CODES = (200, 301, 302, 303, 304, 308)

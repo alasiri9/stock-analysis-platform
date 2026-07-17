@@ -873,27 +873,37 @@ def create_app():
             db.session.commit()
         return redirect(url_for("settings"))
 
-    @app.route("/export/scanner.csv")
+    @app.route("/export/scanner.xlsx")
     def export_scanner():
-        # تصدير نتائج الماسح كملف CSV (يفتح بـExcel) — من الكاش، بلا API
-        import csv
+        # تصدير نتائج الماسح كملف Excel حقيقي (.xlsx) — عربية سليمة في كل الأجهزة، بلا API
         import io
+        from openpyxl import Workbook
+        from openpyxl.styles import Font
         records, _ = screener.load_records()
         records.sort(key=lambda r: screener.measures_met(r), reverse=True)
-        buf = io.StringIO()
-        buf.write("﻿")  # BOM ليعرض Excel العربية صح
-        w = csv.writer(buf)
-        w.writerow(["الرمز", "الشركة", "القطاع", "السعر", "التغير اليومي %",
-                    "Piotroski", "النمو", "قوة التأكيد"])
+        wb = Workbook()
+        ws = wb.active
+        ws.title = "الماسح"
+        ws.sheet_view.rightToLeft = True  # ورقة من اليمين لليسار (عربية)
+        headers = ["الرمز", "الشركة", "القطاع", "السعر", "التغير اليومي %",
+                   "Piotroski", "النمو", "قوة التأكيد"]
+        ws.append(headers)
+        for c in ws[1]:
+            c.font = Font(bold=True)  # صف العناوين عريض
         for r in records:
-            w.writerow([
+            ws.append([
                 r.get("ticker"), r.get("name"), r.get("sector"),
                 r.get("price"), r.get("change_percent"),
                 r.get("piotroski"), r.get("catalyst"), screener.measures_met(r),
             ])
+        for col, w in zip("ABCDEFGH", (10, 26, 20, 10, 14, 11, 8, 12)):
+            ws.column_dimensions[col].width = w
+        buf = io.BytesIO()
+        wb.save(buf)
         return Response(
-            buf.getvalue(), mimetype="text/csv; charset=utf-8",
-            headers={"Content-Disposition": "attachment; filename=algomatix_scanner.csv"},
+            buf.getvalue(),
+            mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            headers={"Content-Disposition": "attachment; filename=algomatix_scanner.xlsx"},
         )
 
     @app.route("/pulse")
