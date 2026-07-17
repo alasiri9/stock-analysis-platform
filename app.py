@@ -137,8 +137,15 @@ def create_app():
         print("[app] تنبيه: APP_PASSWORD غير مضبوط — المنصة مفتوحة بلا تسجيل دخول")
 
     def is_admin():
-        """المدير = صاحب المنصة (كلمة المرور الرئيسية)، أو الوضع المحلي بلا كلمة مرور."""
-        return (not app_password) or session.get("role") == "admin"
+        """المدير = صاحب المنصة (كلمة المرور الرئيسية)، أو الوضع المحلي بلا كلمة مرور.
+
+        توافق خلفي: جلسة قديمة سُجّلت قبل نظام الصلاحيات تحمل authed بلا role — تُعدّ
+        مديراً (المشترك دائماً role='sub'، فلا يتأثّر ولا يُمنح صلاحية بالخطأ).
+        """
+        if not app_password:
+            return True
+        role = session.get("role")
+        return role == "admin" or (session.get("authed") and role is None)
 
     def current_user_id():
         """هوية المستخدم الحالي لبياناته الخاصة — لفصل قائمة المراقبة/التنبيهات/المحفظة.
