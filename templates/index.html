@@ -118,6 +118,17 @@
     <button class="btn" type="submit">فلترة</button>
   </form>
 
+  {# أدوات التحديث/التصدير — مع الفلترة. «تحديث البيانات» للمدير فقط (يستهلك حصّة FMP) #}
+  <div class="tools-box">
+    {% if is_admin %}
+    <form action="{{ url_for('screener_refresh') }}" method="post" class="tools-form">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button class="btn" type="submit">🔄 تحديث البيانات</button>
+    </form>
+    {% endif %}
+    <a class="btn" href="{{ url_for('export_scanner') }}" title="تنزيل نتائج الماسح كملف Excel">📥 تصدير Excel</a>
+  </div>
+
   {# ============ ① الاستعداد للانطلاق: الأسهم المستعدّة فقط — تلقائي، بلا علاقة بالفلاتر ============ #}
   <section class="panel" id="scanner">
     <div class="panel-head">
@@ -211,15 +222,6 @@
     <div class="panel-head">
       <h2>🔍 فحص كل الأسهم :</h2>
       <p class="panel-sub">كل الأسهم مرتّبة حسب الجودة (Piotroski) والنمو (Catalyst) — تتحكّم بها «الفلاتر» أعلى الصفحة.</p>
-    </div>
-
-    {# صندوق أدوات التحديث — منفصل عن الفلترة #}
-    <div class="tools-box">
-      <form action="{{ url_for('screener_refresh') }}" method="post" class="tools-form">
-    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-        <button class="btn" type="submit">🔄 تحديث البيانات</button>
-      </form>
-      <a class="btn" href="{{ url_for('export_scanner') }}" title="تنزيل نتائج الماسح كملف Excel">📥 تصدير Excel</a>
     </div>
 
     <div class="confidence" style="margin:14px 0 12px">
