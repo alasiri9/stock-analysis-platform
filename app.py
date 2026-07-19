@@ -170,6 +170,10 @@ def create_app():
                 if not sub or not sub.is_active():
                     session.clear()
                     return redirect(url_for("login", expired=1))
+                # بوابة إخلاء المسؤولية: لا تُفتح المنصة للمشترك قبل موافقته (تُسجَّل مرة في سجلّه)
+                if not sub.disclaimer_accepted_at and request.endpoint not in (
+                        "disclaimer", "disclaimer_accept", "logout"):
+                    return redirect(url_for("disclaimer"))
             return None
         return redirect(url_for("login"))
 
@@ -229,6 +233,30 @@ def create_app():
     def logout():
         session.clear()
         return redirect(url_for("login") if app_password else url_for("index"))
+
+    @app.route("/disclaimer")
+    def disclaimer():
+        # تنبيه إخلاء المسؤولية — يُعرض للمشترك قبل دخول المنصة (مرة واحدة ثم تُحفظ موافقته)
+        if session.get("role") != "sub":
+            return redirect(url_for("index"))
+        sub = db.session.get(Subscriber, session.get("sub_id"))
+        if sub and sub.disclaimer_accepted_at:
+            return redirect(url_for("index"))
+        return render_template("disclaimer.html")
+
+    @app.route("/disclaimer/accept", methods=["POST"])
+    def disclaimer_accept():
+        # تسجيل موافقة المشترك (بعد تأشير «قرأت التنبيه وفهمت») — إثبات يُحفظ في سجلّه
+        if session.get("role") != "sub":
+            return redirect(url_for("index"))
+        if request.form.get("agree") != "on":
+            return redirect(url_for("disclaimer"))
+        sub = db.session.get(Subscriber, session.get("sub_id"))
+        if sub and not sub.disclaimer_accepted_at:
+            from datetime import datetime as _dt, timezone as _tz
+            sub.disclaimer_accepted_at = _dt.now(_tz.utc)
+            db.session.commit()
+        return redirect(url_for("index"))
 
     @app.context_processor
     def inject_sub_status():
@@ -366,7 +394,8 @@ def create_app():
         # هجرة خفيفة: أعمدة أُضيفت لجداول موجودة مسبقاً (create_all لا يعدّل الجداول القائمة)
         from sqlalchemy import text as _sql
         for stmt in ("ALTER TABLE subscriber ADD COLUMN last_login TIMESTAMP",
-                     "ALTER TABLE subscriber ADD COLUMN fmp_api_key VARCHAR(128)"):
+                     "ALTER TABLE subscriber ADD COLUMN fmp_api_key VARCHAR(128)",
+                     "ALTER TABLE subscriber ADD COLUMN disclaimer_accepted_at TIMESTAMP"):
             try:
                 db.session.execute(_sql(stmt))
                 db.session.commit()

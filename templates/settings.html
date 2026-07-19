@@ -129,7 +129,7 @@
       </form>
       {% if subscribers %}
         <table class="insider">
-          <thead><tr><th>المشترك</th><th>رمز الدخول</th><th>ينتهي في</th><th>آخر دخول</th><th>الحالة</th><th></th></tr></thead>
+          <thead><tr><th>المشترك</th><th>رمز الدخول</th><th>ينتهي في</th><th>آخر دخول</th><th>إخلاء المسؤولية</th><th>الحالة</th><th></th></tr></thead>
           <tbody>
             {% for s in subscribers %}
               <tr>
@@ -137,6 +137,7 @@
                 <td dir="ltr"><code class="sub-code">{{ s.access_code }}</code> <button type="button" class="copy-btn" onclick="copyCode(this, '{{ s.access_code }}')" title="نسخ الرمز">📋</button></td>
                 <td dir="ltr">{{ s.end_date.strftime('%Y-%m-%d') }}</td>
                 <td dir="ltr" class="muted">{{ s.last_login.strftime('%Y-%m-%d') if s.last_login else 'لم يدخل بعد' }}</td>
+                <td>{% if s.disclaimer_accepted_at %}<span class="pill buy" dir="ltr" title="وافق المشترك على إخلاء المسؤولية">✅ {{ s.disclaimer_accepted_at.strftime('%Y-%m-%d %H:%M') }}</span>{% else %}<span class="muted">لم يوقّع بعد</span>{% endif %}</td>
                 <td>
                   {% if s.is_active() %}
                     {% if s.days_left() <= 3 %}<span class="pill warn">⏳ ينتهي قريباً · {{ s.days_left() }} يوم</span>
