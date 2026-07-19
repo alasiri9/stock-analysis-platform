@@ -915,13 +915,12 @@ def create_app():
             ])
             for c in ws[i]:
                 c.border = Border(bottom=thin)
+                c.alignment = center                      # توسيط كل الخلايا (رأس ومحتوى)
                 if i % 2 == 1:
                     c.fill = band
             ws.cell(i, 4).number_format = '"$"0.00'        # السعر بعلامة الدولار
             ws.cell(i, 5).number_format = "0.00"          # التغير %
             ws.cell(i, 7).number_format = "0"             # النمو
-            for col in (1, 6, 7, 8):
-                ws.cell(i, col).alignment = center
             chp = r.get("change_percent")                 # لون التغير: أخضر/أحمر
             if chp is not None:
                 ws.cell(i, 5).font = Font(color=("1A7F37" if chp >= 0 else "CF222E"), bold=True)
