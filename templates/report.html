@@ -45,12 +45,15 @@
     .layout { display: block !important; }
     .content { margin: 0 !important; padding: 0 !important; max-width: none !important; }
     .report-doc { box-shadow: none; border-radius: 0; padding: 0; }
-    table.report-table { font-size: 12px; }
-    table.report-table th, table.report-table td { padding: 6px 5px; }
+    .report-doc .doc-title { font-size: 16px; margin: 0 0 2px; }
+    .report-doc .doc-date { font-size: 11px; margin: 0 0 7px; }
+    .report-doc .doc-foot { font-size: 10px; margin-top: 7px; }
+    table.report-table { font-size: 11px; }
+    table.report-table th, table.report-table td { padding: 3.5px 5px; }
     table.report-table thead th { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
     table.report-table tbody tr { -webkit-print-color-adjust: exact; print-color-adjust: exact;
       page-break-inside: avoid; }
-    @page { size: A4 portrait; margin: 10mm; }
+    @page { size: portrait; margin: 8mm; }
   }
 </style>
 
