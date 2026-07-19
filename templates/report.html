@@ -45,9 +45,12 @@
     .layout { display: block !important; }
     .content { margin: 0 !important; padding: 0 !important; max-width: none !important; }
     .report-doc { box-shadow: none; border-radius: 0; padding: 0; }
+    table.report-table { font-size: 12px; }
+    table.report-table th, table.report-table td { padding: 6px 5px; }
     table.report-table thead th { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-    table.report-table tbody tr:nth-child(even) { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-    @page { size: A4 landscape; margin: 12mm; }
+    table.report-table tbody tr { -webkit-print-color-adjust: exact; print-color-adjust: exact;
+      page-break-inside: avoid; }
+    @page { size: A4 portrait; margin: 10mm; }
   }
 </style>
 
@@ -79,14 +82,14 @@
       {% for r in rows %}
       <tr>
         <td class="ticker">{{ r.ticker }}</td>
-        <td class="name">{{ r.name or '—' }}</td>
+        <td class="name" dir="ltr">{{ r.name or '—' }}</td>
         <td>{{ r.sector or '—' }}</td>
-        <td>{{ '$%.2f'|format(r.price) if r.price is not none else '—' }}</td>
-        <td class="{{ 'chg-up' if (r.change is not none and r.change >= 0) else ('chg-down' if r.change is not none else '') }}">
+        <td dir="ltr">{{ '$%.2f'|format(r.price) if r.price is not none else '—' }}</td>
+        <td dir="ltr" class="{{ 'chg-up' if (r.change is not none and r.change >= 0) else ('chg-down' if r.change is not none else '') }}">
           {{ '%+.2f'|format(r.change) if r.change is not none else '—' }}
         </td>
         <td>{{ r.piotroski if r.piotroski is not none else '—' }}</td>
-        <td>{{ r.catalyst if r.catalyst is not none else '—' }}</td>
+        <td>{{ r.catalyst|round|int if r.catalyst is not none else '—' }}</td>
         <td>{{ r.met }}</td>
       </tr>
       {% endfor %}
