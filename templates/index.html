@@ -223,7 +223,7 @@
       <p class="panel-sub">كل الأسهم مرتّبة حسب الجودة (Piotroski) والنمو (Catalyst) — تتحكّم بها «الفلاتر» أعلى الصفحة.</p>
     </div>
 
-    <div class="confidence" style="margin:14px 0 12px; display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap">
+    <div class="confidence" style="margin:14px 0 12px; display:flex; align-items:center; gap:8px; flex-wrap:wrap">
       {% if latest %}
         <span>المعروض <b>{{ results|length }}</b> / <b>{{ total }}</b> · آخر تحديث <span dir="ltr">{{ latest.strftime('%Y-%m-%d %H:%M') }} UTC</span></span>
         <a class="btn" href="{{ url_for('scanner_report') }}" title="عرض تقرير منسّق قابل للطباعة أو الحفظ PDF"
