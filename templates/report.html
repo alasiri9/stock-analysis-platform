@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+{% block title %}تقرير الفحص — Algomatix{% endblock %}
+{% block content %}
+<style>
+  /* تقرير الفحص: مستند أبيض نظيف يظهر على الشاشة ويُطبع/يُحفظ PDF بنفس الشكل */
+  .report-toolbar {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 12px; flex-wrap: wrap; margin-bottom: 16px;
+  }
+  .report-toolbar h1 { font-size: 20px; margin: 0; }
+  .report-toolbar .sub { color: var(--muted, #8aa0c0); font-size: 13px; margin-top: 4px; }
+  .btn-print {
+    background: #1a7f37; color: #fff; border: none; border-radius: 10px;
+    padding: 12px 22px; font-size: 16px; font-weight: 700; cursor: pointer;
+    display: inline-flex; align-items: center; gap: 8px;
+  }
+  .btn-print:hover { background: #15682d; }
+
+  .report-doc {
+    background: #fff; color: #16274a; border-radius: 12px; padding: 22px;
+    box-shadow: 0 8px 30px rgba(0,0,0,.18);
+  }
+  .report-doc .doc-title { text-align: center; margin: 0 0 4px; font-size: 22px; color: #16274a; }
+  .report-doc .doc-date { text-align: center; margin: 0 0 18px; font-size: 14px; color: #5a6b86; }
+
+  table.report-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  table.report-table th, table.report-table td {
+    text-align: center; padding: 9px 8px; border-bottom: 1px solid #d9dee8;
+  }
+  table.report-table thead th {
+    background: #16274a; color: #fff; font-weight: 700; font-size: 14px;
+    border-bottom: none;
+  }
+  table.report-table tbody tr:nth-child(even) { background: #f2f5fa; }
+  table.report-table td.ticker { font-weight: 700; }
+  table.report-table td.name { color: #33465f; }
+  .chg-up { color: #1a7f37; font-weight: 700; }
+  .chg-down { color: #cf222e; font-weight: 700; }
+  .report-doc .doc-foot { text-align: center; color: #7a8aa3; font-size: 12px; margin-top: 16px; }
+
+  /* عند الطباعة أو الحفظ PDF: نُخفي كل ما حول التقرير ونجعله يملأ الصفحة */
+  @media print {
+    .sidebar, .report-toolbar, .theme-toggle, .nav-tip,
+    .notif-overlay, .sidebar-foot { display: none !important; }
+    .layout { display: block !important; }
+    .content { margin: 0 !important; padding: 0 !important; max-width: none !important; }
+    .report-doc { box-shadow: none; border-radius: 0; padding: 0; }
+    table.report-table thead th { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    table.report-table tbody tr:nth-child(even) { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    @page { size: A4 landscape; margin: 12mm; }
+  }
+</style>
+
+<div class="report-toolbar">
+  <div>
+    <h1>📄 تقرير فحص الأسهم</h1>
+    <div class="sub">{{ count }} سهماً — مرتّبة حسب قوة التأكيد · بيانات {{ as_of }}</div>
+  </div>
+  <button class="btn-print" type="button" onclick="window.print()">🖨️ طباعة التقرير</button>
+</div>
+
+<div class="report-doc">
+  <h2 class="doc-title">مسح Algomatix للأسهم الأمريكية</h2>
+  <p class="doc-date">بيانات {{ as_of }} — {{ count }} سهماً مرتّبة حسب قوة التأكيد</p>
+  <table class="report-table">
+    <thead>
+      <tr>
+        <th>الرمز</th>
+        <th>الشركة</th>
+        <th>القطاع</th>
+        <th>السعر</th>
+        <th>التغيّر اليومي %</th>
+        <th>Piotroski</th>
+        <th>النمو</th>
+        <th>قوة التأكيد</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for r in rows %}
+      <tr>
+        <td class="ticker">{{ r.ticker }}</td>
+        <td class="name">{{ r.name or '—' }}</td>
+        <td>{{ r.sector or '—' }}</td>
+        <td>{{ '$%.2f'|format(r.price) if r.price is not none else '—' }}</td>
+        <td class="{{ 'chg-up' if (r.change is not none and r.change >= 0) else ('chg-down' if r.change is not none else '') }}">
+          {{ '%+.2f'|format(r.change) if r.change is not none else '—' }}
+        </td>
+        <td>{{ r.piotroski if r.piotroski is not none else '—' }}</td>
+        <td>{{ r.catalyst if r.catalyst is not none else '—' }}</td>
+        <td>{{ r.met }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  <p class="doc-foot">Algomatix © 2026 — تقرير تعليمي، ليس توصية بيع أو شراء.</p>
+</div>
+{% endblock %}
