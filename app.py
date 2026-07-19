@@ -879,37 +879,45 @@ def create_app():
         import io
         from openpyxl import Workbook
         from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
-        records, _ = screener.load_records()
+        records, latest = screener.load_records()
         records.sort(key=lambda r: screener.measures_met(r), reverse=True)
         wb = Workbook()
         ws = wb.active
         ws.title = "الماسح"
         ws.sheet_view.rightToLeft = True  # ورقة من اليمين لليسار (عربية)
+        # سطر عنوان موثّق بالتاريخ (يوثّق الملف نفسه للتدقيق لاحقاً)
+        as_of = latest.strftime("%Y/%m/%d") if latest else "—"
+        ws.append([f"مسح Algomatix للأسهم الأمريكية — بيانات {as_of}"])
+        ws.merge_cells("A1:H1")
+        t = ws.cell(1, 1)
+        t.font = Font(bold=True, color="16274A", size=14)
+        t.alignment = Alignment(horizontal="center", vertical="center")
+        ws.row_dimensions[1].height = 30
         headers = ["الرمز", "الشركة", "القطاع", "السعر", "التغير اليومي %",
                    "Piotroski", "النمو", "قوة التأكيد"]
         ws.append(headers)
         # صف العناوين: خلفية داكنة + خط أبيض عريض + توسيط
         head_fill = PatternFill("solid", fgColor="16274A")
         thin = Side(style="thin", color="D9DEE8")
-        for c in ws[1]:
+        for c in ws[2]:
             c.font = Font(bold=True, color="FFFFFF", size=12)
             c.fill = head_fill
             c.alignment = Alignment(horizontal="center", vertical="center")
             c.border = Border(bottom=thin)
-        ws.row_dimensions[1].height = 26
+        ws.row_dimensions[2].height = 26
         band = PatternFill("solid", fgColor="F2F5FA")     # تظليل صفوف بالتناوب
         center = Alignment(horizontal="center")
-        for i, r in enumerate(records, start=2):
+        for i, r in enumerate(records, start=3):
             ws.append([
-                r.get("ticker"), r.get("name"), r.get("sector"),
+                r.get("ticker"), r.get("name"), sector_ar(r.get("sector")),
                 r.get("price"), r.get("change_percent"),
                 r.get("piotroski"), r.get("catalyst"), screener.measures_met(r),
             ])
             for c in ws[i]:
                 c.border = Border(bottom=thin)
-                if i % 2 == 0:
+                if i % 2 == 1:
                     c.fill = band
-            ws.cell(i, 4).number_format = "0.00"          # السعر
+            ws.cell(i, 4).number_format = '"$"0.00'        # السعر بعلامة الدولار
             ws.cell(i, 5).number_format = "0.00"          # التغير %
             ws.cell(i, 7).number_format = "0"             # النمو
             for col in (1, 6, 7, 8):
@@ -917,10 +925,10 @@ def create_app():
             chp = r.get("change_percent")                 # لون التغير: أخضر/أحمر
             if chp is not None:
                 ws.cell(i, 5).font = Font(color=("1A7F37" if chp >= 0 else "CF222E"), bold=True)
-        for col, w in zip("ABCDEFGH", (10, 30, 22, 11, 15, 11, 9, 13)):
+        for col, w in zip("ABCDEFGH", (10, 30, 24, 12, 15, 11, 9, 13)):
             ws.column_dimensions[col].width = w
-        ws.freeze_panes = "A2"                            # تثبيت صف العناوين عند التمرير
-        ws.auto_filter.ref = ws.dimensions                # تفعيل الفرز/الفلترة في Excel
+        ws.freeze_panes = "A3"                            # تثبيت العنوان + رؤوس الأعمدة عند التمرير
+        ws.auto_filter.ref = f"A2:H{max(2, len(records) + 2)}"  # فلترة تبدأ من صف الرؤوس
         buf = io.BytesIO()
         wb.save(buf)
         return Response(
