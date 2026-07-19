@@ -31,6 +31,9 @@
     background: #16274a; color: #fff; font-weight: 700; font-size: 14px;
     border-bottom: none;
   }
+  table.report-table thead th .th-en {
+    display: block; font-size: 10px; font-weight: 400; opacity: .85; margin-top: 1px;
+  }
   table.report-table tbody tr:nth-child(even) { background: #f2f5fa; }
   table.report-table td.ticker { font-weight: 700; }
   table.report-table td.name { color: #33465f; }
@@ -76,7 +79,7 @@
         <th>القطاع</th>
         <th>السعر</th>
         <th>التغيّر اليومي %</th>
-        <th>Piotroski</th>
+        <th>الجودة المالية <span dir="ltr">0/9</span><span class="th-en">(Piotroski)</span></th>
         <th>النمو</th>
         <th>قوة التأكيد</th>
       </tr>
