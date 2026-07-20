@@ -18,24 +18,24 @@
     <div class="mood-cards">
       <div class="mood-card bull">
         <div class="mc-head">
-          <svg class="mc-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 16 L9 10 L13 14 L19 8" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/><path d="M13.5 8 H20 V14.5 Z" fill="currentColor"/></svg>
-          الأسهم الصاعدة
+          <svg class="mc-ic" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M16 6l2.29 2.29-4.88 4.88-4-4L2 16.59 3.41 18l6-6 4 4 6.3-6.29L22 12V6z"/></svg>
+          <span>الأسهم الصاعدة</span>
         </div>
         <div class="mc-count">{{ mood.bull }}</div>
         <div class="mc-pct" dir="ltr">{{ "%.1f"|format(mood.bull / mood.total * 100) }}%</div>
       </div>
       <div class="mood-card neutral">
         <div class="mc-head">
-          <svg class="mc-ic" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="4" y="8" width="16" height="3" rx="1.5"/><rect x="4" y="13" width="16" height="3" rx="1.5"/></svg>
-          الأسهم المتوازنة
+          <svg class="mc-ic" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="3" y="8" width="18" height="3.2" rx="1.6"/><rect x="3" y="13" width="18" height="3.2" rx="1.6"/></svg>
+          <span>الأسهم المتوازنة</span>
         </div>
         <div class="mc-count">{{ mood.neutral }}</div>
         <div class="mc-pct" dir="ltr">{{ "%.1f"|format(mood.neutral / mood.total * 100) }}%</div>
       </div>
       <div class="mood-card bear">
         <div class="mc-head">
-          <svg class="mc-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 8 L9 14 L13 10 L19 16" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/><path d="M13.5 16 H20 V9.5 Z" fill="currentColor"/></svg>
-          الأسهم الهابطة
+          <svg class="mc-ic" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M16 18l2.29-2.29-4.88-4.88-4 4L2 7.41 3.41 6l6 6 4-4 6.3 6.29L22 12v6z"/></svg>
+          <span>الأسهم الهابطة</span>
         </div>
         <div class="mc-count">{{ mood.bear }}</div>
         <div class="mc-pct" dir="ltr">{{ "%.1f"|format(mood.bear / mood.total * 100) }}%</div>
