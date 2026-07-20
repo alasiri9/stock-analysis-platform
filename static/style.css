@@ -203,8 +203,14 @@ a.stat-box:hover { filter: brightness(1.15); transform: translateY(-1px); }
 
 /* ---------- مزاج الأسهم: جدول (الحالة/العدد/النسبة) بصفوف ملوّنة + سطر حالة السوق ---------- */
 .mood-table {
-  width: 100%; border-collapse: collapse; margin-bottom: 16px;
-  border-radius: 12px; overflow: hidden; border: 3px solid #6f8bc4;  /* برواز الصندوق (أوضح) */
+  width: calc(100% - 20px); border-collapse: collapse; margin: 16px auto 30px;
+  border-radius: 14px; overflow: hidden;
+  /* برواز متعدّد الطبقات: أخضر داخلي · أزرق-فضّي أوسط · أزرق-بنفسجي خارجي + توهّج */
+  box-shadow:
+    0 0 0 3px #22c55e,
+    0 0 0 6px #a7c0e8,
+    0 0 0 9px #7c6fe6,
+    0 0 26px 8px rgba(124, 111, 230, .45);
   text-align: center;
 }
 .mood-table th, .mood-table td { border: 2px solid rgba(255,255,255,.55); }  /* خطوط الشبكة (أبرز) */
