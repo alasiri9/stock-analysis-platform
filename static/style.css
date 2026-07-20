@@ -214,7 +214,7 @@ a.stat-box:hover { filter: brightness(1.15); transform: translateY(-1px); }
 .mood-table td { padding: 12px 8px; font-weight: 900; font-size: 17px; color: #fff; }
 .mood-table tbody tr.row-bull { background: #16a34a; }     /* صف الصاعدة أخضر بالكامل */
 .mood-table tbody tr.row-neutral { background: #6b7280; }  /* صف المتوازنة رمادي بالكامل */
-.mood-table tbody tr.row-bear { background: #dc2626; }     /* صف الهابطة أحمر بالكامل */
+.mood-table tbody tr.row-bear { background: #c0392b; }     /* صف الهابطة أحمر هادئ (أقل صراخاً) */
 /* سطر حالة السوق: يتلوّن نصه حسب الحالة (أخضر/أحمر/رمادي) */
 .mood-market td {
   background: var(--panel-2); text-align: center; padding: 13px 10px;
