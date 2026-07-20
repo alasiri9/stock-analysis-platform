@@ -13,41 +13,41 @@
       }
     })();
   </script>
-  {# مزاج أسهم المنصة: 3 بطاقات (صاعدة/متوازنة/هابطة) + سطر «حالة السوق» — من الكاش بلا API #}
+  {# مزاج أسهم المنصة: جدول (الحالة/عدد الأسهم/النسبة) بصفوف ملوّنة + سطر «حالة السوق» — من الكاش بلا API #}
   {% if mood %}
-    <div class="mood-cards">
-      <div class="mood-card bull">
-        <div class="mc-head">
-          <svg class="mc-ic" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M16 6l2.29 2.29-4.88 4.88-4-4L2 16.59 3.41 18l6-6 4 4 6.3-6.29L22 12V6z"/></svg>
-          <span>الأسهم الصاعدة</span>
-        </div>
-        <div class="mc-count">{{ mood.bull }}</div>
-        <div class="mc-pct" dir="ltr">{{ "%.1f"|format(mood.bull / mood.total * 100) }}%</div>
-      </div>
-      <div class="mood-card neutral">
-        <div class="mc-head">
-          <svg class="mc-ic" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="3" y="8" width="18" height="3.2" rx="1.6"/><rect x="3" y="13" width="18" height="3.2" rx="1.6"/></svg>
-          <span>الأسهم المتوازنة</span>
-        </div>
-        <div class="mc-count">{{ mood.neutral }}</div>
-        <div class="mc-pct" dir="ltr">{{ "%.1f"|format(mood.neutral / mood.total * 100) }}%</div>
-      </div>
-      <div class="mood-card bear">
-        <div class="mc-head">
-          <svg class="mc-ic" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M16 18l2.29-2.29-4.88-4.88-4 4L2 7.41 3.41 6l6 6 4-4 6.3 6.29L22 12v6z"/></svg>
-          <span>الأسهم الهابطة</span>
-        </div>
-        <div class="mc-count">{{ mood.bear }}</div>
-        <div class="mc-pct" dir="ltr">{{ "%.1f"|format(mood.bear / mood.total * 100) }}%</div>
-      </div>
+    <table class="mood-table">
+      <thead>
+        <tr><th>الحالة</th><th>عدد الأسهم</th><th>النسبة</th></tr>
+      </thead>
+      <tbody>
+        <tr class="row-bull">
+          <td>الأسهم الصاعدة</td>
+          <td>{{ mood.bull }}</td>
+          <td dir="ltr">{{ "%.1f"|format(mood.bull / mood.total * 100) }}%</td>
+        </tr>
+        <tr class="row-neutral">
+          <td>الأسهم المتوازنة</td>
+          <td>{{ mood.neutral }}</td>
+          <td dir="ltr">{{ "%.1f"|format(mood.neutral / mood.total * 100) }}%</td>
+        </tr>
+        <tr class="row-bear">
+          <td>الأسهم الهابطة</td>
+          <td>{{ mood.bear }}</td>
+          <td dir="ltr">{{ "%.1f"|format(mood.bear / mood.total * 100) }}%</td>
+        </tr>
+      </tbody>
       {% if market_dir %}
-        <div class="mood-market mood-{{ market_dir.cls }}">
-          <span class="mm-label">حالة السوق الأمريكي <span class="mkt-sub">(مؤشر S&amp;P 500)</span>:</span>
-          <b>{{ market_dir.label }} {{ market_dir.emoji }}</b>
-          {% if market_dir.change_20 is not none %}<span class="mm-chg" dir="ltr">{{ "%+.1f"|format(market_dir.change_20) }}% خلال شهر</span>{% endif %}
-        </div>
+        <tfoot>
+          <tr class="mood-market mood-{{ market_dir.cls }}">
+            <td colspan="3">
+              <span class="mm-label">حالة السوق الأمريكي <span class="mkt-sub">(مؤشر S&amp;P 500)</span>:</span>
+              <b>{{ market_dir.label }} {{ market_dir.emoji }}</b>
+              {% if market_dir.change_20 is not none %}<span class="mm-chg" dir="ltr">{{ "%+.1f"|format(market_dir.change_20) }}% خلال شهر</span>{% endif %}
+            </td>
+          </tr>
+        </tfoot>
       {% endif %}
-    </div>
+    </table>
   {% endif %}
 
   {# بحث مباشر عن أي سهم #}

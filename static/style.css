@@ -201,42 +201,33 @@ a.stat-box:hover { filter: brightness(1.15); transform: translateY(-1px); }
 .market-dir { margin-bottom: 12px; }
 .mkt-sub { color: var(--muted); font-size: 14px; font-weight: 400; }
 
-/* ---------- مزاج الأسهم: 3 بطاقات + سطر حالة السوق ---------- */
-.mood-cards {
-  display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px;
-  border-radius: 14px; overflow: hidden; margin-bottom: 16px;
-  border: 1px solid var(--border); background: var(--border);
+/* ---------- مزاج الأسهم: جدول (الحالة/العدد/النسبة) بصفوف ملوّنة + سطر حالة السوق ---------- */
+.mood-table {
+  width: 100%; border-collapse: collapse; margin-bottom: 16px;
+  border-radius: 12px; overflow: hidden; border: 1px solid var(--border);
+  text-align: center;
 }
-.mood-card { display: flex; flex-direction: column; text-align: center; background: var(--card); }
-.mc-head {
-  color: #fff; font-weight: 900; font-size: 15px; padding: 12px 6px 11px;
-  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;
+.mood-table th {
+  background: var(--panel-2); color: var(--text); font-weight: 900;
+  font-size: 15px; padding: 11px 8px; border-bottom: 1px solid var(--border);
 }
-.mc-ic { width: 34px; height: 34px; flex: 0 0 auto; color: #fff; }
-.mood-card.bull .mc-head { background: #16a34a; }
-.mood-card.neutral .mc-head { background: #6b7280; }
-.mood-card.bear .mc-head { background: #dc2626; }
-.mc-count { font-size: 30px; font-weight: 900; padding: 14px 6px 2px; }
-.mc-pct { font-size: 18px; font-weight: 900; padding: 0 6px 14px; }
-.mood-card.bull .mc-count, .mood-card.bull .mc-pct { color: #22c55e; }
-.mood-card.neutral .mc-count, .mood-card.neutral .mc-pct { color: var(--muted); }
-.mood-card.bear .mc-count, .mood-card.bear .mc-pct { color: #ef4444; }
-.mood-market {
-  grid-column: 1 / -1; text-align: center; padding: 13px 10px;
-  font-weight: 900; font-size: 15px; background: var(--panel-2);
-  color: var(--green);  /* لون السطر كله حسب الحالة (افتراضي: صاعد=أخضر) */
+.mood-table td { padding: 12px 8px; font-weight: 900; font-size: 17px; color: #fff; }
+.mood-table tbody tr.row-bull { background: #16a34a; }     /* صف الصاعدة أخضر بالكامل */
+.mood-table tbody tr.row-neutral { background: #6b7280; }  /* صف المتوازنة رمادي بالكامل */
+.mood-table tbody tr.row-bear { background: #dc2626; }     /* صف الهابطة أحمر بالكامل */
+/* سطر حالة السوق: يتلوّن نصه حسب الحالة (أخضر/أحمر/رمادي) */
+.mood-market td {
+  background: var(--panel-2); text-align: center; padding: 13px 10px;
+  font-size: 15px; border-top: 1px solid var(--border); color: var(--green);
 }
-.mood-market.mood-bear { color: var(--red); }        /* هابط = أحمر */
-.mood-market.mood-neutral { color: var(--muted); }   /* عرضي = رمادي */
-.mood-market b, .mood-market .mkt-sub, .mood-market .mm-chg { color: inherit; }
+.mood-market.mood-bear td { color: var(--red); }
+.mood-market.mood-neutral td { color: var(--muted); }
 .mood-market .mkt-sub { font-weight: 700; }
 .mood-market .mm-chg { font-weight: 700; margin-inline-start: 6px; font-size: 13px; }
 @media (max-width: 560px) {
-  .mc-head { font-size: 12px; padding: 9px 3px; gap: 4px; }
-  .mc-ic { width: 26px; height: 26px; }
-  .mc-count { font-size: 23px; }
-  .mc-pct { font-size: 14px; }
-  .mood-market { font-size: 13px; }
+  .mood-table th { font-size: 13px; padding: 9px 4px; }
+  .mood-table td { font-size: 15px; padding: 10px 4px; }
+  .mood-market td { font-size: 12px; }
 }
 
 /* ---------- قبل الانطلاق (المرشحون المبكرون) ---------- */
