@@ -223,12 +223,14 @@ a.stat-box:hover { filter: brightness(1.15); transform: translateY(-1px); }
 .mood-card.bear .mc-count, .mood-card.bear .mc-pct { color: #ef4444; }
 .mood-market {
   grid-column: 1 / -1; text-align: center; padding: 13px 10px;
-  font-weight: 900; font-size: 15px; background: var(--panel-2); color: var(--text);
+  font-weight: 900; font-size: 15px; background: var(--panel-2);
+  color: var(--green);  /* لون السطر كله حسب الحالة (افتراضي: صاعد=أخضر) */
 }
-.mood-market b { color: var(--green); }
-.mood-market.mood-bear b { color: var(--red); }
-.mood-market.mood-neutral b { color: var(--muted); }
-.mood-market .mm-chg { color: var(--muted); font-weight: 700; margin-inline-start: 6px; font-size: 13px; }
+.mood-market.mood-bear { color: var(--red); }        /* هابط = أحمر */
+.mood-market.mood-neutral { color: var(--muted); }   /* عرضي = رمادي */
+.mood-market b, .mood-market .mkt-sub, .mood-market .mm-chg { color: inherit; }
+.mood-market .mkt-sub { font-weight: 700; }
+.mood-market .mm-chg { font-weight: 700; margin-inline-start: 6px; font-size: 13px; }
 @media (max-width: 560px) {
   .mc-head { font-size: 12px; padding: 9px 3px; gap: 4px; }
   .mc-ic { width: 26px; height: 26px; }
