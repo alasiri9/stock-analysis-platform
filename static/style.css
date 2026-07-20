@@ -55,6 +55,13 @@ a { color: inherit; text-decoration: none; }
   -webkit-background-clip: text; background-clip: text;
   -webkit-text-fill-color: transparent; color: transparent;
 }
+/* اسم المنصة بلونه الرسمي (تدرّج أزرق-فضّي) لاستخدامه داخل النصوص */
+.brand-ink {
+  background: linear-gradient(180deg, #eaf1ff 0%, #a7c0e8 48%, #5e7bb0 100%);
+  -webkit-background-clip: text; background-clip: text;
+  -webkit-text-fill-color: transparent; color: transparent;
+  font-weight: 900;
+}
 .brand-tag {
   display: flex; align-items: center; justify-content: center; gap: 9px;
   color: var(--green); font-size: 18px; font-weight: 900; margin-top: 8px; padding: 0 10px;
