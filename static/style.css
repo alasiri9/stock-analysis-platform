@@ -201,9 +201,14 @@ a.stat-box:hover { filter: brightness(1.15); transform: translateY(-1px); }
 .market-dir { margin-bottom: 12px; }
 .mkt-sub { color: var(--muted); font-size: 14px; font-weight: 400; }
 
+/* ---------- صف المزاج: جدول يميناً + عدّادان في الفراغ يساره ---------- */
+.mood-row { display: flex; align-items: center; gap: 24px; margin-bottom: 16px; flex-wrap: wrap; }
+.mood-gauges { flex: 1 1 300px; display: flex; justify-content: center; align-items: center; gap: 40px; flex-wrap: wrap; }
+.mood-gauges .gauge-box { text-align: center; }
+
 /* ---------- مزاج الأسهم: جدول (الحالة/العدد/النسبة) بصفوف ملوّنة + سطر حالة السوق ---------- */
 .mood-table {
-  width: 46%; border-collapse: collapse; margin: 16px 12px 30px auto;  /* مصغّر ومحاذٍ لليمين */
+  flex: 0 0 46%; width: 46%; border-collapse: collapse; margin: 16px 6px 24px 0;  /* مصغّر، يميناً داخل الصف */
   border-radius: 14px; overflow: hidden;
   /* برواز متعدّد الطبقات: أخضر داخلي · أزرق-فضّي أوسط · أزرق-بنفسجي خارجي + توهّج */
   box-shadow:
@@ -236,7 +241,8 @@ a.stat-box:hover { filter: brightness(1.15); transform: translateY(-1px); }
 .mood-market .mkt-sub { font-weight: 700; }
 .mood-market .mm-chg { font-weight: 700; margin-inline-start: 6px; font-size: 13px; }
 @media (max-width: 900px) {
-  .mood-table { width: calc(100% - 20px); margin: 16px auto 30px; }  /* كامل العرض على الشاشات الصغيرة */
+  .mood-table { flex-basis: 100%; width: calc(100% - 20px); margin: 16px auto 20px; }  /* كامل العرض على الشاشات الصغيرة */
+  .mood-gauges { flex-basis: 100%; }
 }
 @media (max-width: 560px) {
   .mood-table th { font-size: 13px; padding: 9px 4px; }

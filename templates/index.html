@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "_gauge.html" import gauge %}
 {% set active = 'home' %}
 {% block title %}الرئيسية — Algomatix{% endblock %}
 
@@ -13,8 +14,9 @@
       }
     })();
   </script>
-  {# مزاج أسهم المنصة: جدول (الحالة/عدد الأسهم/النسبة) بصفوف ملوّنة + سطر «حالة السوق» — من الكاش بلا API #}
+  {# مزاج أسهم المنصة: جدول يميناً + عدّادان (مزاج الأسهم/مزاج السوق) في الفراغ يساره — من الكاش بلا API #}
   {% if mood %}
+  <div class="mood-row">
     <table class="mood-table">
       <thead>
         <tr><th>الحالة</th><th>عدد الأسهم</th><th>النسبة</th></tr>
@@ -48,6 +50,21 @@
         </tfoot>
       {% endif %}
     </table>
+
+    {# عدّادان في الفراغ يسار الجدول: مزاج الأسهم (نسبة الصاعدة) + مزاج السوق (اتجاه S&P 500) #}
+    <div class="mood-gauges">
+      <div class="gauge-box">
+        {{ gauge(mood.bull_pct, 100, 'مزاج الأسهم', 'lg', 'نسبة أسهم المنصة الصاعدة اليوم من 100 — كل ما زادت، كان مزاج أسهم المنصة أكثر إيجابية. تعليمي.') }}
+      </div>
+      {% if market_dir and market_dir.change_20 is not none %}
+        {% set mkt_val = 50 + (market_dir.change_20 / 6 * 50) %}
+        {% set mkt_val = 0 if mkt_val < 0 else (100 if mkt_val > 100 else mkt_val) %}
+        <div class="gauge-box">
+          {{ gauge(mkt_val, 100, 'مزاج السوق', 'lg', 'مؤشّر عام لمزاج السوق الأمريكي من حركة S&P 500 خلال شهر: 50 = محايد، فوقها صاعد، تحتها هابط. تعليمي.') }}
+        </div>
+      {% endif %}
+    </div>
+  </div>
   {% endif %}
 
   {# بحث مباشر عن أي سهم #}
