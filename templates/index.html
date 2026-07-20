@@ -17,17 +17,26 @@
   {% if mood %}
     <div class="mood-cards">
       <div class="mood-card bull">
-        <div class="mc-head"><span class="mc-ic">↗</span> الأسهم الصاعدة</div>
+        <div class="mc-head">
+          <svg class="mc-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 18 L14 8 M14 8 H8 M14 8 V14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          الأسهم الصاعدة
+        </div>
         <div class="mc-count">{{ mood.bull }}</div>
         <div class="mc-pct" dir="ltr">{{ "%.1f"|format(mood.bull / mood.total * 100) }}%</div>
       </div>
       <div class="mood-card neutral">
-        <div class="mc-head"><span class="mc-ic">=</span> الأسهم المتوازنة</div>
+        <div class="mc-head">
+          <svg class="mc-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 9 H19 M5 15 H19" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>
+          الأسهم المتوازنة
+        </div>
         <div class="mc-count">{{ mood.neutral }}</div>
         <div class="mc-pct" dir="ltr">{{ "%.1f"|format(mood.neutral / mood.total * 100) }}%</div>
       </div>
       <div class="mood-card bear">
-        <div class="mc-head"><span class="mc-ic">↘</span> الأسهم الهابطة</div>
+        <div class="mc-head">
+          <svg class="mc-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6 L14 16 M14 16 H8 M14 16 V10" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          الأسهم الهابطة
+        </div>
         <div class="mc-count">{{ mood.bear }}</div>
         <div class="mc-pct" dir="ltr">{{ "%.1f"|format(mood.bear / mood.total * 100) }}%</div>
       </div>

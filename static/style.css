@@ -212,7 +212,7 @@ a.stat-box:hover { filter: brightness(1.15); transform: translateY(-1px); }
   color: #fff; font-weight: 900; font-size: 15px; padding: 12px 6px;
   display: flex; align-items: center; justify-content: center; gap: 8px;
 }
-.mc-ic { font-size: 20px; font-weight: 900; line-height: 1; }
+.mc-ic { width: 22px; height: 22px; flex: 0 0 auto; color: #fff; }
 .mood-card.bull .mc-head { background: #16a34a; }
 .mood-card.neutral .mc-head { background: #6b7280; }
 .mood-card.bear .mc-head { background: #dc2626; }
@@ -231,7 +231,7 @@ a.stat-box:hover { filter: brightness(1.15); transform: translateY(-1px); }
 .mood-market .mm-chg { color: var(--muted); font-weight: 700; margin-inline-start: 6px; font-size: 13px; }
 @media (max-width: 560px) {
   .mc-head { font-size: 12px; padding: 9px 3px; gap: 4px; }
-  .mc-ic { font-size: 15px; }
+  .mc-ic { width: 16px; height: 16px; }
   .mc-count { font-size: 23px; }
   .mc-pct { font-size: 14px; }
   .mood-market { font-size: 13px; }
