@@ -13,41 +13,31 @@
       }
     })();
   </script>
-  {# اتجاه السوق الأمريكي: من مؤشر S&P 500 (بيانات SPY بالكاش، بلا استدعاء API) #}
-  {% if market_dir %}
-    <div class="mood-banner mood-{{ market_dir.cls }} market-dir">
-      <div class="mood-head">
-        <span class="mood-emoji">{{ market_dir.emoji }}</span>
-        <span class="mood-label">اتجاه السوق الأمريكي <span class="mkt-sub">(مؤشر S&amp;P 500)</span>: <b>{{ market_dir.label }}</b></span>
-        {% if market_dir.change_20 is not none %}
-          <span class="mood-pct" dir="ltr">{{ "%+.1f"|format(market_dir.change_20) }}% خلال شهر</span>
-        {% endif %}
+  {# مزاج أسهم المنصة: 3 بطاقات (صاعدة/متوازنة/هابطة) + سطر «حالة السوق» — من الكاش بلا API #}
+  {% if mood %}
+    <div class="mood-cards">
+      <div class="mood-card bull">
+        <div class="mc-head"><span class="mc-ic">↗</span> الأسهم الصاعدة</div>
+        <div class="mc-count">{{ mood.bull }}</div>
+        <div class="mc-pct" dir="ltr">{{ "%.1f"|format(mood.bull / mood.total * 100) }}%</div>
       </div>
-      {% if market_dir.change_20 is not none %}
-        {% set ch = market_dir.change_20 %}
-        {% set mag = ch if ch >= 0 else -ch %}
-        {% set w = (mag / 6 * 50) %}{% set w = 50 if w > 50 else w %}
-        <div class="dir-bar" dir="ltr" title="حركة المؤشر خلال شهر (المنتصف = بلا تغيّر)">
-          <div class="dir-bar-fill {{ 'pos' if ch >= 0 else 'neg' }}" style="width: {{ '%.1f'|format(w) }}%; {{ 'left:50%' if ch >= 0 else 'right:50%' }}"></div>
-          <div class="dir-bar-center"></div>
+      <div class="mood-card neutral">
+        <div class="mc-head"><span class="mc-ic">=</span> الأسهم المتوازنة</div>
+        <div class="mc-count">{{ mood.neutral }}</div>
+        <div class="mc-pct" dir="ltr">{{ "%.1f"|format(mood.neutral / mood.total * 100) }}%</div>
+      </div>
+      <div class="mood-card bear">
+        <div class="mc-head"><span class="mc-ic">↘</span> الأسهم الهابطة</div>
+        <div class="mc-count">{{ mood.bear }}</div>
+        <div class="mc-pct" dir="ltr">{{ "%.1f"|format(mood.bear / mood.total * 100) }}%</div>
+      </div>
+      {% if market_dir %}
+        <div class="mood-market mood-{{ market_dir.cls }}">
+          <span class="mm-label">حالة السوق الأمريكي <span class="mkt-sub">(مؤشر S&amp;P 500)</span>:</span>
+          <b>{{ market_dir.label }} {{ market_dir.emoji }}</b>
+          {% if market_dir.change_20 is not none %}<span class="mm-chg" dir="ltr">{{ "%+.1f"|format(market_dir.change_20) }}% خلال شهر</span>{% endif %}
         </div>
       {% endif %}
-    </div>
-  {% endif %}
-
-  {# مزاج أسهم المنصة: كم سهم صاعد/هابط من الـ32 (من مؤشرات الكاش، بلا استدعاء API) #}
-  {% if mood %}
-    <div class="mood-banner mood-{{ mood.cls }}">
-      <div class="mood-head">
-        <span class="mood-emoji">{{ mood.emoji }}</span>
-        <span class="mood-label">مزاج أسهم المنصة: <b>{{ mood.label }}</b></span>
-        <span class="mood-pct" dir="ltr">{{ "%.0f"|format(mood.bull_pct) }}% صاعد</span>
-      </div>
-      <div class="mood-bar" title="نسبة الأسهم الصاعدة/المحايدة/الهابطة">
-        <span class="mood-seg bull" style="width:{{ mood.bull / mood.total * 100 }}%"></span>
-        <span class="mood-seg neutral" style="width:{{ mood.neutral / mood.total * 100 }}%"></span>
-        <span class="mood-seg bear" style="width:{{ mood.bear / mood.total * 100 }}%"></span>
-      </div>
     </div>
   {% endif %}
 

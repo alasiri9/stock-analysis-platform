@@ -201,6 +201,42 @@ a.stat-box:hover { filter: brightness(1.15); transform: translateY(-1px); }
 .market-dir { margin-bottom: 12px; }
 .mkt-sub { color: var(--muted); font-size: 14px; font-weight: 400; }
 
+/* ---------- مزاج الأسهم: 3 بطاقات + سطر حالة السوق ---------- */
+.mood-cards {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px;
+  border-radius: 14px; overflow: hidden; margin-bottom: 16px;
+  border: 1px solid var(--border); background: var(--border);
+}
+.mood-card { display: flex; flex-direction: column; text-align: center; background: var(--card); }
+.mc-head {
+  color: #fff; font-weight: 900; font-size: 15px; padding: 12px 6px;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+}
+.mc-ic { font-size: 20px; font-weight: 900; line-height: 1; }
+.mood-card.bull .mc-head { background: #16a34a; }
+.mood-card.neutral .mc-head { background: #6b7280; }
+.mood-card.bear .mc-head { background: #dc2626; }
+.mc-count { font-size: 30px; font-weight: 900; padding: 14px 6px 2px; }
+.mc-pct { font-size: 18px; font-weight: 900; padding: 0 6px 14px; }
+.mood-card.bull .mc-count, .mood-card.bull .mc-pct { color: #22c55e; }
+.mood-card.neutral .mc-count, .mood-card.neutral .mc-pct { color: var(--muted); }
+.mood-card.bear .mc-count, .mood-card.bear .mc-pct { color: #ef4444; }
+.mood-market {
+  grid-column: 1 / -1; text-align: center; padding: 13px 10px;
+  font-weight: 900; font-size: 15px; background: var(--panel-2); color: var(--text);
+}
+.mood-market b { color: var(--green); }
+.mood-market.mood-bear b { color: var(--red); }
+.mood-market.mood-neutral b { color: var(--muted); }
+.mood-market .mm-chg { color: var(--muted); font-weight: 700; margin-inline-start: 6px; font-size: 13px; }
+@media (max-width: 560px) {
+  .mc-head { font-size: 12px; padding: 9px 3px; gap: 4px; }
+  .mc-ic { font-size: 15px; }
+  .mc-count { font-size: 23px; }
+  .mc-pct { font-size: 14px; }
+  .mood-market { font-size: 13px; }
+}
+
 /* ---------- قبل الانطلاق (المرشحون المبكرون) ---------- */
 .prelaunch-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 14px; }
 .pl-card {
