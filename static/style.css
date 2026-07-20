@@ -215,7 +215,7 @@ a.stat-box:hover { filter: brightness(1.15); transform: translateY(-1px); }
 }
 /* خطوط الشبكة الداخلية: نفس تدرّج البرواز الخارجي (أخضر→فضّي→بنفسجي) لكن رفيعة */
 .mood-table th, .mood-table td {
-  border: 1.5px solid #7c6fe6;
+  border: 2.5px solid #7c6fe6;
   border-image: linear-gradient(135deg, #22c55e, #a7c0e8, #7c6fe6) 1;
 }
 .mood-table th {
