@@ -203,8 +203,11 @@ a.stat-box:hover { filter: brightness(1.15); transform: translateY(-1px); }
 
 /* ---------- صف المزاج: جدول يميناً + عدّادان في الفراغ يساره ---------- */
 .mood-row { display: flex; align-items: center; gap: 24px; margin-bottom: 16px; flex-wrap: wrap; }
-.mood-gauges { flex: 1 1 300px; display: flex; justify-content: center; align-items: center; gap: 40px; flex-wrap: wrap; }
+.mood-gauges { flex: 1 1 300px; display: flex; justify-content: center; align-items: center; gap: 80px; flex-wrap: wrap; }
 .mood-gauges .gauge-box { text-align: center; }
+.mood-gauges .gauge-lg { width: 210px; }        /* عدّادات أكبر في صف المزاج */
+.mood-gauges .gauge-num { font-size: 34px; }
+.mood-gauges .gauge-label { font-size: 15px; }
 
 /* ---------- مزاج الأسهم: جدول (الحالة/العدد/النسبة) بصفوف ملوّنة + سطر حالة السوق ---------- */
 .mood-table {
