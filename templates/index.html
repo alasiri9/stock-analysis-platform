@@ -182,10 +182,6 @@
       <div class="perf-panel">
       <h3 class="perf-title">📊 إحصائيات الأداء العام :</h3>
       <div class="stat-row">
-        <div class="stat-box trophy-box">
-          <div class="trophy-icon">🏆</div>
-          <div class="trophy-text">المنصة تعمل على مؤشرات واستراتيجيات قوية ونسبة نجاحها عالية</div>
-        </div>
         <div class="stat-box">
           <div class="label">متوسط الربح</div>
           <div class="value {{ 'pos' if perf.avg is not none and perf.avg >= 0 else 'neg' }}" dir="ltr">{{ ('%+.1f'|format(perf.avg)) ~ '%' if perf.avg is not none else '—' }}</div>
