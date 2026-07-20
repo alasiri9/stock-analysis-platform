@@ -213,7 +213,11 @@ a.stat-box:hover { filter: brightness(1.15); transform: translateY(-1px); }
     0 0 26px 8px rgba(124, 111, 230, .45);
   text-align: center;
 }
-.mood-table th, .mood-table td { border: 2px solid rgba(255,255,255,.55); }  /* خطوط الشبكة (أبرز) */
+/* خطوط الشبكة الداخلية: نفس تدرّج البرواز الخارجي (أخضر→فضّي→بنفسجي) لكن رفيعة */
+.mood-table th, .mood-table td {
+  border: 1.5px solid #7c6fe6;
+  border-image: linear-gradient(135deg, #22c55e, #a7c0e8, #7c6fe6) 1;
+}
 .mood-table th {
   background: var(--panel-2); color: var(--text); font-weight: 900;
   font-size: 15px; padding: 11px 8px;
