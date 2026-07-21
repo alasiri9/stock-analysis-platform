@@ -121,7 +121,8 @@ class Subscriber(db.Model):
     last_login = db.Column(db.DateTime(timezone=True), nullable=True)  # آخر دخول للمشترك
     # مفتاح FMP الخاص بالمشترك (اختياري) — لو أدخله يرى الأسعار اللحظية على حصّته هو
     # (لا على حصّة المنصة). None = بلا مفتاح → يرى سعر آخر تحديث ليلي.
-    fmp_api_key = db.Column(db.String(128), nullable=True)
+    # يُخزّن مشفّراً (Fernet) — القيمة المشفّرة أطول بكثير من المفتاح الخام (~140 حرفاً)، لذا 256.
+    fmp_api_key = db.Column(db.String(256), nullable=True)
     # وقت موافقة المشترك على تنبيه إخلاء المسؤولية (يُسجَّل مرة واحدة كإثبات).
     # None = لم يوافق بعد ⇒ تُعرض له صفحة التنبيه ولا تُفتح المنصة حتى يوافق.
     disclaimer_accepted_at = db.Column(db.DateTime(timezone=True), nullable=True)

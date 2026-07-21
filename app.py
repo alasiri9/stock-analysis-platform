@@ -395,7 +395,9 @@ def create_app():
         from sqlalchemy import text as _sql
         for stmt in ("ALTER TABLE subscriber ADD COLUMN last_login TIMESTAMP",
                      "ALTER TABLE subscriber ADD COLUMN fmp_api_key VARCHAR(128)",
-                     "ALTER TABLE subscriber ADD COLUMN disclaimer_accepted_at TIMESTAMP"):
+                     "ALTER TABLE subscriber ADD COLUMN disclaimer_accepted_at TIMESTAMP",
+                     # المفتاح المشفّر (~140 حرفاً) يتجاوز 128 — نوسّع العمود لتفادي خطأ الحفظ
+                     "ALTER TABLE subscriber ALTER COLUMN fmp_api_key TYPE VARCHAR(256)"):
             try:
                 db.session.execute(_sql(stmt))
                 db.session.commit()
