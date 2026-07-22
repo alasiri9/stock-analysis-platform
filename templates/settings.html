@@ -20,14 +20,6 @@
     </div>
 
 
-    {# روابط الإدارة #}
-    <h3 class="learn-group">🗂️ إدارة سريعة</h3>
-    <div class="set-links">
-      <a class="preset" href="{{ url_for('alerts') }}">🔔 التنبيهات السعرية</a>
-      <a class="preset" href="{{ url_for('watchlist') }}">👁 قائمة المراقبة</a>
-      <a class="preset" href="{{ url_for('portfolio') }}">🧠 المحفظة</a>
-    </div>
-
     {# الأسعار اللحظية — للمشترك فقط (مفتاح FMP الخاص، اختياري) #}
     {% if is_sub %}
       <h3 class="learn-group">⚡ الأسعار اللحظية</h3>
