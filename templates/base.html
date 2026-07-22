@@ -8,8 +8,7 @@
   <link rel="apple-touch-icon" href="{{ url_for('static', filename='icon-192.png') }}">
   <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
   <meta name="theme-color" content="#0d1830">
-  <script>(function(){try{if(localStorage.getItem('theme')==='light'){document.documentElement.classList.add('light');}}catch(e){}})();</script>
-  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=20260720r">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=20260721a">
 </head>
 <body>
   <div class="layout">
@@ -48,7 +47,6 @@
         {% if is_admin %}<a href="{{ url_for('business') }}" class="{{ 'active' if active=='business' else '' }}"><span class="ic">📊</span> لوحة أعمالي<span class="nav-eye" data-tip="لوحة للمدير: المشتركون النشطون، من ينتهي قريباً، والدخل الشهري المتوقّع.">👁</span></a>
         <a href="{{ url_for('health') }}" class="{{ 'active' if active=='health' else '' }}"><span class="ic">🩺</span> صحة المنصة<span class="nav-eye" data-tip="لوحة للمدير: آخر تحديث، نضارة البيانات، تلغرام، المشتركون، وإحصائيات القاعدة.">👁</span></a>{% endif %}
       </nav>
-      <button class="theme-toggle" type="button" onclick="toggleTheme()">🌗 تبديل الوضع (فاتح/داكن)</button>
       <a href="{{ url_for('logout') }}" class="nav-logout"><span class="ic">🚪</span> خروج</a>
       <div class="sidebar-foot">
         <small>Algomatix © 2026</small>
@@ -95,11 +93,6 @@
   </datalist>
 
   <script>
-    function toggleTheme() {
-      var el = document.documentElement;
-      el.classList.toggle('light');
-      try { localStorage.setItem('theme', el.classList.contains('light') ? 'light' : 'dark'); } catch (e) {}
-    }
 
     // علامة الرسائل غير المقروءة (رقم بجانب «الرسائل»)
     (function () {
