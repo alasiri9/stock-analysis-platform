@@ -3,16 +3,6 @@
 {% block title %}اختيار الأداء — Algomatix{% endblock %}
 
 {% block content %}
-  {# تطبيق مبلغ المحاكاة المحفوظ من الإعدادات (إن لم يُحدَّد في الرابط) #}
-  <script>
-    (function () {
-      var p = new URLSearchParams(location.search);
-      if (!p.has('amount')) {
-        var a = localStorage.getItem('simAmount');
-        if (a && a !== '1000') { p.set('amount', a); location.replace(location.pathname + '?' + p.toString()); }
-      }
-    })();
-  </script>
   <section class="panel">
     <div class="panel-head">
       <h2>📈 اختيار الأداء :</h2>
@@ -50,19 +40,6 @@
           </div>
         {% endif %}
       </div>
-
-      {# محاكاة: لو تابعت كل الإشارات #}
-      {% if sim %}
-        <div class="sim-box">
-          <div class="sim-head">💰 لو تابعت كل الإشارات (استثمار {{ "{:,.0f}".format(sim.per_trade) }}$ عند كل واحدة)</div>
-          <div class="sim-stats">
-            <div class="sim-item"><span class="sim-label">استثمرت</span><span class="sim-val" dir="ltr">{{ "{:,.0f}".format(sim.invested) }}$</span><span class="sim-sub">{{ sim.count }} إشارة</span></div>
-            <div class="sim-item"><span class="sim-label">قيمتها الآن</span><span class="sim-val" dir="ltr">{{ "{:,.0f}".format(sim.value) }}$</span></div>
-            <div class="sim-item"><span class="sim-label">الربح/الخسارة</span><span class="sim-val {{ 'pos' if sim.pnl >= 0 else 'neg' }}" dir="ltr">{{ "{:+,.0f}".format(sim.pnl) }}$ ({{ "%+.1f"|format(sim.pnl_pct) }}%)</span></div>
-          </div>
-          <div class="note">📌 محاكاة تعليمية افتراضية (مبلغ متساوٍ لكل إشارة، بلا رسوم) — ليست نتائج فعلية ولا توصية.</div>
-        </div>
-      {% endif %}
 
       {# مقارنة أنواع الإشارات #}
       {% if type_stats %}

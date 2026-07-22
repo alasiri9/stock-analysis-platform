@@ -819,7 +819,7 @@ def create_app():
 
     @app.route("/settings")
     def settings():
-        # إعدادات المنصة (المظهر/الترتيب/مبلغ المحاكاة تُحفظ في المتصفح — localStorage)
+        # إعدادات المنصة (الترتيب الافتراضي يُحفظ في المتصفح — localStorage)
         # إدارة المشتركين تظهر للمدير فقط
         subs = []
         security = None
@@ -1019,24 +1019,8 @@ def create_app():
     def performance():
         # اختيار الأداء: سجل كل الإشارات التاريخية وأداؤها منذ صدورها (من الكاش، بلا API)
         rows, overall, type_stats = screener.signals_performance()
-        # محاكاة "لو تابعت الإشارات": استثمار مبلغ عند كل إشارة (قابل للتخصيص من الإعدادات)
-        try:
-            PER_TRADE = float(request.args.get("amount", 1000))
-        except (TypeError, ValueError):
-            PER_TRADE = 1000.0
-        PER_TRADE = min(max(PER_TRADE, 1.0), 1_000_000.0)  # حدود منطقية
-        measured = [r for r in rows if r.get("return_pct") is not None]
-        sim = None
-        if measured:
-            invested = PER_TRADE * len(measured)
-            value = sum(PER_TRADE * (1 + r["return_pct"] / 100.0) for r in measured)
-            sim = {
-                "per_trade": PER_TRADE, "count": len(measured), "invested": invested,
-                "value": value, "pnl": value - invested,
-                "pnl_pct": (value - invested) / invested * 100.0 if invested else None,
-            }
         return render_template(
-            "performance.html", rows=rows, overall=overall, type_stats=type_stats, sim=sim,
+            "performance.html", rows=rows, overall=overall, type_stats=type_stats,
         )
 
     @app.route("/screener/refresh", methods=["POST"])

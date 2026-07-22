@@ -19,11 +19,6 @@
       </select>
     </div>
 
-    {# مبلغ المحاكاة #}
-    <div class="set-row">
-      <div class="set-info"><div class="set-title">💰 مبلغ محاكاة الإشارات</div><div class="set-sub">المبلغ المفترض لكل إشارة في صفحة الأداء («لو تابعت الإشارات»).</div></div>
-      <input id="set-amount" class="set-select" type="number" min="1" step="100" dir="ltr" placeholder="1000">
-    </div>
 
     {# روابط الإدارة #}
     <h3 class="learn-group">🗂️ إدارة سريعة</h3>
@@ -172,13 +167,6 @@
       sortSel.value = localStorage.getItem('defaultSort') || 'confidence';
       sortSel.addEventListener('change', function () {
         localStorage.setItem('defaultSort', sortSel.value);
-      });
-      // مبلغ المحاكاة
-      var amount = document.getElementById('set-amount');
-      amount.value = localStorage.getItem('simAmount') || '1000';
-      amount.addEventListener('change', function () {
-        var v = parseFloat(amount.value);
-        if (!isNaN(v) && v > 0) { localStorage.setItem('simAmount', Math.round(v)); }
       });
     })();
 
