@@ -699,8 +699,12 @@ a.stat-box:hover { filter: brightness(1.15); transform: translateY(-1px); }
 
 /* أيقونة «؟» تربط بشرح المصطلح في صفحة تعلّم */
 .help-q {
-  text-decoration: none; vertical-align: middle;
-  font-size: 14px; opacity: .95; cursor: pointer;
+  display: inline-block; width: 16px; height: 16px; vertical-align: middle;
+  margin-inline-start: 5px; cursor: pointer; font-size: 0; /* يخفي الإيموجي الأصلي */
+  background-color: #a7c0e8;                                /* لون العين: فضّي-أزرق هادئ مميّز */
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z'/%3E%3Ccircle cx='12' cy='12' r='3'/%3E%3C/svg%3E") center/contain no-repeat;
+          mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z'/%3E%3Ccircle cx='12' cy='12' r='3'/%3E%3C/svg%3E") center/contain no-repeat;
+  opacity: .85; transition: opacity .15s;
 }
 .help-q:hover { opacity: 1; }
 
