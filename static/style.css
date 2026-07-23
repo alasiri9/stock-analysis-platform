@@ -700,7 +700,7 @@ a.stat-box:hover { filter: brightness(1.15); transform: translateY(-1px); }
 /* أيقونة «؟» تربط بشرح المصطلح في صفحة تعلّم */
 .help-q {
   text-decoration: none; vertical-align: middle;
-  font-size: 14px; opacity: .5; cursor: pointer;
+  font-size: 14px; opacity: .95; cursor: pointer;
 }
 .help-q:hover { opacity: 1; }
 
