@@ -143,11 +143,11 @@ def smart_summary(report, scan=None):
     c = (report.get("catalyst") or {}).get("score")
     if c is not None:
         if c >= 80:
-            strengths.append(f"نمو قوي (درجة النمو {c:.0f})")
+            strengths.append(f"نمو قوي (درجة النمو {c:.0f} من 100)")
         elif c >= 40:
-            strengths.append(f"نمو متوسط (درجة النمو {c:.0f})")
+            strengths.append(f"نمو متوسط (درجة النمو {c:.0f} من 100)")
         else:
-            cautions.append(f"نمو ضعيف (درجة النمو {c:.0f})")
+            cautions.append(f"نمو ضعيف (درجة النمو {c:.0f} من 100)")
 
     # الاتجاه والزخم والاختراق (من المؤشرات الفنية)
     inds = {b.get("label"): b for b in (report.get("indicators") or [])}
