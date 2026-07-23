@@ -88,11 +88,11 @@
   {# لوحة الفلاتر #}
   <form class="filters" action="{{ url_for('index') }}" method="get">
     <div class="filter">
-      <label title="مقياس Piotroski من 0 إلى 9 — كلما زاد كانت مالية الشركة أقوى وأصح. اكتب أقل قيمة تقبلها.">الجودة المالية <a class="help-q" href="{{ url_for('learn') }}#piotroski" title="اشرح لي هذا المصطلح">؟</a></label>
+      <label title="مقياس Piotroski من 0 إلى 9 — كلما زاد كانت مالية الشركة أقوى وأصح. اكتب أقل قيمة تقبلها.">الجودة المالية <a class="help-q" href="{{ url_for('learn') }}#piotroski" title="اضغط لتعرف المعنى">👁</a></label>
       <input type="number" name="piotroski_min" min="0" max="9" step="1" placeholder="من 0 لـ9 (مثال: 8)" value="{{ filters.piotroski_min|int if filters.piotroski_min is not none else '' }}">
     </div>
     <div class="filter">
-      <label title="مقياس Catalyst من 0 إلى 100 — يقيس نمو الشركة (مبيعات وأرباح). كلما زاد كانت أسرع نمواً. اكتب أقل قيمة تقبلها.">قوة النمو <a class="help-q" href="{{ url_for('learn') }}#catalyst" title="اشرح لي هذا المصطلح">؟</a></label>
+      <label title="مقياس Catalyst من 0 إلى 100 — يقيس نمو الشركة (مبيعات وأرباح). كلما زاد كانت أسرع نمواً. اكتب أقل قيمة تقبلها.">قوة النمو <a class="help-q" href="{{ url_for('learn') }}#catalyst" title="اضغط لتعرف المعنى">👁</a></label>
       <input type="number" name="catalyst_min" min="0" max="100" step="1" placeholder="من 0 لـ100 (مثال: 80)" value="{{ filters.catalyst_min|int if filters.catalyst_min is not none else '' }}">
     </div>
     <div class="filter">

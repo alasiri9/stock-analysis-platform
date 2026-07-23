@@ -699,12 +699,10 @@ a.stat-box:hover { filter: brightness(1.15); transform: translateY(-1px); }
 
 /* أيقونة «؟» تربط بشرح المصطلح في صفحة تعلّم */
 .help-q {
-  display: inline-flex; align-items: center; justify-content: center;
-  width: 17px; height: 17px; border-radius: 50%;
-  background: var(--accent); color: #041018; font-size: 12px; font-weight: 900;
   text-decoration: none; vertical-align: middle;
+  font-size: 14px; opacity: .5; cursor: pointer;
 }
-.help-q:hover { opacity: .8; }
+.help-q:hover { opacity: 1; }
 
 /* جملة "لماذا هذا السهم مرشّح؟" على البطاقة */
 .scard-why {
