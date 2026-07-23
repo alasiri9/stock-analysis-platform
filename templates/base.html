@@ -135,7 +135,7 @@
         tip.style.top = top + 'px';
       }
       function hide() { tip.classList.remove('show'); }
-      document.querySelectorAll('.nav-eye, .help').forEach(function (eye) {
+      document.querySelectorAll('.nav-eye, .help, .help-q').forEach(function (eye) {
         eye.addEventListener('mouseenter', function () { show(eye); });
         eye.addEventListener('mouseleave', hide);
         // منع فتح الصفحة/الرابط عند الضغط على العلامة (وإظهار التلميح على الجوال باللمس)
