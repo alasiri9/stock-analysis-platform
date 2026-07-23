@@ -182,7 +182,7 @@
   {% set avail = mlist | selectattr('val', 'ne', none) | list %}
   <div class="section">
     <h2>📊 المقاييس المالية
-      <span class="tech-count {{ 'strong' if avail|length >= 4 else '' }}">{{ avail|length }} من {{ mlist|length }}</span>
+      <span class="tech-count">{{ avail|length }} من {{ mlist|length }}</span>
     </h2>
     {% if avail %}
       <div class="grid">
