@@ -82,8 +82,20 @@
   {% endif %}
 
   {# ===== الشارت التفاعلي (TradingView) — يفتح بمدة يختارها المستخدم ===== #}
+  {# للمدير: يفتح تخطيطه المحفوظ بمؤشراته الخاصة. للمشترك: الشارت العادي بالرمز فقط. #}
+  {% set tv_layout = "yYTDQbef" %}
   <div class="section">
     <h2>📊 مسار السعر</h2>
+    {% if is_admin %}
+    <a class="tv-open" href="https://www.tradingview.com/chart/{{ tv_layout }}/?symbol={{ report.ticker }}" target="_blank" rel="noopener noreferrer">
+      <span class="tv-open-ic">📈</span>
+      <span class="tv-open-txt">
+        <b>افتح الشارت التفاعلي بمؤشراتك في TradingView</b>
+        <small>يفتح تخطيطك المحفوظ بمؤشراتك الخاصة على هذا السهم — جاهزاً للمقارنة والدراسة بأي مدة تريدها.</small>
+      </span>
+      <span class="tv-open-go">↗</span>
+    </a>
+    {% else %}
     <a class="tv-open" href="https://www.tradingview.com/chart/?symbol={{ report.ticker }}" target="_blank" rel="noopener noreferrer">
       <span class="tv-open-ic">📈</span>
       <span class="tv-open-txt">
@@ -92,6 +104,7 @@
       </span>
       <span class="tv-open-go">↗</span>
     </a>
+    {% endif %}
   </div>
 
   {# ===== الدرجات الكبيرة ===== #}
