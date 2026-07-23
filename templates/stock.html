@@ -58,11 +58,6 @@
     </div>
   </div>
 
-  {# ===== درجة ثقة البيانات ===== #}
-  <div class="confidence">درجة ثقة السعر: <b>{{ report.price_sources }}</b> من المصادر أكّدت السعر
-    {%- if report.finnhub_price is not none %} (FMP + Finnhub){% else %} (FMP){% endif %}.
-    {% if report.finnhub_price is not none %}<span class="muted">سعر Finnhub: {{ "%.2f $"|format(report.finnhub_price) }}</span>{% endif %}</div>
-
   {# ===== الملخّص الذكي (مُولّد آلياً من البيانات — وصفي تعليمي) ===== #}
   {% if summary and (summary.strengths or summary.cautions) %}
     <div class="section smart-summary">
