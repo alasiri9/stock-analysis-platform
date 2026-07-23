@@ -180,10 +180,9 @@
     {'label': 'PEG', 'val': report.metrics.peg, 'suf': '', 'dig': 2},
   ] %}
   {% set avail = mlist | selectattr('val', 'ne', none) | list %}
-  {% set mpct = (avail|length / mlist|length * 100) | round | int %}
   <div class="section">
     <h2>📊 المقاييس المالية
-      <span class="tech-count {{ 'strong' if mpct >= 60 else '' }}">{{ avail|length }} من {{ mlist|length }} · {{ mpct }}%</span>
+      <span class="tech-count {{ 'strong' if avail|length >= 4 else '' }}">{{ avail|length }} من {{ mlist|length }}</span>
     </h2>
     {% if avail %}
       <div class="grid">
