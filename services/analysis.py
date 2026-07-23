@@ -263,7 +263,7 @@ def build_stock_report(ticker):
         candles = fmp_client.get_historical_prices(ticker, limit=250)
         atr_plan = scoring.atr_trade_plan(price, candles)
         tech_indicators = indicators.build_indicators(candles)
-        chart = price_chart(candles)  # نفس الشموع المجلوبة — بلا استدعاء إضافي
+        chart = price_chart(candles, days=250)  # سياق سنة كامل — يطابق نافذة التحليل
     except Exception as e:  # noqa: BLE001
         print(f"[analysis] تعذّر حساب ATR/المؤشرات لـ {ticker}: {e}")
         atr_plan = None
