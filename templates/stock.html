@@ -81,36 +81,18 @@
     </div>
   {% endif %}
 
-  {# ===== شارت مسار السعر ===== #}
-  {% if report.chart %}
-    {% set ch = report.chart %}
-    <div class="section">
-      <h2>📊 مسار السعر — آخر {{ ch.days }} يوم تداول</h2>
-      <div class="big-chart {{ 'up' if ch.up else 'down' }}">
-        <div class="big-chart-meta">
-          <span>أعلى سعر: <b dir="ltr">{{ "%.2f $"|format(ch.high) }}</b></span>
-          <span>أدنى سعر: <b dir="ltr">{{ "%.2f $"|format(ch.low) }}</b></span>
-          <span>التغيّر بالفترة:
-            <b dir="ltr" class="{{ 'chg-up' if ch.up else 'chg-down' }}">{{ "%+.1f"|format(ch.change_pct) }}%</b>
-          </span>
-        </div>
-        <svg viewBox="0 0 {{ ch.width }} {{ ch.height }}" preserveAspectRatio="none" class="big-chart-svg">
-          <defs>
-            <linearGradient id="chartFill" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stop-color="currentColor" stop-opacity="0.25"/>
-              <stop offset="100%" stop-color="currentColor" stop-opacity="0"/>
-            </linearGradient>
-          </defs>
-          <polygon points="{{ ch.area_points }}" fill="url(#chartFill)"/>
-          <polyline points="{{ ch.points }}" fill="none" stroke="currentColor" stroke-width="2.5"/>
-        </svg>
-        <div class="big-chart-dates" dir="ltr">
-          <span>{{ ch.first_date }}</span>
-          <span>{{ ch.last_date }}</span>
-        </div>
-      </div>
-    </div>
-  {% endif %}
+  {# ===== الشارت التفاعلي (TradingView) — يفتح بمدة يختارها المستخدم ===== #}
+  <div class="section">
+    <h2>📊 مسار السعر</h2>
+    <a class="tv-open" href="https://www.tradingview.com/chart/?symbol={{ report.ticker }}" target="_blank" rel="noopener noreferrer">
+      <span class="tv-open-ic">📈</span>
+      <span class="tv-open-txt">
+        <b>افتح الشارت التفاعلي في TradingView</b>
+        <small>اختر المدة التي تريد دراسة السهم من خلالها — يوم · أسبوع · شهر · سنوات — مع كل الأدوات والمؤشرات.</small>
+      </span>
+      <span class="tv-open-go">↗</span>
+    </a>
+  </div>
 
   {# ===== الدرجات الكبيرة ===== #}
   <div class="section">

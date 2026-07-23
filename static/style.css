@@ -721,6 +721,22 @@ a.stat-box:hover { filter: brightness(1.15); transform: translateY(-1px); }
 }
 .help-q:hover { opacity: 1; }
 
+/* زر فتح الشارت التفاعلي في TradingView (بدل الشارت المصغّر) */
+.tv-open {
+  display: flex; align-items: center; gap: 14px; text-decoration: none;
+  background: var(--panel-2); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 16px 18px; transition: border-color .15s, transform .1s, box-shadow .15s;
+}
+.tv-open:hover {
+  border-color: var(--accent); transform: translateY(-1px);
+  box-shadow: 0 8px 22px rgba(56, 189, 248, .18);
+}
+.tv-open-ic { font-size: 30px; flex-shrink: 0; }
+.tv-open-txt { display: flex; flex-direction: column; gap: 3px; flex: 1; }
+.tv-open-txt b { color: var(--text); font-size: 17px; font-weight: 800; }
+.tv-open-txt small { color: var(--muted); font-size: 14px; line-height: 1.7; }
+.tv-open-go { color: var(--accent); font-size: 24px; font-weight: 900; flex-shrink: 0; }
+
 /* جملة "لماذا هذا السهم مرشّح؟" على البطاقة */
 .scard-why {
   margin-top: 8px; color: var(--muted); font-size: 12.5px; font-weight: 700;
