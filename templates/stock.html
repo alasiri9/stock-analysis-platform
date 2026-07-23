@@ -31,7 +31,7 @@
     <div>
       <div class="ticker">{{ report.ticker }}</div>
       <div class="name" dir="ltr">{{ report.name or '—' }}</div>
-      <div class="sector">{{ report.sector | sector_ar or '—' }}</div>
+      <div class="sector">قطاع السهم / {{ report.sector | sector_ar or '—' }}</div>
     </div>
     <div class="price-block">
       <div class="price">{{ show(report.price, ' $') }}</div>
