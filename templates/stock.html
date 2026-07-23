@@ -170,17 +170,29 @@
   </div>
   {% endif %}
 
-  {# ===== المقاييس المالية ===== #}
+  {# ===== المقاييس المالية (نعرض المتوفّرة فقط + عدّاد X من 6) ===== #}
+  {% set mlist = [
+    {'label': 'ROE (العائد على حقوق الملكية)', 'val': report.metrics.roe, 'suf': '%', 'dig': 1},
+    {'label': 'ROA (العائد على الأصول)', 'val': report.metrics.roa, 'suf': '%', 'dig': 1},
+    {'label': 'هامش التشغيل', 'val': report.metrics.op_margin, 'suf': '%', 'dig': 1},
+    {'label': 'الهامش الإجمالي', 'val': report.metrics.gross_margin, 'suf': '%', 'dig': 1},
+    {'label': 'P/E (مكرر الربحية)', 'val': report.metrics.pe, 'suf': '', 'dig': 1},
+    {'label': 'PEG', 'val': report.metrics.peg, 'suf': '', 'dig': 2},
+  ] %}
+  {% set avail = mlist | selectattr('val', 'ne', none) | list %}
   <div class="section">
-    <h2>📊 المقاييس المالية</h2>
-    <div class="grid">
-      <div class="metric"><div class="label">ROE (العائد على حقوق الملكية)</div><div class="num">{{ show(report.metrics.roe, '%', 1) }}</div></div>
-      <div class="metric"><div class="label">ROA (العائد على الأصول)</div><div class="num">{{ show(report.metrics.roa, '%', 1) }}</div></div>
-      <div class="metric"><div class="label">هامش التشغيل</div><div class="num">{{ show(report.metrics.op_margin, '%', 1) }}</div></div>
-      <div class="metric"><div class="label">الهامش الإجمالي</div><div class="num">{{ show(report.metrics.gross_margin, '%', 1) }}</div></div>
-      <div class="metric"><div class="label">P/E (مكرر الربحية)</div><div class="num">{{ show(report.metrics.pe, '', 1) }}</div></div>
-      <div class="metric"><div class="label">PEG</div><div class="num">{{ show(report.metrics.peg, '', 2) }}</div></div>
-    </div>
+    <h2>📊 المقاييس المالية
+      <span class="tech-count {{ 'strong' if avail|length >= 4 else '' }}">{{ avail|length }} من {{ mlist|length }}</span>
+    </h2>
+    {% if avail %}
+      <div class="grid">
+        {% for m in avail %}
+          <div class="metric"><div class="label">{{ m.label }}</div><div class="num">{{ show(m.val, m.suf, m.dig) }}</div></div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="soon">لم تتوفّر مقاييس مالية لهذا السهم بعد — تظهر هنا فور توفّر بياناتها.</div>
+    {% endif %}
   </div>
 
   {# ===== نقاط الجودة المالية المتحققة (الناجحة فقط) ===== #}
