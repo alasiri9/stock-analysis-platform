@@ -835,11 +835,15 @@ def create_app():
         # حالة مفتاح FMP الخاص بالمشترك الحالي (لعرض قسم الأسعار اللحظية له فقط)
         is_sub = session.get("role") == "sub"
         sub_key_set = False
+        sub_key_value = ""  # المفتاح المفكوك — يُرسل لصاحبه فقط ليراه عند الطلب (زر العين)
         if is_sub:
             _s = db.session.get(Subscriber, session.get("sub_id"))
-            sub_key_set = bool(_s and _s.fmp_api_key)
+            if _s and _s.fmp_api_key:
+                sub_key_set = True
+                sub_key_value = crypto.decrypt(_s.fmp_api_key)
         return render_template("settings.html", is_admin=is_admin(), subscribers=subs,
-                               security=security, is_sub=is_sub, sub_key_set=sub_key_set)
+                               security=security, is_sub=is_sub, sub_key_set=sub_key_set,
+                               sub_key_value=sub_key_value)
 
     @app.route("/subscriber/fmp-key", methods=["POST"])
     def subscriber_fmp_key():

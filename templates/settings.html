@@ -53,7 +53,7 @@
           <label>مفتاح FMP الخاص بك</label>
           <div style="position:relative">
             <input id="fmpKey" type="password" name="fmp_api_key" dir="ltr" autocomplete="off"
-                   style="padding-left:42px"
+                   style="padding-left:42px" value="{{ sub_key_value }}"
                    placeholder="{{ 'محفوظ — الصق مفتاحاً جديداً للتغيير' if sub_key_set else 'الصق المفتاح هنا' }}">
             <button type="button" title="إظهار/إخفاء المفتاح"
                     onclick="var i=document.getElementById('fmpKey');var h=i.type==='password';i.type=h?'text':'password';this.textContent=h?'🙈':'👁';"
