@@ -156,6 +156,7 @@
   <div class="section">
     <h2>🎯 المؤشرات الفنية المتحققة
       <span class="tech-count {{ 'strong' if tech.pct >= 60 else '' }}">{{ tech.met|length }} من {{ tech.total }} · {{ tech.pct }}%</span>
+      <span class="help-q" data-tip="المؤشرات الفنية المتحققة: كم مؤشراً فنياً يعطي إشارة صاعدة (متحقّقة) من أصل 12 مؤشراً تحسبها المنصة (EMA · MACD · RSI · اختراق ...). نعرض المتحقّقة فقط. تعليمي، ليس توصية.">👁</span>
     </h2>
     {% if tech.met %}
       <div class="tech-badges">
@@ -183,6 +184,7 @@
   <div class="section">
     <h2>📊 المقاييس المالية
       <span class="tech-count">{{ avail|length }} من {{ mlist|length }}</span>
+      <span class="help-q" data-tip="المقاييس المالية: أرقام تعريفية عن أداء الشركة (العائد على حقوق الملكية والأصول، هامش التشغيل والإجمالي، مكرّر الربحية P/E، وPEG). نعرض المتوفّرة منها فقط. تعليمي للاطّلاع، ليس توصية.">👁</span>
     </h2>
     {% if avail %}
       <div class="grid">
@@ -202,6 +204,7 @@
     {% set ppct = (p.score / ptotal * 100) | round | int if ptotal else 0 %}
     <h2>💎 مستوى الجودة المالية المتحققة
       <span class="tech-count {{ 'strong' if ppct >= 60 else '' }}">{{ p.score }} من {{ ptotal }} · {{ ppct }}%</span>
+      <span class="help-q" data-tip="الجودة المالية (Piotroski): درجة من 0 إلى 9 تقيس صحة الشركة المالية (ربحيتها وديونها وكفاءتها). نعرض النقاط الناجحة فقط. 8 أو 9 تُعتبر قوية. تعليمي.">👁</span>
     </h2>
     {% if pio_met %}
       <div class="checks">
