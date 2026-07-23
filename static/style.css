@@ -713,7 +713,7 @@ a.stat-box:hover { filter: brightness(1.15); transform: translateY(-1px); }
 .help-q::after {
   content: ""; position: absolute; top: 50%; left: 50%;
   width: 5px; height: 5px; transform: translate(-50%, -50%);
-  background: #000; border-radius: 50%;
+  background: #d9b45f; border-radius: 50%;   /* بؤبؤ العين: ذهبي هادئ */
 }
 .help-q:hover { opacity: 1; }
 
