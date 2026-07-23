@@ -258,8 +258,9 @@ def build_stock_report(ticker):
         price_sources += 1
 
     # --- خطة ATR + المؤشرات الفنية + الشارت من أسعار FMP التاريخية (جلب واحد) ---
+    # 250 يوماً (نفس الفحص) ليكفي لحساب التقاطع الذهبي SMA50/SMA200 — بلا طلب إضافي.
     try:
-        candles = fmp_client.get_historical_prices(ticker, limit=120)
+        candles = fmp_client.get_historical_prices(ticker, limit=250)
         atr_plan = scoring.atr_trade_plan(price, candles)
         tech_indicators = indicators.build_indicators(candles)
         chart = price_chart(candles)  # نفس الشموع المجلوبة — بلا استدعاء إضافي
