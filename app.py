@@ -91,6 +91,7 @@ def _clear_login_fails():
 from services import analysis
 from services import crypto
 from services import fmp_client
+from services import indicators
 from services import radar
 from services import news_client
 from services import screener
@@ -1119,8 +1120,10 @@ def create_app():
         # المؤشرات الفنية المتحققة (الصاعدة فقط) + نسبة التحقق
         inds = report.get("indicators") or []
         met = [b for b in inds if b.get("status") == "bull"]
-        tech = {"met": met, "total": len(inds),
-                "pct": round(len(met) / len(inds) * 100) if inds else 0}
+        # المقام ثابت = عدد مؤشرات المنصة (12) حتى لا يتذبذب حسب بيانات كل سهم
+        tech_total = indicators.TOTAL_INDICATORS
+        tech = {"met": met, "total": tech_total,
+                "pct": round(len(met) / tech_total * 100) if tech_total else 0}
         # ميزان الإشارات الفنية (تعليمي): يميل حسب المؤشرات الإيجابية مقابل السلبية
         bull = len(met)
         bear = sum(1 for b in inds if b.get("status") == "bear")
