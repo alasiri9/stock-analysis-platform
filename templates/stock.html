@@ -30,8 +30,8 @@
   <div class="stock-head">
     <div>
       <div class="ticker">{{ report.ticker }}</div>
-      <div class="name">{{ report.name or '—' }}</div>
-      <div class="sector">{{ report.sector or '—' }}{% if report.industry %} · {{ report.industry }}{% endif %}</div>
+      <div class="name" dir="ltr">{{ report.name or '—' }}</div>
+      <div class="sector">{{ report.sector | sector_ar or '—' }}</div>
     </div>
     <div class="price-block">
       <div class="price">{{ show(report.price, ' $') }}</div>
