@@ -53,14 +53,14 @@
           <label>مفتاح FMP الخاص بك</label>
           <div style="position:relative">
             <input id="fmpKey" type="password" name="fmp_api_key" dir="ltr" autocomplete="off"
-                   style="padding-left:42px" value="{{ sub_key_value }}"
+                   style="padding:6px 12px 6px 42px; font-size:16px" value="{{ sub_key_value }}"
                    placeholder="{{ 'محفوظ — الصق مفتاحاً جديداً للتغيير' if sub_key_set else 'الصق المفتاح هنا' }}">
             <button type="button" title="إظهار/إخفاء المفتاح"
                     onclick="var i=document.getElementById('fmpKey');var h=i.type==='password';i.type=h?'text':'password';this.textContent=h?'🙈':'👁';"
                     style="position:absolute;left:8px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--muted);cursor:pointer;font-size:18px;padding:0;line-height:1">👁</button>
           </div>
         </div>
-        <button class="btn" type="submit" style="height:41px; padding:0 22px; font-size:17px; display:inline-flex; align-items:center; gap:6px">💾 حفظ</button>
+        <button class="btn" type="submit" style="height:32px; padding:0 22px; font-size:16px; display:inline-flex; align-items:center; gap:6px">💾 حفظ</button>
       </form>
       {% if sub_key_set %}
         <p class="set-sub" style="margin-top:8px">لحذف المفتاح: اترك الخانة فارغة واضغط حفظ.</p>
