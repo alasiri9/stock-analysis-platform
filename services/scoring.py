@@ -210,9 +210,9 @@ def catalyst_score(financials):
     specs = [
         ("نمو الإيرادات (عن العام الماضي)", 0.25, _scale(rev_growth, 0.0, 0.20), rev_growth, "نمو"),
         ("نمو صافي الأرباح (عن العام الماضي)", 0.25, _scale(ni_growth, 0.0, 0.20), ni_growth, "نمو"),
-        ("ROE", 0.20, _scale(roe, 0.0, 0.25), roe, "نسبة"),
+        ("العائد على حقوق الملكية", 0.20, _scale(roe, 0.0, 0.25), roe, "نسبة"),
         ("هامش التشغيل", 0.15, _scale(op_margin, 0.0, 0.25), op_margin, "نسبة"),
-        ("ROA", 0.15, _scale(roa, 0.0, 0.15), roa, "نسبة"),
+        ("العائد على الأصول", 0.15, _scale(roa, 0.0, 0.15), roa, "نسبة"),
     ]
 
     components = []
