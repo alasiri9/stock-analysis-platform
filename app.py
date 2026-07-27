@@ -514,7 +514,9 @@ def create_app():
             return "—"
         out = title
         # عبارات كاملة — استبدال غير حسّاس لحالة الأحرف (تُترجم CHIEF أو Chief سواء)
+        # مناصب مختصرة معروفة من SEC تُترجم كاملةً أولاً (قبل تفكيك المفردات)
         phrases = [
+            ("CHIEF INN,PROD&DSG OFCR", "مدير الابتكار والمنتجات والتصميم"),
             ("Chief Executive Officer", "الرئيس التنفيذي"),
             ("Chief Financial Officer", "المدير المالي"),
             ("Chief Operating Officer", "مدير العمليات"),
