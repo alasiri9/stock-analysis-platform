@@ -224,9 +224,8 @@
     </h2>
     {% for c in report.catalyst.components %}
       <div class="bar-row">
-        <div class="name">{{ c.name }}</div>
-        <div style="flex:1"></div>
-        <div class="val" dir="ltr">{{ c.detail }}</div>
+        <div class="name" style="width:auto">{{ c.name }}</div>
+        <div class="val" dir="ltr" style="width:auto; text-align:right">{{ c.detail }}</div>
       </div>
     {% endfor %}
   </div>
