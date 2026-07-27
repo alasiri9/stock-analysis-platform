@@ -77,7 +77,7 @@ def _parse_form4(xml_text):
     rel = owner_el.find(".//reportingOwnerRelationship") if owner_el is not None else None
     if rel is not None:
         if rel.findtext("isDirector") in ("1", "true"):
-            title = "مدير"
+            title = "عضو مجلس إدارة"
         elif rel.findtext("officerTitle"):
             title = rel.findtext("officerTitle")
         elif rel.findtext("isOfficer") in ("1", "true"):
