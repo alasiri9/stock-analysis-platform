@@ -9,6 +9,7 @@ app.py — تطبيق Flask الرئيسي: يربط قاعدة البيانات
 """
 
 import os
+import re
 import sys
 
 # طباعة النصوص العربية بأمان بأي بيئة (كونسول ويندوز الافتراضي cp1252 ينهار بدونها)
@@ -512,7 +513,8 @@ def create_app():
         if not title:
             return "—"
         out = title
-        pairs = [
+        # عبارات كاملة — استبدال غير حسّاس لحالة الأحرف (تُترجم CHIEF أو Chief سواء)
+        phrases = [
             ("Chief Executive Officer", "الرئيس التنفيذي"),
             ("Chief Financial Officer", "المدير المالي"),
             ("Chief Operating Officer", "مدير العمليات"),
@@ -532,6 +534,12 @@ def create_app():
             ("Secretary", "أمين السر"),
             ("Treasurer", "أمين الصندوق"),
             ("10% Owner", "مالك 10%+"),
+            ("Officer", "مسؤول"),
+        ]
+        for en, ar in phrases:
+            out = re.sub(re.escape(en), ar, out, flags=re.IGNORECASE)
+        # اختصارات — بحدود كلمة (حتى لا تُطابق داخل كلمة أخرى)، الأطول أولاً
+        abbrevs = [
             ("SEVP", "نائب رئيس تنفيذي أول"),
             ("SVP", "نائب رئيس أول"),
             ("EVP", "نائب رئيس تنفيذي"),
@@ -540,14 +548,10 @@ def create_app():
             ("CFO", "المدير المالي"),
             ("COO", "مدير العمليات"),
             ("CTO", "المدير التقني"),
-            ("Officer", "مسؤول"),
-            (" and ", " و"),
-            (" & ", " و"),
-            ("&", " و "),
         ]
-        for en, ar in pairs:
-            out = out.replace(en, ar)
-        return out
+        for en, ar in abbrevs:
+            out = re.sub(r"\b" + en + r"\b", ar, out, flags=re.IGNORECASE)
+        return out.replace(" and ", " و").replace(" & ", " و").replace("&", " و ")
 
     def _to_float(name):
         """يقرأ قيمة رقمية من باراميتر الطلب، أو None لو فارغة/غير صالحة."""
