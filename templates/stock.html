@@ -219,7 +219,9 @@
 
   {# ===== تفصيل Catalyst ===== #}
   <div class="section">
-    <h2>🚀 تفصيل Catalyst</h2>
+    <h2>🚀 تفصيل Catalyst
+      <span class="help-q" data-tip="«النمو» مقياس مساعد اجتهادي للإرشاد — تعليمي فقط، ليس توصية.">👁</span>
+    </h2>
     {% for c in report.catalyst.components %}
       <div class="bar-row">
         <div class="name">{{ c.name }} <span class="na">({{ "%.0f"|format(c.weight*100) }}%)</span></div>
@@ -229,7 +231,6 @@
         <div class="val">{{ c.detail }}{% if c.points is not none %} · {{ "%.0f"|format(c.points) }}/100{% endif %}</div>
       </div>
     {% endfor %}
-    <div class="note">📊 «النمو» مقياس مساعد اجتهادي للإرشاد — تعليمي فقط، ليس توصية.</div>
   </div>
 
   {# ===== معاملات المطلعين (SEC EDGAR) ===== #}
@@ -261,7 +262,9 @@
 
   {# ===== خطة ATR التعليمية ===== #}
   <div class="section">
-    <h2>📈 خطة التداول (ATR) — تعليمية</h2>
+    <h2>📈 خطة التداول (ATR) — تعليمية
+      <span class="help-q" data-tip="حساب تعليمي بحت مبني على ATR ومضاعفات افتراضية — ليس توصية بالدخول أو الخروج.">👁</span>
+    </h2>
     {% if report.atr_plan %}
       {% set p = report.atr_plan %}
       <div class="grid">
@@ -272,7 +275,6 @@
         <div class="metric"><div class="label">العائد/المخاطرة</div><div class="num">{{ "%.1f : 1"|format(p.risk_reward) if p.risk_reward is not none else '—' }}</div></div>
       </div>
       <a class="btn" style="margin-top:12px; display:inline-block" href="{{ url_for('calculator') }}?entry={{ '%.2f'|format(p.entry) }}&stop={{ '%.2f'|format(p.stop) }}">🧮 احسب كمية الشراء بهذه المستويات</a>
-      <div class="note">⚠️ حساب تعليمي بحت مبني على ATR ومضاعفات افتراضية — ليس توصية بالدخول أو الخروج.</div>
     {% else %}
       <div class="soon">تعذّر حساب خطة ATR (بيانات الأسعار التاريخية غير كافية لهذا السهم).</div>
     {% endif %}
@@ -281,7 +283,9 @@
   {# ===== أسهم من نفس القطاع (من الكاش — بلا API) ===== #}
   {% if peers %}
     <div class="section">
-      <h2>🏢 أسهم من نفس القطاع ({{ report.sector }})</h2>
+      <h2>🏢 أسهم من نفس القطاع ({{ report.sector }})
+        <span class="help-q" data-tip="للمقارنة السريعة مع سهمك — تعليمي فقط.">👁</span>
+      </h2>
       <div class="peers-grid">
         {% for pr in peers %}
           <a class="peer-card" href="{{ url_for('stock_report', ticker=pr.ticker) }}">
@@ -291,7 +295,6 @@
           </a>
         {% endfor %}
       </div>
-      <div class="note">📌 للمقارنة السريعة مع سهمك — تعليمي فقط.</div>
     </div>
   {% endif %}
 
