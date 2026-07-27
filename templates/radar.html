@@ -33,7 +33,7 @@
             <tr>
               <td><a href="{{ url_for('stock_report', ticker=t.ticker) }}"><b>{{ t.ticker }}</b></a></td>
               <td>{{ t.owner or '—' }}</td>
-              <td>{{ t.title or '—' }}</td>
+              <td>{{ t.title|position_ar }}</td>
               <td dir="ltr">{{ "{:,.0f}".format(t.shares) if t.shares is not none else '—' }}</td>
               <td dir="ltr">{{ "%.2f $"|format(t.price) if t.price is not none else '—' }}</td>
               <td dir="ltr">{{ t.date or '—' }}</td>

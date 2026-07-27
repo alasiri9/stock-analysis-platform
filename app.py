@@ -502,6 +502,53 @@ def create_app():
             "Utilities": "المرافق",
         }.get(sector, sector or "")
 
+    @app.template_filter("position_ar")
+    def position_ar(title):
+        """يعرّب مناصب المطّلعين الشائعة القادمة من SEC.
+
+        نصوص SEC حرّة ومختصرة أحياناً؛ نترجم المفردات المعروفة ونترك الغريب كما هو
+        (استبدال متتابع للأطول فالأقصر حتى لا تتداخل الاختصارات).
+        """
+        if not title:
+            return "—"
+        out = title
+        pairs = [
+            ("Chief Executive Officer", "الرئيس التنفيذي"),
+            ("Chief Financial Officer", "المدير المالي"),
+            ("Chief Operating Officer", "مدير العمليات"),
+            ("Chief Technology Officer", "المدير التقني"),
+            ("Chief Accounting Officer", "المدير المحاسبي"),
+            ("Chief Legal Officer", "المدير القانوني"),
+            ("Chief Marketing Officer", "مدير التسويق"),
+            ("Executive Vice President", "نائب الرئيس التنفيذي"),
+            ("Senior Vice President", "نائب رئيس أول"),
+            ("Vice President", "نائب الرئيس"),
+            ("General Counsel", "المستشار العام"),
+            ("Chairman of the Board", "رئيس مجلس الإدارة"),
+            ("Chairman", "رئيس مجلس الإدارة"),
+            ("President", "الرئيس"),
+            ("Director", "عضو مجلس إدارة"),
+            ("Controller", "المراقب المالي"),
+            ("Secretary", "أمين السر"),
+            ("Treasurer", "أمين الصندوق"),
+            ("10% Owner", "مالك 10%+"),
+            ("SEVP", "نائب رئيس تنفيذي أول"),
+            ("SVP", "نائب رئيس أول"),
+            ("EVP", "نائب رئيس تنفيذي"),
+            ("VP", "نائب رئيس"),
+            ("CEO", "الرئيس التنفيذي"),
+            ("CFO", "المدير المالي"),
+            ("COO", "مدير العمليات"),
+            ("CTO", "المدير التقني"),
+            ("Officer", "مسؤول"),
+            (" and ", " و"),
+            (" & ", " و"),
+            ("&", " و "),
+        ]
+        for en, ar in pairs:
+            out = out.replace(en, ar)
+        return out
+
     def _to_float(name):
         """يقرأ قيمة رقمية من باراميتر الطلب، أو None لو فارغة/غير صالحة."""
         raw = request.args.get(name, "").strip()

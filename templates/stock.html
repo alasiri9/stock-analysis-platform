@@ -232,7 +232,7 @@
 
   {# ===== معاملات المطلعين (SEC EDGAR) ===== #}
   <div class="section">
-    <h2>🏛️ معاملات المطلعين (SEC EDGAR)</h2>
+    <h2>🏛️ معاملات المطلعين (من هيئة السوق الأمريكية)</h2>
     {% if report.insider_trades %}
       <table class="insider">
         <thead>
@@ -243,7 +243,7 @@
             <tr>
               <td dir="ltr">{{ t.date or '—' }}</td>
               <td>{{ t.owner or '—' }}</td>
-              <td class="muted">{{ t.title or '—' }}</td>
+              <td class="muted">{{ t.title|position_ar }}</td>
               <td><span class="pill {{ 'buy' if t.direction == 'شراء' else ('sell' if t.direction == 'بيع' else '') }}">{{ t.direction or '—' }}</span></td>
               <td class="muted">{{ t.code_label or '—' }}</td>
               <td dir="ltr">{{ "{:,.0f}".format(t.shares) if t.shares is not none else '—' }}</td>
@@ -253,7 +253,7 @@
         </tbody>
       </table>
     {% else %}
-      <div class="soon">لا توجد معاملات مطلعين حديثة متاحة لهذا السهم من SEC EDGAR.</div>
+      <div class="soon">لا توجد معاملات مطلعين حديثة متاحة لهذا السهم من هيئة السوق الأمريكية (SEC).</div>
     {% endif %}
   </div>
 
