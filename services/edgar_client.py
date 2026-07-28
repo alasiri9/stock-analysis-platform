@@ -82,6 +82,8 @@ def _parse_form4(xml_text):
             title = rel.findtext("officerTitle")
         elif rel.findtext("isOfficer") in ("1", "true"):
             title = "مسؤول"
+        elif rel.findtext("isTenPercentOwner") in ("1", "true"):
+            title = "مالك +10%"
         else:
             title = None
     else:
