@@ -37,6 +37,17 @@ _CODE_LABELS = {
     "D": "استرداد للشركة",
     "C": "تحويل مشتق",
     "X": "تنفيذ حق",
+    "J": "اقتناء/تصرّف آخر",
+    "I": "معاملة تقديرية",
+    "V": "معاملة مُبلَّغ عنها مبكراً",
+    "O": "تنفيذ خيار خارج السعر",
+    "E": "انتهاء مركز مشتق قصير",
+    "H": "انتهاء مركز مشتق طويل",
+    "L": "اقتناء صغير",
+    "W": "نقل بالإرث/الوصية",
+    "Z": "إيداع/سحب من صندوق تصويت",
+    "K": "معاملة مقايضة أسهم",
+    "U": "تصرّف عبر عرض استحواذ",
 }
 
 
@@ -107,7 +118,7 @@ def _parse_form4(xml_text):
             "title": title,
             "date": t.findtext(".//transactionDate/value"),
             "code": code,
-            "code_label": _CODE_LABELS.get(code, code),
+            "code_label": _CODE_LABELS.get(code, "معاملة أخرى") if code else None,
             "direction": "شراء" if ad == "A" else ("بيع" if ad == "D" else None),
             "shares": _num(t.findtext(".//transactionAmounts/transactionShares/value")),
             "price": _num(t.findtext(".//transactionAmounts/transactionPricePerShare/value")),
