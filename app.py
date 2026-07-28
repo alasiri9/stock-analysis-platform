@@ -530,6 +530,8 @@ def create_app():
             ("Principal Accounting Officer", "المدير المحاسبي الرئيسي"),
             ("Principal Financial Officer", "المدير المالي الرئيسي"),
             ("Principal Executive Officer", "المدير التنفيذي الرئيسي"),
+            ("Worldwide Amazon Stores", "لمتاجر أمازون العالمية"),
+            ("Amazon Web Services", "لخدمات أمازون السحابية (AWS)"),
             ("Executive Vice President", "نائب الرئيس التنفيذي"),
             ("Senior Vice President", "نائب رئيس أول"),
             ("Vice President", "نائب الرئيس"),
