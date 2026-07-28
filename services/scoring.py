@@ -41,7 +41,7 @@ def piotroski_score(financials):
       "computable": كم نقطة أمكن حسابها (من 9),
       "components": قائمة 9 عناصر، كل عنصر {n, name, passed, detail}
     }
-    حيث passed: True (محقّقة) / False (غير محقّقة) / None (بيانات ناقصة).
+    حيث passed: True (محقّقة) / False (غير محقّقة) / None (بيانات غير متوفّرة).
     """
     inc = financials.get("income") if financials else None
     bal = financials.get("balance") if financials else None
@@ -89,55 +89,55 @@ def piotroski_score(financials):
     # 1) ROA > 0
     add(1, "ROA > 0",
         (roa0 > 0) if roa0 is not None else None,
-        f"ROA = صافي الربح/الأصول = {roa0:.4f}" if roa0 is not None else "بيانات ناقصة")
+        f"ROA = صافي الربح/الأصول = {roa0:.4f}" if roa0 is not None else "بيانات غير متوفّرة")
 
     # 2) CFO > 0  (التدفق النقدي التشغيلي موجب)
     add(2, "CFO > 0",
         (cfo0 > 0) if cfo0 is not None else None,
-        f"CFO = {cfo0:,.0f}" if cfo0 is not None else "بيانات ناقصة")
+        f"CFO = {cfo0:,.0f}" if cfo0 is not None else "بيانات غير متوفّرة")
 
     # 3) ΔROA > 0  (تحسّن العائد على الأصول)
     delta_roa_ok = (roa0 > roa1) if (roa0 is not None and roa1 is not None) else None
     add(3, "ΔROA > 0",
         delta_roa_ok,
-        f"ROA: {roa1:.4f} → {roa0:.4f}" if delta_roa_ok is not None else "بيانات ناقصة")
+        f"ROA: {roa1:.4f} → {roa0:.4f}" if delta_roa_ok is not None else "بيانات غير متوفّرة")
 
     # 4) Accruals = CFO/Assets − ROA < 0  (جودة الأرباح: تدفق نقدي يفوق الربح المحاسبي)
     if cfo_assets0 is not None and roa0 is not None:
         accr = cfo_assets0 - roa0
         add(4, "Accruals < 0", accr < 0, f"CFO/Assets − ROA = {accr:.4f}")
     else:
-        add(4, "Accruals < 0", None, "بيانات ناقصة")
+        add(4, "Accruals < 0", None, "بيانات غير متوفّرة")
 
     # 5) ΔLeverage < 0  (انخفاض الرافعة المالية = دين أقل نسبياً)
     delta_lev_ok = (lev0 < lev1) if (lev0 is not None and lev1 is not None) else None
     add(5, "ΔLeverage < 0",
         delta_lev_ok,
-        f"الرافعة: {lev1:.4f} → {lev0:.4f}" if delta_lev_ok is not None else "بيانات ناقصة")
+        f"الرافعة: {lev1:.4f} → {lev0:.4f}" if delta_lev_ok is not None else "بيانات غير متوفّرة")
 
     # 6) ΔLiquidity > 0  (تحسّن نسبة السيولة الجارية)
     delta_liq_ok = (cr0 > cr1) if (cr0 is not None and cr1 is not None) else None
     add(6, "ΔLiquidity > 0",
         delta_liq_ok,
-        f"نسبة السيولة: {cr1:.2f} → {cr0:.2f}" if delta_liq_ok is not None else "بيانات ناقصة")
+        f"نسبة السيولة: {cr1:.2f} → {cr0:.2f}" if delta_liq_ok is not None else "بيانات غير متوفّرة")
 
     # 7) لا إصدار أسهم جديدة  (عدد الأسهم لم يزد)
     no_dilution = (shares0 <= shares1) if (shares0 is not None and shares1 is not None) else None
     add(7, "لا إصدار أسهم جديدة",
         no_dilution,
-        f"الأسهم: {shares1:,.0f} → {shares0:,.0f}" if no_dilution is not None else "بيانات ناقصة")
+        f"الأسهم: {shares1:,.0f} → {shares0:,.0f}" if no_dilution is not None else "بيانات غير متوفّرة")
 
     # 8) ΔGross Margin > 0  (تحسّن الهامش الإجمالي)
     delta_gm_ok = (gm0 > gm1) if (gm0 is not None and gm1 is not None) else None
     add(8, "ΔGross Margin > 0",
         delta_gm_ok,
-        f"الهامش الإجمالي: {gm1:.4f} → {gm0:.4f}" if delta_gm_ok is not None else "بيانات ناقصة")
+        f"الهامش الإجمالي: {gm1:.4f} → {gm0:.4f}" if delta_gm_ok is not None else "بيانات غير متوفّرة")
 
     # 9) ΔAsset Turnover > 0  (تحسّن كفاءة استخدام الأصول)
     delta_at_ok = (at0 > at1) if (at0 is not None and at1 is not None) else None
     add(9, "ΔAsset Turnover > 0",
         delta_at_ok,
-        f"دوران الأصول: {at1:.4f} → {at0:.4f}" if delta_at_ok is not None else "بيانات ناقصة")
+        f"دوران الأصول: {at1:.4f} → {at0:.4f}" if delta_at_ok is not None else "بيانات غير متوفّرة")
 
     score = sum(1 for c in components if c["passed"] is True)
     computable = sum(1 for c in components if c["passed"] is not None)
@@ -222,7 +222,7 @@ def catalyst_score(financials):
         if raw is not None:
             detail = f"{raw * 100:.1f}%"
         else:
-            detail = "بيانات ناقصة"
+            detail = "بيانات غير متوفّرة"
         components.append({"name": name, "weight": weight, "points": points, "detail": detail})
         if points is not None:
             weighted_sum += weight * points
@@ -326,7 +326,7 @@ if __name__ == "__main__":
 
     print(f"\nالنتيجة: {result['score']} / 9", end="")
     if result["computable"] < 9:
-        print(f"  (أمكن حساب {result['computable']} نقاط فقط — الباقي بيانات ناقصة)")
+        print(f"  (أمكن حساب {result['computable']} نقاط فقط — الباقي بيانات غير متوفّرة)")
     else:
         print()
 
