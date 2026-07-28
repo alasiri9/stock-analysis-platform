@@ -249,7 +249,7 @@
               <td><span class="pill {{ 'buy' if t.direction == 'شراء' else ('sell' if t.direction == 'بيع' else '') }}">{{ t.direction or '—' }}</span></td>
               <td class="muted">{{ t.code_label or '—' }}</td>
               <td dir="ltr">{{ "{:,.0f}".format(t.shares) if t.shares is not none else '—' }}</td>
-              <td dir="ltr">{{ "%.2f $"|format(t.price) if t.price is not none else '—' }}</td>
+              <td>{% if t.price is not none %}<span dir="ltr">{{ "%.2f $"|format(t.price) }}</span>{% else %}<span class="muted" style="font-size:13px">غير محدد من المصدر</span>{% endif %}</td>
             </tr>
           {% endfor %}
         </tbody>
