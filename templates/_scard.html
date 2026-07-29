@@ -19,6 +19,7 @@
       {% endif %}
     </div>
     <div class="scard-name">{{ r.name or '—' }}</div>
+    {% if r.sector %}<div class="scard-sector">🏷️ {{ r.sector | sector_ar }}</div>{% endif %}
     <div class="scard-scores">
       <span class="measures-pill">🚀 نمو {{ r.catalyst | growth_icon }} <b>{{ "%.0f"|format(r.catalyst) if r.catalyst is not none else '—' }}</b></span>
       <span class="help-q" data-tip="درجة النمو (Catalyst) من 100 — تقيس قوة نمو الشركة (نمو الإيرادات والأرباح والزخم). كلما زادت كان نمو الشركة أقوى. تعليمي.">👁</span>

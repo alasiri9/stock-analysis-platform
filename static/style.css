@@ -394,6 +394,7 @@ a.stat-box:hover { filter: brightness(1.15); transform: translateY(-1px); }
 .scard-ticker { font-size: 21px; font-weight: 900; }
 .scard-price { color: var(--muted); font-size: 17px; }
 .scard-name { color: var(--text); font-size: 16px; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.scard-sector { color: var(--muted); font-size: 13px; margin-top: 3px; }
 .scard-scores { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; margin-top: 6px; font-size: 16px; color: var(--muted); }
 .scard-scores b { color: var(--text); font-size: 17px; }
 .scard-scores .dot { color: var(--border); }
