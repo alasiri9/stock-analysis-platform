@@ -82,6 +82,7 @@
         <th>الجودة المالية <span dir="ltr">0/9</span><span class="th-en">(Piotroski)</span></th>
         <th>النمو <span dir="ltr">0/100</span></th>
         <th>قوة التأكيد <span dir="ltr">0/16</span></th>
+        <th>الاختراق</th>
       </tr>
     </thead>
     <tbody>
@@ -97,6 +98,13 @@
         <td>{{ r.piotroski if r.piotroski is not none else '—' }}</td>
         <td>{{ r.catalyst|round|int if r.catalyst is not none else '—' }}</td>
         <td>{{ r.met }}</td>
+        <td>
+          {%- if r.brk and r.brk.confirmed and r.brk.dir == 'breakout' -%}
+            <span class="chg-up">🚀 اختراق</span>
+          {%- elif r.brk and r.brk.confirmed and r.brk.dir == 'breakdown' -%}
+            <span class="chg-down">⚠️ كسر</span>
+          {%- else -%}—{%- endif -%}
+        </td>
       </tr>
       {% endfor %}
     </tbody>

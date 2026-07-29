@@ -1008,6 +1008,7 @@ def create_app():
             "piotroski": r.get("piotroski"),
             "catalyst": r.get("catalyst"),
             "met": screener.measures_met(r),
+            "brk": r.get("break_status"),
         } for r in records]
         return render_template("report.html", rows=rows, as_of=as_of,
                                count=len(rows), active="home")
