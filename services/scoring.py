@@ -267,6 +267,34 @@ def compute_atr(candles, period=14):
     return sum(trs[-period:]) / period
 
 
+def nearest_resistance(candles, current_price, left=5, right=5):
+    """يجد أقرب «مقاومة فنية» فوق السعر الحالي من قمم الشارت السابقة.
+
+    المقاومة = «قمة محورية» (pivot high): يومٌ إغلاقه/قمته أعلى من `left` أيام قبله
+    و`right` أيام بعده — أي نقطة توقّف عندها الصعود وارتد السعر. أقرب قمة فوق
+    السعر الحالي = أول عائق منطقي أمام الصعود، فتصلح هدفاً.
+
+    candles: أيام (الأحدث أولاً)، كل يوم فيه high. يُرجع سعر أقرب مقاومة أو None.
+    """
+    if not candles or current_price is None:
+        return None
+    rows = list(reversed(candles))  # الأقدم أولاً
+    highs = [r.get("high") for r in rows]
+    n = len(highs)
+    pivots = []
+    for i in range(left, n - right):
+        window = highs[i - left:i + right + 1]
+        if any(x is None for x in window):
+            continue
+        h = highs[i]
+        # قمة محورية فوق السعر الحالي (توقّف عندها الصعود سابقاً)
+        if h == max(window) and h > current_price:
+            pivots.append(h)
+    if not pivots:
+        return None
+    return min(pivots)  # أقرب مقاومة فوق السعر الحالي
+
+
 def atr_trade_plan(current_price, candles, period=14, stop_mult=1.5, target_mult=3.0):
     """يبني خطة تداول تعليمية (دخول/وقف/هدف) من ATR.
 
@@ -285,7 +313,16 @@ def atr_trade_plan(current_price, candles, period=14, stop_mult=1.5, target_mult
         return None
 
     stop = current_price - stop_mult * atr
-    target = current_price + target_mult * atr
+
+    # الهدف: أقرب مقاومة فنية فوق الدخول (إن كانت بعيدة بما يكفي)، وإلا مضاعف التذبذب
+    resistance = nearest_resistance(candles, current_price)
+    if resistance is not None and resistance > current_price + 0.5 * atr:
+        target = resistance
+        target_basis = "resistance"
+    else:
+        target = current_price + target_mult * atr
+        target_basis = "atr"
+
     risk = current_price - stop
     reward = target - current_price
     rr = (reward / risk) if risk > 0 else None
@@ -298,6 +335,7 @@ def atr_trade_plan(current_price, candles, period=14, stop_mult=1.5, target_mult
         "target": target,
         "stop_mult": stop_mult,
         "target_mult": target_mult,
+        "target_basis": target_basis,
         "risk_reward": rr,
     }
 

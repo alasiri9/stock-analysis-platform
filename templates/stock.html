@@ -270,7 +270,7 @@
         <div class="metric"><div class="label">مدى تذبذب السهم ({{ p.period }} يوم)</div><div class="num">{{ "%.2f $"|format(p.atr) }}</div></div>
         <div class="metric"><div class="label">الدخول (السعر الحالي)</div><div class="num">{{ "%.2f $"|format(p.entry) }}</div></div>
         <div class="metric"><div class="label">وقف الخسارة (−{{ "%.1f"|format(p.stop_mult) }}×ATR)</div><div class="num" style="color:var(--red)">{{ "%.2f $"|format(p.stop) }}</div></div>
-        <div class="metric"><div class="label">الهدف (+{{ "%.1f"|format(p.target_mult) }}×ATR)</div><div class="num" style="color:var(--green)">{{ "%.2f $"|format(p.target) }}</div></div>
+        <div class="metric"><div class="label">الهدف {% if p.target_basis == 'resistance' %}(أقرب مقاومة){% else %}(+{{ "%.1f"|format(p.target_mult) }}×ATR){% endif %}</div><div class="num" style="color:var(--green)">{{ "%.2f $"|format(p.target) }}</div></div>
         <div class="metric"><div class="label">العائد/المخاطرة</div><div class="num">{{ "%.1f : 1"|format(p.risk_reward) if p.risk_reward is not none else '—' }}</div></div>
       </div>
       <a class="btn" style="margin-top:12px; display:inline-block" href="{{ url_for('calculator') }}?entry={{ '%.2f'|format(p.entry) }}&stop={{ '%.2f'|format(p.stop) }}">🧮 احسب كمية الشراء المناسبة لمخاطرتك</a>
