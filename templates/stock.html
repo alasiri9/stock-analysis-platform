@@ -291,7 +291,8 @@
             <span class="rank-num">{{ loop.index }}</span>
             <span class="rank-tk">{{ pr.ticker }}</span>
             <span class="rank-nm">{{ pr.name or '—' }}</span>
-            <span class="rank-mt">🎯 {{ measures_met(pr) }}/16</span>
+            {% set m = measures_met(pr) %}
+            <span class="rank-mt" style="color:{% if m >= 10 %}var(--green){% elif m >= 6 %}var(--gold){% else %}var(--red){% endif %}">🎯 {{ m }}/16</span>
             <span class="rank-pr" dir="ltr">{{ "%.2f $"|format(pr.price) if pr.price is not none else '—' }}</span>
           </a>
         {% endfor %}
