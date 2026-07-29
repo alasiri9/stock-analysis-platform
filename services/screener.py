@@ -838,7 +838,8 @@ def market_mood(records=None):
 
 def filter_records(records, piotroski_min=None, catalyst_min=None,
                    price_max=None, market_cap_min=None, sector=None,
-                   recent_gain_max=None, float_max=None, min_measures=None):
+                   recent_gain_max=None, float_max=None, min_measures=None,
+                   break_dir=None, money_flow_bull=None):
     """يطبّق الفلاتر على السجلّات المخزّنة.
 
     None ≠ 0 : السجلّ الذي تكون قيمته المطلوبة None لا يجتاز فلتراً يحدّ تلك القيمة
@@ -848,6 +849,8 @@ def filter_records(records, piotroski_min=None, catalyst_min=None,
     (recent_gain=None يُبقى: العائد غير محسوب بعد، لا نستبعد بلا يقين).
     float_max: أعلى عدد أسهم حرة (خام) — يعرض الأسهم قليلة الحرة (الأسرع حركة)؛
     float_shares=None يُستبعد لأن العتبة صريحة (لا حكم بلا بيانات float).
+    break_dir: "breakout" أو "breakdown" — يُبقي فقط الأسهم ذات اختراق/كسر «مؤكّد» بحجم عالٍ.
+    money_flow_bull: True — يُبقي فقط الأسهم ذات سيولة داخلة (تجميع).
     """
     out = []
     for r in records:
@@ -876,6 +879,13 @@ def filter_records(records, piotroski_min=None, catalyst_min=None,
                 continue
         if min_measures is not None:
             if measures_met(r) < min_measures:
+                continue
+        if break_dir is not None:
+            bk = r.get("break_status") or {}
+            if not (bk.get("dir") == break_dir and bk.get("confirmed")):
+                continue
+        if money_flow_bull:
+            if (r.get("money_flow") or {}).get("status") != "bull":
                 continue
         out.append(r)
     # ترتيب تنازلي حسب Catalyst ثم Piotroski (None في الأسفل)

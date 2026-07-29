@@ -695,18 +695,10 @@ a.stat-box:hover { filter: brightness(1.15); transform: translateY(-1px); }
 .tools-form { margin: 0; display: inline; }
 
 /* أزرار الفلترة الجاهزة (الرئيسية) */
-.presets { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 0 0 16px; }
-.presets-label { color: var(--muted); font-size: 14px; font-weight: 700; margin-left: 4px; }
-.preset {
-  background: var(--card); border: 1px solid var(--border); color: var(--text);
-  padding: 7px 14px; border-radius: 20px; font-size: 14px; font-weight: 800;
-  text-decoration: none; transition: border-color .15s, color .15s;
-}
-.preset:hover { border-color: var(--accent); color: var(--accent); }
-.preset.clear { color: var(--muted); }
-/* عدّاد الأسهم المطابقة داخل الفلتر السريع */
-.pcount { font-weight: 800; font-variant-numeric: tabular-nums; color: var(--accent);
-  background: rgba(56,189,248,.14); border-radius: 999px; padding: 1px 8px; font-size: 12px; margin-inline-start: 3px; }
+/* قائمة «فلتر جاهز» — صف كامل فوق مربّعات الفلترة اليدوية (اختصارات بنقرة) */
+.filter-preset { flex-basis: 100%; align-items: stretch; }
+.filter-preset label { text-align: right; font-weight: 700; }
+.filter-preset select { width: 100%; min-width: 0; font-weight: 700; }
 
 /* أيقونة «؟» تربط بشرح المصطلح في صفحة تعلّم */
 .help-q {

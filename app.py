@@ -597,7 +597,21 @@ def create_app():
         float_max = float_max_millions * 1e6 if float_max_millions is not None else None
 
         # "لسا ما صعد": يستبعد ما قفز أكثر من الحدّ خلال آخر أسبوعين (اصطياد مبكر)
-        not_risen = request.args.get("not_risen") in ("1", "on", "true")
+        # فلتر جاهز (قائمة منسدلة): كل خيار يترجَم لمعايير فلترة تُدمج مع المربّعات اليدوية
+        preset = request.args.get("preset", "").strip() or None
+        PRESET_FILTERS = {
+            "gems": {"piotroski_min": 8, "catalyst_min": 80},
+            "quality": {"piotroski_min": 8},
+            "growth": {"catalyst_min": 80},
+            "not_risen": {"recent_gain_max": screener.EARLY_MAX_RECENT_GAIN},
+            "under100": {"price_max": 100},
+            "breakout": {"break_dir": "breakout"},
+            "breakdown": {"break_dir": "breakdown"},
+            "high_volume": {"money_flow_bull": True},
+        }
+        preset_f = PRESET_FILTERS.get(preset, {})
+
+        not_risen = request.args.get("not_risen") in ("1", "on", "true") or preset == "not_risen"
         min_measures = _to_float("min_measures")  # عدد المقاييس الإيجابية المجتمعة (الأدنى)
         filters = {
             "piotroski_min": _to_float("piotroski_min"),
@@ -608,6 +622,9 @@ def create_app():
             "float_max": float_max,
             "min_measures": int(min_measures) if min_measures is not None else None,
         }
+        # معايير الفلتر الجاهز تُضاف فوق اليدوية (للمفاتيح التي يحدّدها فقط)
+        for _k, _v in preset_f.items():
+            filters[_k] = _v
         results = screener.filter_records(records, **filters)
 
         # ترتيب النتائج حسب اختيار المستخدم (افتراضياً: قوة التأكيد)
@@ -638,6 +655,9 @@ def create_app():
             "gems": len(screener.filter_records(records, piotroski_min=8, catalyst_min=80)),
             "not_risen": len(screener.filter_records(records, recent_gain_max=screener.EARLY_MAX_RECENT_GAIN)),
             "under100": len(screener.filter_records(records, price_max=100)),
+            "breakout": len(screener.filter_records(records, break_dir="breakout")),
+            "breakdown": len(screener.filter_records(records, break_dir="breakdown")),
+            "high_volume": len(screener.filter_records(records, money_flow_bull=True)),
         }
         # الأسهم المستعدّة للانطلاق — سجلاتها الكاملة (نعرضها بنفس بطاقة _scard تماماً).
         # نعيد استخدام منطق «قبل الانطلاق» الموجود، ثم نأخذ السجل الكامل لكل رمز (لا نسخة مبسّطة)
@@ -660,7 +680,7 @@ def create_app():
             filters=filters, total=len(records), stats=stats, counts=counts, ready=ready,
             signals=screener.recent_signals(),
             launched=launched, perf=perf, mood=mood, market_dir=market_dir,
-            breakouts=breakouts, sort=sort,
+            breakouts=breakouts, sort=sort, preset=preset,
         )
 
     @app.route("/gems")
