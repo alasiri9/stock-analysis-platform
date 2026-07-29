@@ -1178,6 +1178,16 @@ def create_app():
                      if r.get("sector") == report["sector"] and r["ticker"] != report["ticker"]]
             peers.sort(key=lambda r: screener.measures_met(r), reverse=True)
             peers = peers[:6]
+        # ترتيب السهم الحالي بين كل منافسيه في القطاع (حسب قوة التأكيد)
+        sector_rank = sector_total = None
+        if report.get("sector"):
+            same = [r for r in records if r.get("sector") == report["sector"]]
+            same.sort(key=lambda r: screener.measures_met(r), reverse=True)
+            sector_total = len(same)
+            for idx, r in enumerate(same, 1):
+                if r["ticker"] == report["ticker"]:
+                    sector_rank = idx
+                    break
         # المؤشرات الفنية المتحققة (الصاعدة فقط) + نسبة التحقق
         inds = report.get("indicators") or []
         met = [b for b in inds if b.get("status") == "bull"]
@@ -1208,6 +1218,7 @@ def create_app():
         return render_template("stock.html", report=report, ticker=report["ticker"],
                                scan=scan, summary=summary, peers=peers, tech=tech,
                                pio_met=pio_met, meter=meter,
+                               sector_rank=sector_rank, sector_total=sector_total,
                                price_cached=price_cached, price_time=price_time)
 
     # ===================== حاسبة حجم الصفقة =====================

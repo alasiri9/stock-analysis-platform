@@ -285,6 +285,11 @@
       <h2>🏢 أسهم من نفس القطاع ({{ report.sector | sector_ar }})
         <span class="help-q" data-tip="للمقارنة السريعة مع سهمك — تعليمي فقط.">👁</span>
       </h2>
+      {% if sector_rank and sector_total %}
+        <div style="margin:2px 0 12px; color:var(--muted); font-size:14.5px">
+          {% if sector_rank == 1 %}🏆 سهمك <b style="color:var(--green)">{{ report.ticker }}</b> — الأقوى في قطاعه (بين {{ sector_total }} أسهم).{% else %}سهمك <b style="color:var(--text)">{{ report.ticker }}</b> — الترتيب <b>{{ sector_rank }}</b> من {{ sector_total }} في قطاعه (حسب قوة التأكيد).{% endif %}
+        </div>
+      {% endif %}
       <div class="peers-grid">
         {% for pr in peers %}
           <a class="peer-card" href="{{ url_for('stock_report', ticker=pr.ticker) }}">
