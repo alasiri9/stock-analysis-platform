@@ -75,7 +75,7 @@
 
   {# ============ الفلترة: تحت البحث، فوق الاستعداد — تفلتر قسم «فحص كل الأسهم» بالأسفل ============ #}
   {# لوحة الفلاتر — تبدأ بقائمة «فلتر جاهز» (اختصارات بنقرة)، ثم المربّعات اليدوية #}
-  <form class="filters" action="{{ url_for('index') }}" method="get">
+  <form class="filters" action="{{ url_for('index') }}#screener" method="get">
     <div class="filter filter-preset">
       <label>فلتر جاهز <span class="help-q" data-tip="اختصارات جاهزة تطبّق فلتراً شائعاً بنقرة واحدة بلا كتابة أرقام. اختر واحداً ثم اضغط «فلترة». الرقم بين القوسين = عدد الأسهم المطابقة حالياً. يمكن دمجه مع المربّعات تحته.">👁</span></label>
       <select name="preset">
