@@ -282,20 +282,17 @@
   {# ===== أسهم من نفس القطاع (من الكاش — بلا API) ===== #}
   {% if peers %}
     <div class="section">
-      <h2>🏢 أسهم من نفس القطاع ({{ report.sector | sector_ar }})
-        <span class="help-q" data-tip="للمقارنة السريعة مع سهمك — تعليمي فقط.">👁</span>
+      <h2>🏢 ترتيب القطاع ({{ report.sector | sector_ar }})
+        <span class="help-q" data-tip="ترتيب أسهم نفس القطاع حسب قوة التأكيد (الأقوى أولاً). السهم المعروض حالياً مميّز بلون. تعليمي فقط.">👁</span>
       </h2>
-      {% if sector_rank and sector_total %}
-        <div style="margin:2px 0 12px; color:var(--muted); font-size:14.5px">
-          {% if sector_rank == 1 %}🏆 سهمك <b style="color:var(--green)">{{ report.ticker }}</b> — الأقوى في قطاعه (بين {{ sector_total }} أسهم).{% else %}سهمك <b style="color:var(--text)">{{ report.ticker }}</b> — الترتيب <b>{{ sector_rank }}</b> من {{ sector_total }} في قطاعه (حسب قوة التأكيد).{% endif %}
-        </div>
-      {% endif %}
-      <div class="peers-grid">
+      <div class="sector-rank">
         {% for pr in peers %}
-          <a class="peer-card" href="{{ url_for('stock_report', ticker=pr.ticker) }}">
-            <span class="peer-ticker">{{ pr.ticker }}</span>
-            <span class="peer-name">{{ pr.name or '—' }}</span>
-            <span class="peer-meta">🎯 {{ measures_met(pr) }}/16 · {{ "%.2f $"|format(pr.price) if pr.price is not none else '—' }}</span>
+          <a class="rank-row {% if pr.ticker == report.ticker %}rank-me{% endif %}" href="{{ url_for('stock_report', ticker=pr.ticker) }}">
+            <span class="rank-num">{{ loop.index }}</span>
+            <span class="rank-tk">{{ pr.ticker }}</span>
+            <span class="rank-nm">{{ pr.name or '—' }}</span>
+            <span class="rank-mt">🎯 {{ measures_met(pr) }}/16</span>
+            <span class="rank-pr" dir="ltr">{{ "%.2f $"|format(pr.price) if pr.price is not none else '—' }}</span>
           </a>
         {% endfor %}
       </div>
