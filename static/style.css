@@ -954,7 +954,7 @@ a.stat-box:hover { filter: brightness(1.15); transform: translateY(-1px); }
 }
 .peer-card:hover { border-color: var(--accent); }
 .peer-ticker { color: var(--accent); font-weight: 900; font-size: 16px; }
-.peer-name { color: var(--text); font-size: 12.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.peer-name { color: var(--text); font-size: 12.5px; line-height: 1.35; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .peer-meta { color: var(--muted); font-size: 12.5px; }
 
 /* بار اتجاه السوق (متمركز في الصفر: أخضر يميناً صاعد، أحمر يساراً هابط) */
