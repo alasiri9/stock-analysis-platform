@@ -81,6 +81,27 @@
     </div>
   {% endif %}
 
+  {# ===== حالة الاختراق / الكسر المؤكّد بالحجم ===== #}
+  {% if report.break_status %}
+    {% set bk = report.break_status %}
+    <div class="section">
+      <h2>📍 حالة الاختراق / الكسر
+        <span class="help-q" data-tip="مقارنة إغلاق السهم اليوم بأعلى/أدنى نطاق آخر 20 يوم تداول، مع حجم التداول. الاختراق أو الكسر «المؤكّد» = بحجم عالٍ (≥1.5× المتوسط) = اهتمام حقيقي من السوق. تعليمي فقط، ليس توصية.">👁</span>
+      </h2>
+      {% if bk.dir == 'breakout' and bk.confirmed %}
+        <div class="break-badge up">🚀 اخترق أعلى نطاق آخر 20 يوماً <b>بحجم عالٍ</b> — اختراق مؤكّد (زخم صعود).</div>
+      {% elif bk.dir == 'breakout' %}
+        <div class="break-badge warn">اخترق أعلى النطاق لكن <b>بحجم ضعيف</b> — غير مؤكّد (احذر الحركة الكاذبة).</div>
+      {% elif bk.dir == 'breakdown' and bk.confirmed %}
+        <div class="break-badge down">⚠️ كسر أدنى نطاق آخر 20 يوماً <b>بحجم عالٍ</b> — كسر مؤكّد (ضعف واضح).</div>
+      {% elif bk.dir == 'breakdown' %}
+        <div class="break-badge warn">كسر أدنى النطاق لكن <b>بحجم ضعيف</b> — غير مؤكّد (قد يكون كسراً كاذباً).</div>
+      {% else %}
+        <div class="break-badge neutral">داخل نطاقه الطبيعي (آخر 20 يوماً) — بلا اختراق أو كسر.</div>
+      {% endif %}
+    </div>
+  {% endif %}
+
   {# ===== الشارت التفاعلي (TradingView) — يفتح بمدة يختارها المستخدم ===== #}
   {# للمدير: يفتح تخطيطه المحفوظ بمؤشراته الخاصة. للمشترك: الشارت العادي بالرمز فقط. #}
   {% set tv_layout = "yYTDQbef" %}
@@ -258,27 +279,6 @@
       <div class="soon">لا توجد معاملات مطلعين حديثة متاحة لهذا السهم من هيئة السوق الأمريكية (SEC).</div>
     {% endif %}
   </div>
-
-  {# ===== حالة الاختراق / الكسر المؤكّد بالحجم ===== #}
-  {% if report.break_status %}
-    {% set bk = report.break_status %}
-    <div class="section">
-      <h2>📍 حالة الاختراق / الكسر
-        <span class="help-q" data-tip="مقارنة إغلاق السهم اليوم بأعلى/أدنى نطاق آخر 20 يوم تداول، مع حجم التداول. الاختراق أو الكسر «المؤكّد» = بحجم عالٍ (≥1.5× المتوسط) = اهتمام حقيقي من السوق. تعليمي فقط، ليس توصية.">👁</span>
-      </h2>
-      {% if bk.dir == 'breakout' and bk.confirmed %}
-        <div class="break-badge up">🚀 اخترق أعلى نطاق آخر 20 يوماً <b>بحجم عالٍ</b> — اختراق مؤكّد (زخم صعود).</div>
-      {% elif bk.dir == 'breakout' %}
-        <div class="break-badge warn">اخترق أعلى النطاق لكن <b>بحجم ضعيف</b> — غير مؤكّد (احذر الحركة الكاذبة).</div>
-      {% elif bk.dir == 'breakdown' and bk.confirmed %}
-        <div class="break-badge down">⚠️ كسر أدنى نطاق آخر 20 يوماً <b>بحجم عالٍ</b> — كسر مؤكّد (ضعف واضح).</div>
-      {% elif bk.dir == 'breakdown' %}
-        <div class="break-badge warn">كسر أدنى النطاق لكن <b>بحجم ضعيف</b> — غير مؤكّد (قد يكون كسراً كاذباً).</div>
-      {% else %}
-        <div class="break-badge neutral">داخل نطاقه الطبيعي (آخر 20 يوماً) — بلا اختراق أو كسر.</div>
-      {% endif %}
-    </div>
-  {% endif %}
 
   {# ===== خطة ATR التعليمية ===== #}
   <div class="section">
