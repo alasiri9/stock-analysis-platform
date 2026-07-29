@@ -376,7 +376,16 @@ def atr_trade_plan(current_price, candles, period=14, stop_mult=1.5, target_mult
     risk = current_price - stop
     reward = target - current_price
     rr = (reward / risk) if risk > 0 else None
-    weak_rr = (rr is not None and rr < 1.5)
+    # جودة العائد/المخاطرة: ضعيف (<1.5) · عادي (1.5–2) · جيد (≥2 نسبة احترافية)
+    if rr is None:
+        rr_quality = None
+    elif rr < 1.5:
+        rr_quality = "weak"
+    elif rr >= 2.0:
+        rr_quality = "good"
+    else:
+        rr_quality = "ok"
+    weak_rr = (rr_quality == "weak")
 
     return {
         "atr": atr,
@@ -394,6 +403,7 @@ def atr_trade_plan(current_price, candles, period=14, stop_mult=1.5, target_mult
         "stop_strong": stop_strong,
         "risk_reward": rr,
         "weak_rr": weak_rr,
+        "rr_quality": rr_quality,
     }
 
 
