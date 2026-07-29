@@ -284,6 +284,7 @@ def _build_record(ticker):
         gc = indicators.golden_cross(closes)  # التقاطع الذهبي SMA50/SMA200
         pullback = indicators.trend_pullback(candles)  # ارتداد الترند (شراء الانخفاض)
         atr_val = indicators.atr(candles)  # تذبذب السهم — لمستويات الدخول/الوقف/الهدف بالتنبيهات
+        brk = scoring.break_status(candles)  # اختراق/كسر مؤكّد بالحجم
         mom_63d = _period_return(closes, MOMENTUM_SESSIONS)  # زخم ~3 أشهر (للقوة النسبية مقابل السوق)
         recent_gain = _period_return(closes, RECENT_SESSIONS)  # صعود آخر أسبوعين (لفلتر "لسا ما صعد")
         _save_price_history(ticker, candles)  # نفس البيانات المجلوبة أصلاً — بلا استدعاء API إضافي
@@ -294,6 +295,7 @@ def _build_record(ticker):
         gc = None
         pullback = False
         atr_val = None
+        brk = None
         mom_63d = None
         recent_gain = None
 
@@ -312,6 +314,7 @@ def _build_record(ticker):
         "golden_cross": (gc or {}).get("cross"),
         "trend_pullback": pullback,
         "atr": atr_val,
+        "break_status": brk,
         "mom_63d": mom_63d,
         "recent_gain": recent_gain,
     }
@@ -576,6 +579,13 @@ def refresh_cache(time_budget=20):
             # 🎯 ارتداد الترند: ترند صاعد + تراجع لمس EMA20 + بدء ارتداد (شراء الانخفاض)
             if record.get("trend_pullback"):
                 _record_signal(ticker, "trend_pullback", sig_price, atr=sig_atr, earnings_days=sig_earn)
+            # 🚀/⚠️ اختراق أو كسر مؤكّد بحجم عالٍ (إغلاق تجاوز نطاق 20 يوماً + حجم مرتفع)
+            brk = record.get("break_status")
+            if brk and brk.get("confirmed"):
+                if brk.get("dir") == "breakout":
+                    _record_signal(ticker, "breakout_confirmed", sig_price, atr=sig_atr, earnings_days=sig_earn)
+                elif brk.get("dir") == "breakdown":
+                    _record_signal(ticker, "breakdown_confirmed", sig_price)
 
             db.session.commit()  # حفظ هذا السهم مباشرة
             updated += 1

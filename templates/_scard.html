@@ -59,6 +59,12 @@
     {% elif r.catalyst is not none and r.catalyst >= 80 %}
       <div class="scard-ready">🎯 انفجار قوي — جاهز للانطلاق <span class="help" data-tip="جاهز للانطلاق: درجة النمو (Catalyst) عالية جداً (≥80) — السهم في وضع قوي مرشّح للحركة. تعليمي لا توصية شراء.">؟</span></div>
     {% endif %}
+    {% set bk = r.get('break_status') %}
+    {% if bk and bk.confirmed and bk.dir == 'breakout' %}
+      <div class="scard-brk up">🚀 اختراق مؤكّد بحجم عالٍ</div>
+    {% elif bk and bk.confirmed and bk.dir == 'breakdown' %}
+      <div class="scard-brk down">⚠️ كسر مؤكّد بحجم عالٍ</div>
+    {% endif %}
     {% set dte = r.get('days_to_earnings') %}
     {% if dte is not none %}
       <div class="scard-earn {{ 'soon' if dte <= 7 }}">📅 أرباح {{ 'اليوم' if dte == 0 else ('بعد يوم' if dte == 1 else 'بعد ' ~ dte ~ ' يوم') }} <span class="help" data-tip-accent="{{ 'var(--red)' if dte <= 7 else 'var(--gold)' }}" data-tip="تنبيه: قرب إعلان الأرباح يتسبب في حركة سعرية متقلّبة للسهم صعوداً أو نزولاً. اللون الأصفر يعني أكثر من 7 أيام، واللون الأحمر خلال 7 أيام.">؟</span></div>

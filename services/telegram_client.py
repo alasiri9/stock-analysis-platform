@@ -59,6 +59,8 @@ def notify_signal(ticker, signal_type, price, atr=None, earnings_days=None):
         "golden_cross": "🌟 تقاطع ذهبي — SMA50 قطع SMA200 صعوداً (اتجاه طويل المدى)",
         "trend_pullback": "🎯 شراء في الانخفاض — تراجع مؤقت بترند صاعد بدأ يرتد",
         "prelaunch_ready": "🚦 جاهز للانطلاق — دخل قائمة الاستعداد (تضافر عوامل مبكرة قبل الصعود)",
+        "breakout_confirmed": "🚀 اختراق مؤكّد — إغلاق فوق أعلى 20 يوماً بحجم عالٍ (زخم صعود)",
+        "breakdown_confirmed": "⚠️ كسر مؤكّد — إغلاق تحت أدنى 20 يوماً بحجم عالٍ (ضعف واضح)",
     }.get(signal_type, signal_type)
     price_txt = f"{price:.2f}$" if price is not None else "غير متوفر"
 

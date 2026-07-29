@@ -461,6 +461,8 @@ def create_app():
             "golden_cross": "🌟 تقاطع ذهبي (SMA50/200)",
             "trend_pullback": "🎯 شراء في الانخفاض",
             "prelaunch_ready": "🔎 جاهز للانطلاق",
+            "breakout_confirmed": "🚀 اختراق مؤكّد بحجم",
+            "breakdown_confirmed": "⚠️ كسر مؤكّد بحجم",
         }.get(signal_type, signal_type)
 
     @app.template_filter("quality_icon")
