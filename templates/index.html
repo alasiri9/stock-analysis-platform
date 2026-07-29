@@ -185,6 +185,7 @@
             <div class="lcard-top">
               <div class="lcard-ticker">{{ l.ticker }}</div>
               <div class="lcard-name">{{ l.name or '' }}</div>
+              {% if l.sector %}<div class="lcard-sector">🏷️ {{ l.sector | sector_ar }}</div>{% endif %}
             </div>
             <div class="lcard-ret">
               {% if l.return_pct is not none %}{{ '+' if l.return_pct >= 0 else '' }}{{ "%.1f"|format(l.return_pct) }}%{% else %}—{% endif %}

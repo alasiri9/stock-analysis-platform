@@ -338,6 +338,7 @@ a.stat-box:hover { filter: brightness(1.15); transform: translateY(-1px); }
 .lcard-top { margin-bottom: 2px; }
 .lcard-ticker { font-weight: 900; font-size: 26px; }
 .lcard-name { color: var(--muted); font-size: 17px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lcard-sector { color: var(--muted); font-size: 13px; margin-top: 3px; opacity: .85; }
 .lcard-ret { font-size: 40px; font-weight: 900; margin-top: 4px; }
 .lcard.up .lcard-ret { color: var(--green); }
 .lcard.down .lcard-ret { color: var(--red); }

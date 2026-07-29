@@ -700,6 +700,7 @@ def launched_stocks(limit=6):
     records, _ = load_records()
     price_by_ticker = {r["ticker"]: r.get("price") for r in records}
     name_by_ticker = {r["ticker"]: r.get("name") for r in records}
+    sector_by_ticker = {r["ticker"]: r.get("sector") for r in records}
 
     now = datetime.now(timezone.utc)
     rows = []
@@ -723,6 +724,7 @@ def launched_stocks(limit=6):
         rows.append({
             "ticker": s.ticker,
             "name": name_by_ticker.get(s.ticker),
+            "sector": sector_by_ticker.get(s.ticker),
             "signal_type": s.signal_type,
             "price_at_signal": s.price_at_signal,
             "current": current,
