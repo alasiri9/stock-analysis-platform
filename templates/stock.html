@@ -58,12 +58,30 @@
     </div>
   </div>
 
-  {# ===== الملخّص الذكي (مُولّد آلياً من البيانات — وصفي تعليمي) ===== #}
-  {% if summary and (summary.strengths or summary.cautions) %}
+  {# ===== الملخّص الذكي (حالة الاختراق/الكسر + نقاط القوة/الحذر) تحت عنوان واحد ===== #}
+  {% if (summary and (summary.strengths or summary.cautions)) or report.break_status %}
     <div class="section smart-summary">
       <h2>🧠 ملخّص ذكي للسهم
         <span class="help-q" data-tip="ملخّص وصفي تعليمي مُولّد آلياً من بيانات السهم — ليس توصية ولا تنبؤاً.">👁</span>
       </h2>
+
+      {# سطر حالة الاختراق / الكسر — أهم خبر عن حركة السهم الآن #}
+      {% if report.break_status %}
+        {% set bk = report.break_status %}
+        {% if bk.dir == 'breakout' and bk.confirmed %}
+          <div class="break-badge up">🚀 اخترق أعلى نطاق آخر 20 يوماً <b>بحجم عالٍ</b> — اختراق مؤكّد (زخم صعود) · اخترق <b>{{ bk.days_ago | recency_ar }}</b>.<span class="help-q" data-tip="مقارنة إغلاق السهم اليوم بأعلى/أدنى نطاق آخر 20 يوم تداول، مع حجم التداول. الاختراق أو الكسر «المؤكّد» = بحجم عالٍ (≥1.5× المتوسط) = اهتمام حقيقي من السوق. تعليمي فقط، ليس توصية.">👁</span></div>
+        {% elif bk.dir == 'breakout' %}
+          <div class="break-badge warn">اخترق أعلى النطاق <b>{{ bk.days_ago | recency_ar }}</b> لكن <b>بحجم ضعيف</b> — غير مؤكّد (احذر الحركة الكاذبة).<span class="help-q" data-tip="مقارنة إغلاق السهم اليوم بأعلى/أدنى نطاق آخر 20 يوم تداول، مع حجم التداول. الاختراق أو الكسر «المؤكّد» = بحجم عالٍ (≥1.5× المتوسط) = اهتمام حقيقي من السوق. تعليمي فقط، ليس توصية.">👁</span></div>
+        {% elif bk.dir == 'breakdown' and bk.confirmed %}
+          <div class="break-badge down">⚠️ كسر أدنى نطاق آخر 20 يوماً <b>بحجم عالٍ</b> — كسر مؤكّد (ضعف واضح) · كسر <b>{{ bk.days_ago | recency_ar }}</b>.<span class="help-q" data-tip="مقارنة إغلاق السهم اليوم بأعلى/أدنى نطاق آخر 20 يوم تداول، مع حجم التداول. الاختراق أو الكسر «المؤكّد» = بحجم عالٍ (≥1.5× المتوسط) = اهتمام حقيقي من السوق. تعليمي فقط، ليس توصية.">👁</span></div>
+        {% elif bk.dir == 'breakdown' %}
+          <div class="break-badge warn">كسر أدنى النطاق <b>{{ bk.days_ago | recency_ar }}</b> لكن <b>بحجم ضعيف</b> — غير مؤكّد (قد يكون كسراً كاذباً).<span class="help-q" data-tip="مقارنة إغلاق السهم اليوم بأعلى/أدنى نطاق آخر 20 يوم تداول، مع حجم التداول. الاختراق أو الكسر «المؤكّد» = بحجم عالٍ (≥1.5× المتوسط) = اهتمام حقيقي من السوق. تعليمي فقط، ليس توصية.">👁</span></div>
+        {% else %}
+          <div class="break-badge neutral">داخل نطاقه الطبيعي (آخر 20 يوماً) — بلا اختراق أو كسر.<span class="help-q" data-tip="مقارنة إغلاق السهم اليوم بأعلى/أدنى نطاق آخر 20 يوم تداول، مع حجم التداول. الاختراق أو الكسر «المؤكّد» = بحجم عالٍ (≥1.5× المتوسط) = اهتمام حقيقي من السوق. تعليمي فقط، ليس توصية.">👁</span></div>
+        {% endif %}
+      {% endif %}
+
+      {% if summary and (summary.strengths or summary.cautions) %}
       <div class="ss-cols">
         {% if summary.strengths %}
           <div class="ss-group ss-pos">
@@ -78,26 +96,6 @@
           </div>
         {% endif %}
       </div>
-    </div>
-  {% endif %}
-
-  {# ===== حالة الاختراق / الكسر المؤكّد بالحجم ===== #}
-  {% if report.break_status %}
-    {% set bk = report.break_status %}
-    <div class="section">
-      <h2>📍 حالة الاختراق / الكسر
-        <span class="help-q" data-tip="مقارنة إغلاق السهم اليوم بأعلى/أدنى نطاق آخر 20 يوم تداول، مع حجم التداول. الاختراق أو الكسر «المؤكّد» = بحجم عالٍ (≥1.5× المتوسط) = اهتمام حقيقي من السوق. تعليمي فقط، ليس توصية.">👁</span>
-      </h2>
-      {% if bk.dir == 'breakout' and bk.confirmed %}
-        <div class="break-badge up">🚀 اخترق أعلى نطاق آخر 20 يوماً <b>بحجم عالٍ</b> — اختراق مؤكّد (زخم صعود) · اخترق <b>{{ bk.days_ago | recency_ar }}</b>.</div>
-      {% elif bk.dir == 'breakout' %}
-        <div class="break-badge warn">اخترق أعلى النطاق <b>{{ bk.days_ago | recency_ar }}</b> لكن <b>بحجم ضعيف</b> — غير مؤكّد (احذر الحركة الكاذبة).</div>
-      {% elif bk.dir == 'breakdown' and bk.confirmed %}
-        <div class="break-badge down">⚠️ كسر أدنى نطاق آخر 20 يوماً <b>بحجم عالٍ</b> — كسر مؤكّد (ضعف واضح) · كسر <b>{{ bk.days_ago | recency_ar }}</b>.</div>
-      {% elif bk.dir == 'breakdown' %}
-        <div class="break-badge warn">كسر أدنى النطاق <b>{{ bk.days_ago | recency_ar }}</b> لكن <b>بحجم ضعيف</b> — غير مؤكّد (قد يكون كسراً كاذباً).</div>
-      {% else %}
-        <div class="break-badge neutral">داخل نطاقه الطبيعي (آخر 20 يوماً) — بلا اختراق أو كسر.</div>
       {% endif %}
     </div>
   {% endif %}
