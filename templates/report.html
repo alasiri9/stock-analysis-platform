@@ -40,11 +40,12 @@
   .chg-up { color: #1a7f37; font-weight: 700; }
   .chg-down { color: #cf222e; font-weight: 700; }
   .report-doc .doc-foot { text-align: center; color: #7a8aa3; font-size: 12px; margin-top: 16px; }
+  .report-back { text-align: center; margin-top: 18px; }
 
   /* عند الطباعة أو الحفظ PDF: نُخفي كل ما حول التقرير ونجعله يملأ الصفحة */
   @media print {
     .sidebar, .report-toolbar, .theme-toggle, .nav-tip,
-    .notif-overlay, .sidebar-foot { display: none !important; }
+    .notif-overlay, .sidebar-foot, .report-back { display: none !important; }
     .layout { display: block !important; }
     .content { margin: 0 !important; padding: 0 !important; max-width: none !important; }
     .report-doc { box-shadow: none; border-radius: 0; padding: 0; }
@@ -110,5 +111,9 @@
     </tbody>
   </table>
   <p class="doc-foot">Algomatix © 2026 — تقرير تعليمي، ليس توصية بيع أو شراء.</p>
+</div>
+
+<div class="report-back">
+  <a class="btn" href="{{ url_for('index') }}">← رجوع للرئيسية</a>
 </div>
 {% endblock %}
