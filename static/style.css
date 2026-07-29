@@ -962,13 +962,11 @@ a.stat-box:hover { filter: brightness(1.15); transform: translateY(-1px); }
 .rank-row { display: flex; align-items: center; gap: 12px; padding: 11px 14px; text-decoration: none;
   background: var(--panel-2); border: 1px solid var(--border); border-radius: 12px; transition: border-color .15s; }
 .rank-row:hover { border-color: var(--accent); }
-.rank-me { border-color: var(--accent); background: rgba(56, 189, 248, .13); box-shadow: 0 0 0 1px var(--accent) inset; }
 .rank-num { color: var(--muted); font-weight: 900; min-width: 20px; }
 .rank-tk { color: var(--accent); font-weight: 900; font-size: 16px; min-width: 54px; }
 .rank-nm { color: var(--text); font-size: 13px; flex: 1; }
 .rank-mt { color: var(--muted); font-size: 13px; white-space: nowrap; }
 .rank-pr { color: var(--text); font-size: 13px; min-width: 80px; text-align: left; }
-.rank-me .rank-nm, .rank-me .rank-mt, .rank-me .rank-pr { color: var(--text); }
 
 /* بار اتجاه السوق (متمركز في الصفر: أخضر يميناً صاعد، أحمر يساراً هابط) */
 .dir-bar { position: relative; height: 10px; background: var(--border); border-radius: 6px; margin-top: 10px; overflow: hidden; }

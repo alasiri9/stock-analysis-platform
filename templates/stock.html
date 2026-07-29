@@ -287,7 +287,7 @@
       </h2>
       <div class="sector-rank">
         {% for pr in peers %}
-          <a class="rank-row {% if pr.ticker == report.ticker %}rank-me{% endif %}" href="{{ url_for('stock_report', ticker=pr.ticker) }}">
+          <a class="rank-row" href="{{ url_for('stock_report', ticker=pr.ticker) }}">
             <span class="rank-num">{{ loop.index }}</span>
             <span class="rank-tk">{{ pr.ticker }}</span>
             <span class="rank-nm">{{ pr.name or '—' }}</span>
