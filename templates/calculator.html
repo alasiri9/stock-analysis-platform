@@ -48,7 +48,7 @@
       <div class="stat-box">
         <div class="label">🧾 تكلفة الصفقة</div>
         <div class="value" id="out-cost" dir="ltr">—</div>
-        <div class="sub" id="out-cost-pct">— من رأس المال</div>
+        <div class="sub" id="out-cost-pct">— من إجمالي النقد</div>
       </div>
     </div>
 
@@ -77,14 +77,14 @@
 
         if (isNaN(account) || isNaN(risk) || isNaN(entry) || isNaN(stop) || account <= 0 || entry <= 0) {
           outRisk.textContent = outPer.textContent = outShares.textContent = outCost.textContent = '—';
-          outCostPct.textContent = '— من رأس المال';
+          outCostPct.textContent = '— من إجمالي النقد';
           return;
         }
         if (stop >= entry) {
           warn.style.display = 'block';
           warn.textContent = '⚠️ وقف الخسارة يجب أن يكون أقل من سعر الدخول (نحن نشتري ونتوقع الصعود).';
           outRisk.textContent = outPer.textContent = outShares.textContent = outCost.textContent = '—';
-          outCostPct.textContent = '— من رأس المال';
+          outCostPct.textContent = '— من إجمالي النقد';
           return;
         }
 
@@ -98,7 +98,7 @@
         outPer.textContent = money(perShare);
         outShares.textContent = shares.toLocaleString('en-US') + ' سهم';
         outCost.textContent = money(cost);
-        outCostPct.textContent = costPct.toFixed(0) + '% من رأس المال';
+        outCostPct.textContent = costPct.toFixed(0) + '% من إجمالي النقد';
 
         if (cost > account) {
           warn.style.display = 'block';
