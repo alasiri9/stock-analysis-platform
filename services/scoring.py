@@ -237,6 +237,43 @@ def catalyst_score(financials):
     }
 
 
+def break_status(candles, lookback=20, vol_window=20, vol_mult=1.5):
+    """يكشف اختراق/كسر مستوى مؤكّد بالحجم (على أساس الإغلاق اليومي).
+
+    - اختراق أعلى: إغلاق اليوم فوق **أعلى نطاق آخر `lookback` يوم** (عدا اليوم).
+    - كسر أسفل: إغلاق اليوم تحت **أدنى نطاق آخر `lookback` يوم**.
+    - «مؤكّد» = حجم يوم الحركة ≥ `vol_mult` × متوسط الحجم (اهتمام حقيقي من السوق).
+    candles: أيام (الأحدث أولاً) فيها close/high/low/volume.
+
+    يُرجع dict {dir: breakout|breakdown|range, confirmed: bool|None, level, ratio}
+    أو None لو البيانات غير كافية (لا نخترع حالة).
+    """
+    if not candles or len(candles) < lookback + 2:
+        return None
+    today = candles[0]
+    close = today.get("close")
+    vol = today.get("volume")
+    if close is None:
+        return None
+    prior = candles[1:lookback + 1]  # الأيام السابقة (عدا اليوم)
+    highs = [c.get("high") for c in prior if c.get("high") is not None]
+    lows = [c.get("low") for c in prior if c.get("low") is not None]
+    if not highs or not lows:
+        return None
+    range_high, range_low = max(highs), min(lows)
+
+    vols = [c.get("volume") or 0 for c in candles[:vol_window]]
+    avg_vol = (sum(vols) / len(vols)) if vols else 0
+    ratio = (vol / avg_vol) if (vol and avg_vol) else None
+    high_vol = ratio is not None and ratio >= vol_mult
+
+    if close > range_high:
+        return {"dir": "breakout", "confirmed": high_vol, "level": range_high, "ratio": ratio}
+    if close < range_low:
+        return {"dir": "breakdown", "confirmed": high_vol, "level": range_low, "ratio": ratio}
+    return {"dir": "range", "confirmed": None, "level": None, "ratio": ratio}
+
+
 def compute_atr(candles, period=14):
     """يحسب ATR (متوسط المدى الحقيقي) من شموع يومية.
 

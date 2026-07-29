@@ -968,6 +968,15 @@ a.stat-box:hover { filter: brightness(1.15); transform: translateY(-1px); }
 .rank-mt { color: var(--muted); font-size: 13px; white-space: nowrap; }
 .rank-pr { color: var(--text); font-size: 13px; min-width: 80px; text-align: left; }
 
+/* حالة الاختراق/الكسر المؤكّد بالحجم */
+.break-badge { padding: 14px 16px; border-radius: 12px; font-size: 16px; line-height: 1.8;
+  border: 1px solid var(--border); background: var(--panel-2); }
+.break-badge.up { color: var(--green); border-color: rgba(34,197,94,.4); background: var(--green-dim); }
+.break-badge.down { color: var(--red); border-color: rgba(239,68,68,.4); background: var(--red-dim); }
+.break-badge.warn { color: var(--gold); border-color: rgba(245,196,81,.4); background: rgba(245,196,81,.1); }
+.break-badge.neutral { color: var(--muted); }
+.break-badge b { color: inherit; }
+
 /* بار اتجاه السوق (متمركز في الصفر: أخضر يميناً صاعد، أحمر يساراً هابط) */
 .dir-bar { position: relative; height: 10px; background: var(--border); border-radius: 6px; margin-top: 10px; overflow: hidden; }
 .dir-bar-fill { position: absolute; top: 0; bottom: 0; }
