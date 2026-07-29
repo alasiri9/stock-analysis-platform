@@ -217,7 +217,9 @@
         <div class="stat-box">
           <div class="label">نسبة النجاح</div>
           <div class="value" dir="ltr">{{ ('%.0f'|format(perf.win_rate)) ~ '%' if perf.win_rate is not none else '—' }}</div>
-          <div class="sub">{{ '(' ~ perf.win_count ~ ' من ' ~ perf.count ~ ' سهم)' if perf.count else '' }}</div>
+          {%- set _n = perf.count -%}
+          {%- set _unit = 'سهم' if _n == 1 else ('سهمين' if _n == 2 else 'أسهم') -%}
+          <div class="sub">{{ '(' ~ perf.win_count ~ ' من ' ~ _n ~ ' ' ~ _unit ~ ')' if perf.count else '' }}</div>
         </div>
         <div class="stat-box">
           <div class="label">أعلى ربح محقق</div>
