@@ -89,13 +89,13 @@
         <span class="help-q" data-tip="مقارنة إغلاق السهم اليوم بأعلى/أدنى نطاق آخر 20 يوم تداول، مع حجم التداول. الاختراق أو الكسر «المؤكّد» = بحجم عالٍ (≥1.5× المتوسط) = اهتمام حقيقي من السوق. تعليمي فقط، ليس توصية.">👁</span>
       </h2>
       {% if bk.dir == 'breakout' and bk.confirmed %}
-        <div class="break-badge up">🚀 اخترق أعلى نطاق آخر 20 يوماً <b>بحجم عالٍ</b> — اختراق مؤكّد (زخم صعود).</div>
+        <div class="break-badge up">🚀 اخترق أعلى نطاق آخر 20 يوماً <b>بحجم عالٍ</b> — اختراق مؤكّد (زخم صعود) · اخترق <b>{{ bk.days_ago | recency_ar }}</b>.</div>
       {% elif bk.dir == 'breakout' %}
-        <div class="break-badge warn">اخترق أعلى النطاق لكن <b>بحجم ضعيف</b> — غير مؤكّد (احذر الحركة الكاذبة).</div>
+        <div class="break-badge warn">اخترق أعلى النطاق <b>{{ bk.days_ago | recency_ar }}</b> لكن <b>بحجم ضعيف</b> — غير مؤكّد (احذر الحركة الكاذبة).</div>
       {% elif bk.dir == 'breakdown' and bk.confirmed %}
-        <div class="break-badge down">⚠️ كسر أدنى نطاق آخر 20 يوماً <b>بحجم عالٍ</b> — كسر مؤكّد (ضعف واضح).</div>
+        <div class="break-badge down">⚠️ كسر أدنى نطاق آخر 20 يوماً <b>بحجم عالٍ</b> — كسر مؤكّد (ضعف واضح) · كسر <b>{{ bk.days_ago | recency_ar }}</b>.</div>
       {% elif bk.dir == 'breakdown' %}
-        <div class="break-badge warn">كسر أدنى النطاق لكن <b>بحجم ضعيف</b> — غير مؤكّد (قد يكون كسراً كاذباً).</div>
+        <div class="break-badge warn">كسر أدنى النطاق <b>{{ bk.days_ago | recency_ar }}</b> لكن <b>بحجم ضعيف</b> — غير مؤكّد (قد يكون كسراً كاذباً).</div>
       {% else %}
         <div class="break-badge neutral">داخل نطاقه الطبيعي (آخر 20 يوماً) — بلا اختراق أو كسر.</div>
       {% endif %}

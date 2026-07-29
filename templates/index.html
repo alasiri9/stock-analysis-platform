@@ -161,6 +161,19 @@
     {% endif %}
   </section>
 
+  {# ============ 🚀 اخترقت مؤخراً: اختراق مؤكّد بحجم عالٍ (رادار الانطلاق) ============ #}
+  {% if breakouts %}
+  <section class="panel">
+    <div class="panel-head">
+      <h2>🚀 اخترقت مؤخراً :</h2>
+      <p class="panel-sub">أسهم اخترقت أعلى نطاق آخر 20 يوماً <b>بحجم عالٍ</b> (اختراق مؤكّد) — الأحدث أولاً. تعليمي، ليس توصية.</p>
+    </div>
+    <div class="screener-cards">
+      {% for r in breakouts %}{% set rank = loop.index %}{% include "_scard.html" %}{% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
   {# ============ ② أداء الأسهم التي انطلقت (مستقلّ — كما هو) ============ #}
   <section class="panel launched-panel">
     <div class="panel-head">

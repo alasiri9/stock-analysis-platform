@@ -245,8 +245,9 @@ def break_status(candles, lookback=20, vol_window=20, vol_mult=1.5):
     - «مؤكّد» = حجم يوم الحركة ≥ `vol_mult` × متوسط الحجم (اهتمام حقيقي من السوق).
     candles: أيام (الأحدث أولاً) فيها close/high/low/volume.
 
-    يُرجع dict {dir: breakout|breakdown|range, confirmed: bool|None, level, ratio}
-    أو None لو البيانات غير كافية (لا نخترع حالة).
+    - `days_ago`: كم يوم مضى منذ أول إغلاق تجاوز المستوى (0 = اليوم — الأحدث والأهم).
+
+    يُرجع dict {dir, confirmed, level, ratio, days_ago} أو None لو البيانات غير كافية.
     """
     if not candles or len(candles) < lookback + 2:
         return None
@@ -268,10 +269,26 @@ def break_status(candles, lookback=20, vol_window=20, vol_mult=1.5):
     high_vol = ratio is not None and ratio >= vol_mult
 
     if close > range_high:
-        return {"dir": "breakout", "confirmed": high_vol, "level": range_high, "ratio": ratio}
-    if close < range_low:
-        return {"dir": "breakdown", "confirmed": high_vol, "level": range_low, "ratio": ratio}
-    return {"dir": "range", "confirmed": None, "level": None, "ratio": ratio}
+        direction, level = "breakout", range_high
+    elif close < range_low:
+        direction, level = "breakdown", range_low
+    else:
+        return {"dir": "range", "confirmed": None, "level": None, "ratio": ratio, "days_ago": None}
+
+    # حداثة الاختراق: عدد الأيام المتتالية (من اليوم) التي بقي فيها الإغلاق على جهة الكسر
+    n = 0
+    for c in (x.get("close") for x in candles):
+        if c is None:
+            break
+        on_side = (c > level) if direction == "breakout" else (c < level)
+        if on_side:
+            n += 1
+        else:
+            break
+    days_ago = max(0, n - 1)  # 0 = اخترق اليوم
+
+    return {"dir": direction, "confirmed": high_vol, "level": level, "ratio": ratio,
+            "days_ago": days_ago}
 
 
 def compute_atr(candles, period=14):

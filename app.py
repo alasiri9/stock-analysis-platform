@@ -465,6 +465,17 @@ def create_app():
             "breakdown_confirmed": "⚠️ كسر مؤكّد بحجم",
         }.get(signal_type, signal_type)
 
+    @app.template_filter("recency_ar")
+    def recency_ar(days_ago):
+        """نص حداثة الاختراق: اليوم / أمس / قبل N أيام."""
+        if days_ago is None:
+            return ""
+        if days_ago == 0:
+            return "اليوم"
+        if days_ago == 1:
+            return "أمس"
+        return f"قبل {days_ago} أيام"
+
     @app.template_filter("quality_icon")
     def quality_icon(score):
         """أيقونة مستوى الجودة المالية (Piotroski): جوهرة/أصفر/أحمر حسب الرقم."""
@@ -638,13 +649,18 @@ def create_app():
         launched, perf = screener.launched_stocks()
         mood = screener.market_mood(records)  # مزاج أسهم المنصة (نفس السجلّات — بلا قراءة مكررة)
         market_dir = screener.market_direction()  # اتجاه السوق الأمريكي (S&P 500)
+        # 🚀 اخترقت مؤخراً: الأسهم ذات الاختراق المؤكّد بحجم عالٍ، الأحدث أولاً (رادار الانطلاق)
+        breakouts = [r for r in records
+                     if (r.get("break_status") or {}).get("dir") == "breakout"
+                     and (r.get("break_status") or {}).get("confirmed")]
+        breakouts.sort(key=lambda r: r["break_status"].get("days_ago") or 0)
         return render_template(
             "index.html",
             results=results, sectors=sectors, latest=latest,
             filters=filters, total=len(records), stats=stats, counts=counts, ready=ready,
             signals=screener.recent_signals(),
             launched=launched, perf=perf, mood=mood, market_dir=market_dir,
-            sort=sort,
+            breakouts=breakouts, sort=sort,
         )
 
     @app.route("/gems")
