@@ -40,12 +40,17 @@
   .chg-up { color: #1a7f37; font-weight: 700; }
   .chg-down { color: #cf222e; font-weight: 700; }
   .report-doc .doc-foot { text-align: center; color: #7a8aa3; font-size: 12px; margin-top: 16px; }
-  .report-back { text-align: center; margin-top: 18px; }
+  .report-actions { display: flex; align-items: center; gap: 10px; }
+  .btn-back {
+    background: #223a63; color: #fff; border-radius: 10px; padding: 12px 20px;
+    font-size: 15px; font-weight: 700; text-decoration: none; display: inline-flex; align-items: center;
+  }
+  .btn-back:hover { background: #2c4a7a; }
 
   /* عند الطباعة أو الحفظ PDF: نُخفي كل ما حول التقرير ونجعله يملأ الصفحة */
   @media print {
     .sidebar, .report-toolbar, .theme-toggle, .nav-tip,
-    .notif-overlay, .sidebar-foot, .report-back { display: none !important; }
+    .notif-overlay, .sidebar-foot { display: none !important; }
     .layout { display: block !important; }
     .content { margin: 0 !important; padding: 0 !important; max-width: none !important; }
     .report-doc { box-shadow: none; border-radius: 0; padding: 0; }
@@ -66,7 +71,10 @@
     <h1>📄 تقرير فحص الأسهم</h1>
     <div class="sub">{{ count }} سهماً — مرتّبة حسب قوة التأكيد · بيانات {{ as_of }}</div>
   </div>
-  <button class="btn-print" type="button" onclick="window.print()">🖨️ الطباعة أو الحفظ</button>
+  <div class="report-actions">
+    <a class="btn-back" href="{{ url_for('index') }}">← رجوع</a>
+    <button class="btn-print" type="button" onclick="window.print()">🖨️ الطباعة أو الحفظ</button>
+  </div>
 </div>
 
 <div class="report-doc">
@@ -111,9 +119,5 @@
     </tbody>
   </table>
   <p class="doc-foot">Algomatix © 2026 — تقرير تعليمي، ليس توصية بيع أو شراء.</p>
-</div>
-
-<div class="report-back">
-  <a class="btn" href="{{ url_for('index') }}">← رجوع للرئيسية</a>
 </div>
 {% endblock %}
