@@ -69,7 +69,7 @@
 <div class="report-toolbar">
   <div>
     <h1>📄 تقرير فحص الأسهم</h1>
-    <div class="sub">{{ count }} سهماً — مرتّبة حسب قوة التأكيد · بيانات {{ as_of }}</div>
+    <div class="sub">{% if filtered %}{{ count }} من {{ total }} سهماً (حسب الفلترة){% else %}{{ count }} سهماً{% endif %} — مرتّبة حسب قوة التأكيد · بيانات {{ as_of }}</div>
   </div>
   <div class="report-actions">
     <a class="btn-back" href="{{ url_for('index') }}">← رجوع</a>
@@ -79,7 +79,10 @@
 
 <div class="report-doc">
   <h2 class="doc-title">مسح Algomatix للأسهم الأمريكية</h2>
-  <p class="doc-date">بيانات {{ as_of }} — {{ count }} سهماً مرتّبة حسب قوة التأكيد</p>
+  <p class="doc-date">بيانات {{ as_of }} — {% if filtered %}{{ count }} من {{ total }} سهماً (حسب الفلترة){% else %}{{ count }} سهماً{% endif %} مرتّبة حسب قوة التأكيد</p>
+  {% if not rows %}
+  <p style="text-align:center; color:#5a6b86; padding:26px 12px; font-size:15px">لا توجد أسهم مطابقة للفلترة المختارة — عدّل الفلاتر في الصفحة الرئيسية ثم أعد فتح التقرير.</p>
+  {% else %}
   <table class="report-table">
     <thead>
       <tr>
@@ -118,6 +121,7 @@
       {% endfor %}
     </tbody>
   </table>
+  {% endif %}
   <p class="doc-foot">Algomatix © 2026 — تقرير تعليمي، ليس توصية بيع أو شراء.</p>
 </div>
 {% endblock %}

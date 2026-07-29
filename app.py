@@ -594,31 +594,26 @@ def create_app():
         except ValueError:
             return None
 
-    @app.route("/")
-    def index():
-        # الرئيسية = الماسح: يقرأ السجلّات المخزّنة ويطبّق الفلاتر (بدون استدعاء API).
-        records, latest = screener.load_records()
-        sectors = sorted({r["sector"] for r in records if r.get("sector")})
+    _PRESET_FILTERS = {
+        "gems": {"piotroski_min": 8, "catalyst_min": 80},
+        "quality": {"piotroski_min": 8},
+        "growth": {"catalyst_min": 80},
+        "not_risen": {"recent_gain_max": screener.EARLY_MAX_RECENT_GAIN},
+        "under100": {"price_max": 100},
+        "breakout": {"break_dir": "breakout"},
+        "breakdown": {"break_dir": "breakdown"},
+        "high_volume": {"money_flow_bull": True},
+    }
 
-        # الأسهم الحرة تُدخل بالملايين في الواجهة وتُحوّل لعدد خام (لعرض قليلة الحرة = الأسرع)
+    def _read_scan_filters():
+        """يقرأ فلاتر الماسح من باراميترات الطلب — تُستخدم في الرئيسية وتقرير الفحص معاً.
+
+        يُرجع (filters للتمرير إلى filter_records، preset، not_risen، float_max_millions).
+        """
         float_max_millions = _to_float("float_max")
         float_max = float_max_millions * 1e6 if float_max_millions is not None else None
-
-        # "لسا ما صعد": يستبعد ما قفز أكثر من الحدّ خلال آخر أسبوعين (اصطياد مبكر)
-        # فلتر جاهز (قائمة منسدلة): كل خيار يترجَم لمعايير فلترة تُدمج مع المربّعات اليدوية
         preset = request.args.get("preset", "").strip() or None
-        PRESET_FILTERS = {
-            "gems": {"piotroski_min": 8, "catalyst_min": 80},
-            "quality": {"piotroski_min": 8},
-            "growth": {"catalyst_min": 80},
-            "not_risen": {"recent_gain_max": screener.EARLY_MAX_RECENT_GAIN},
-            "under100": {"price_max": 100},
-            "breakout": {"break_dir": "breakout"},
-            "breakdown": {"break_dir": "breakdown"},
-            "high_volume": {"money_flow_bull": True},
-        }
-        preset_f = PRESET_FILTERS.get(preset, {})
-
+        preset_f = _PRESET_FILTERS.get(preset, {})
         not_risen = request.args.get("not_risen") in ("1", "on", "true") or preset == "not_risen"
         min_measures = _to_float("min_measures")  # عدد المقاييس الإيجابية المجتمعة (الأدنى)
         filters = {
@@ -633,10 +628,10 @@ def create_app():
         # معايير الفلتر الجاهز تُضاف فوق اليدوية (للمفاتيح التي يحدّدها فقط)
         for _k, _v in preset_f.items():
             filters[_k] = _v
-        results = screener.filter_records(records, **filters)
+        return filters, preset, not_risen, float_max_millions
 
-        # ترتيب النتائج حسب اختيار المستخدم (افتراضياً: قوة التأكيد)
-        sort = request.args.get("sort", "confidence")
+    def _sort_results(results, sort):
+        """يرتّب النتائج حسب اختيار المستخدم (افتراضياً: قوة التأكيد). يُرجع اسم الترتيب الفعلي."""
         if sort == "growth":
             results.sort(key=lambda r: (r.get("catalyst") is not None, r.get("catalyst") or 0), reverse=True)
         elif sort == "price":
@@ -644,6 +639,20 @@ def create_app():
         else:  # confidence — عدد المقاييس المجتمعة
             sort = "confidence"
             results.sort(key=lambda r: screener.measures_met(r), reverse=True)
+        return sort
+
+    @app.route("/")
+    def index():
+        # الرئيسية = الماسح: يقرأ السجلّات المخزّنة ويطبّق الفلاتر (بدون استدعاء API).
+        records, latest = screener.load_records()
+        sectors = sorted({r["sector"] for r in records if r.get("sector")})
+
+        # قراءة الفلاتر (نفس المنطق المستخدم في تقرير الفحص عبر _read_scan_filters)
+        filters, preset, not_risen, float_max_millions = _read_scan_filters()
+        results = screener.filter_records(records, **filters)
+
+        # ترتيب النتائج حسب اختيار المستخدم (افتراضياً: قوة التأكيد)
+        sort = _sort_results(results, request.args.get("sort", "confidence"))
 
         # نمرّر قيمة الملايين وحالة الشيك بوكس للواجهة (لإبقائها بالخانة)
         filters["float_max_millions"] = float_max_millions
@@ -1023,9 +1032,13 @@ def create_app():
 
     @app.route("/report")
     def scanner_report():
-        # تقرير الفحص: صفحة منسّقة قابلة للطباعة/الحفظ PDF — بلا API وبلا برامج خارجية
+        # تقرير الفحص: صفحة منسّقة قابلة للطباعة/الحفظ PDF — بلا API وبلا برامج خارجية.
+        # يحترم نفس فلترة الصفحة الرئيسية (يُعرض فقط ما تفلتَر) عبر تمرير الباراميترات نفسها.
         records, latest = screener.load_records()
-        records.sort(key=lambda r: screener.measures_met(r), reverse=True)
+        total = len(records)
+        filters, preset, not_risen, float_max_millions = _read_scan_filters()
+        records = screener.filter_records(records, **filters)
+        _sort_results(records, request.args.get("sort", "confidence"))
         as_of = latest.strftime("%Y/%m/%d") if latest else "—"
         rows = [{
             "ticker": r.get("ticker"),
@@ -1038,8 +1051,9 @@ def create_app():
             "met": screener.measures_met(r),
             "brk": r.get("break_status"),
         } for r in records]
+        filtered = len(rows) != total  # هل طُبّق فلتر فعلاً؟ (لعرض ملاحظة في التقرير)
         return render_template("report.html", rows=rows, as_of=as_of,
-                               count=len(rows), active="home")
+                               count=len(rows), total=total, filtered=filtered, active="home")
 
     @app.route("/pulse")
     def pulse():
