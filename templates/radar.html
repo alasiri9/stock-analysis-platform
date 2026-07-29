@@ -15,7 +15,7 @@
     </form>
     <div class="confidence" style="margin-bottom:14px">
       {% if latest %}
-        آخر تحديث <span dir="ltr">{{ latest.strftime('%Y-%m-%d %H:%M') }} UTC</span>
+        آخر تحديث <span dir="ltr">{{ latest | ksa_time }}</span> بتوقيت السعودية
       {% else %}
         لا توجد بيانات بعد — اضغط "تحديث الرادار" (قد يحتاج أكثر من ضغطة لتغطية كل الأسهم).
       {% endif %}

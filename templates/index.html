@@ -250,7 +250,7 @@
 
     <div class="confidence" style="margin:14px 0 12px; display:flex; align-items:center; gap:8px; flex-wrap:wrap">
       {% if latest %}
-        <span>المعروض <b>{{ results|length }}</b> / <b>{{ total }}</b> · آخر تحديث <span dir="ltr">{{ latest.strftime('%Y-%m-%d %H:%M') }} UTC</span></span>
+        <span>المعروض <b>{{ results|length }}</b> / <b>{{ total }}</b> · آخر تحديث <span dir="ltr">{{ latest | ksa_time }}</span> بتوقيت السعودية</span>
         <a class="btn" href="{{ url_for('scanner_report') }}" title="عرض تقرير منسّق قابل للطباعة أو الحفظ PDF"
            style="padding:5px 12px; font-size:13px; font-weight:700">📄 تقرير الفحص</a>
       {% else %}

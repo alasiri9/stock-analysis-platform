@@ -17,7 +17,7 @@
 
     <div class="confidence" style="margin-bottom:18px">
       {% if latest %}
-        آخر تحديث للماسح <span dir="ltr">{{ latest.strftime('%Y-%m-%d %H:%M') }} UTC</span>
+        آخر تحديث للماسح <span dir="ltr">{{ latest | ksa_time }}</span> بتوقيت السعودية
       {% else %}
         لا توجد بيانات بعد — حدّث الماسح من الرئيسية أولاً.
       {% endif %}

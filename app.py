@@ -516,6 +516,14 @@ def create_app():
             "Utilities": "المرافق",
         }.get(sector, sector or "")
 
+    @app.template_filter("ksa_time")
+    def ksa_time(dt):
+        """يحوّل وقتاً بتوقيت UTC إلى توقيت السعودية (UTC+3، بلا توقيت صيفي) للعرض."""
+        from datetime import timedelta
+        if dt is None:
+            return "—"
+        return (dt + timedelta(hours=3)).strftime("%Y-%m-%d %H:%M")
+
     @app.template_filter("position_ar")
     def position_ar(title):
         """يعرّب مناصب المطّلعين الشائعة القادمة من SEC.
