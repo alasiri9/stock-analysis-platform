@@ -21,20 +21,20 @@
     <div class="scard-name">{{ r.name or '—' }}</div>
     <div class="scard-scores">
       <span class="measures-pill">🚀 نمو {{ r.catalyst | growth_icon }} <b>{{ "%.0f"|format(r.catalyst) if r.catalyst is not none else '—' }}</b></span>
-      <span class="help" data-tip="درجة النمو (Catalyst) من 100 — تقيس قوة نمو الشركة (نمو الإيرادات والأرباح والزخم). كلما زادت كان نمو الشركة أقوى. تعليمي.">؟</span>
+      <span class="help-q" data-tip="درجة النمو (Catalyst) من 100 — تقيس قوة نمو الشركة (نمو الإيرادات والأرباح والزخم). كلما زادت كان نمو الشركة أقوى. تعليمي.">👁</span>
       <span class="dot">·</span>
       الجودة {{ r.piotroski | quality_icon }} <b>{{ r.piotroski if r.piotroski is not none else '—' }}</b>/9
-      <span class="help" data-tip="الجودة المالية (Piotroski) من 9 — تقيس متانة الشركة مالياً (ربحية، ديون، كفاءة). 8–9 ممتازة، 5–7 جيدة، أقل ضعيفة.">؟</span>
+      <span class="help-q" data-tip="الجودة المالية (Piotroski) من 9 — تقيس متانة الشركة مالياً (ربحية، ديون، كفاءة). 8–9 ممتازة، 5–7 جيدة، أقل ضعيفة.">👁</span>
       {% set rs = r.get('rel_strength') %}
       {% if rs is not none %}
         <span class="rs-pill {{ 'pos' if rs >= 0 else 'neg' }}">{{ '↑' if rs >= 0 else '↓' }} vs السوق {{ "%+.0f"|format(rs) }}%</span>
-        <span class="help" data-tip="القوة مقابل السوق: تفوّق السهم على مؤشر السوق (SPY) خلال آخر 3 أشهر. رقم موجب = السهم أقوى من السوق، سالب = أضعف.">؟</span>
+        <span class="help-q" data-tip="القوة مقابل السوق: تفوّق السهم على مؤشر السوق (SPY) خلال آخر 3 أشهر. رقم موجب = السهم أقوى من السوق، سالب = أضعف.">👁</span>
       {% endif %}
       {% set fl = r.get('float_shares') %}
       {% if fl is not none %}
         <span class="dot">·</span>
         <span>🔓 {{ "%.2f"|format(fl / 1e9) }} مليار حرة</span>
-        <span class="help" data-tip="الأسهم الحرة: عدد الأسهم المتاحة للتداول فعلياً (بالمليار). كلما قلّت، كان السهم أسرع حركة وأكثر تقلّباً.">؟</span>
+        <span class="help-q" data-tip="الأسهم الحرة: عدد الأسهم المتاحة للتداول فعلياً (بالمليار). كلما قلّت، كان السهم أسرع حركة وأكثر تقلّباً.">👁</span>
       {% endif %}
     </div>
   </div>
@@ -51,13 +51,13 @@
     {% if met_cats %}
     <div class="scard-badges">
       {% for cat in met_cats %}<span class="cat-pill on">{{ cat }}</span>{% endfor %}
-      <span class="help" data-tip="المؤشرات الفنية المتحقّقة (الإيجابية) لهذا السهم فقط — تظهر تلقائياً عند تحقّقها، والبقية لا تظهر حتى تتحقّق. شرح كل مؤشر في صفحة «تعلّم».">؟</span>
+      <span class="help-q" data-tip="المؤشرات الفنية المتحقّقة (الإيجابية) لهذا السهم فقط — تظهر تلقائياً عند تحقّقها، والبقية لا تظهر حتى تتحقّق. شرح كل مؤشر في صفحة «تعلّم».">👁</span>
     </div>
     {% endif %}
     {% if is_golden(r) %}
-      <div class="scard-golden">🥇 إشارة ذهبية — 3 عوامل مجتمعة <span class="help" data-tip="إشارة ذهبية: اجتمعت 3 عوامل قوية معاً (جودة مالية + سيولة داخلة + اختراق سعري). أقوى إشارات الماسح. تعليمي لا توصية.">؟</span></div>
+      <div class="scard-golden">🥇 إشارة ذهبية — 3 عوامل مجتمعة <span class="help-q" data-tip="إشارة ذهبية: اجتمعت 3 عوامل قوية معاً (جودة مالية + سيولة داخلة + اختراق سعري). أقوى إشارات الماسح. تعليمي لا توصية.">👁</span></div>
     {% elif r.catalyst is not none and r.catalyst >= 80 %}
-      <div class="scard-ready">🎯 انفجار قوي — جاهز للانطلاق <span class="help" data-tip="جاهز للانطلاق: درجة النمو (Catalyst) عالية جداً (≥80) — السهم في وضع قوي مرشّح للحركة. تعليمي لا توصية شراء.">؟</span></div>
+      <div class="scard-ready">🎯 انفجار قوي — جاهز للانطلاق <span class="help-q" data-tip="جاهز للانطلاق: درجة النمو (Catalyst) عالية جداً (≥80) — السهم في وضع قوي مرشّح للحركة. تعليمي لا توصية شراء.">👁</span></div>
     {% endif %}
     {% set bk = r.get('break_status') %}
     {% if bk and bk.confirmed and bk.dir == 'breakout' %}
@@ -67,11 +67,11 @@
     {% endif %}
     {% set dte = r.get('days_to_earnings') %}
     {% if dte is not none %}
-      <div class="scard-earn {{ 'soon' if dte <= 7 }}">📅 أرباح {{ 'اليوم' if dte == 0 else ('بعد يوم' if dte == 1 else 'بعد ' ~ dte ~ ' يوم') }} <span class="help" data-tip-accent="{{ 'var(--red)' if dte <= 7 else 'var(--gold)' }}" data-tip="تنبيه: قرب إعلان الأرباح يتسبب في حركة سعرية متقلّبة للسهم صعوداً أو نزولاً. اللون الأصفر يعني أكثر من 7 أيام، واللون الأحمر خلال 7 أيام.">؟</span></div>
+      <div class="scard-earn {{ 'soon' if dte <= 7 }}">📅 أرباح {{ 'اليوم' if dte == 0 else ('بعد يوم' if dte == 1 else 'بعد ' ~ dte ~ ' يوم') }} <span class="help-q" data-tip-accent="{{ 'var(--red)' if dte <= 7 else 'var(--gold)' }}" data-tip="تنبيه: قرب إعلان الأرباح يتسبب في حركة سعرية متقلّبة للسهم صعوداً أو نزولاً. اللون الأصفر يعني أكثر من 7 أيام، واللون الأحمر خلال 7 أيام.">👁</span></div>
     {% endif %}
     {% set reasons = bullish_reasons(r) %}
     {% if reasons %}
-      <div class="scard-why">💡 {{ reasons[:3] | join(' + ') }} <span class="help" data-tip="سبب الترشّح: أقوى 3 عوامل جعلت الماسح يرشّح هذا السهم. لمحة عن نقاط قوته.">؟</span></div>
+      <div class="scard-why">💡 {{ reasons[:3] | join(' + ') }} <span class="help-q" data-tip="سبب الترشّح: أقوى 3 عوامل جعلت الماسح يرشّح هذا السهم. لمحة عن نقاط قوته.">👁</span></div>
     {% endif %}
   </div>
 
@@ -82,7 +82,7 @@
       <div class="scard-meter">
         {{ techmeter(tilt.frac) }}
         <div class="scard-meter-label {{ tilt.kind }}">{{ tilt.label }}</div>
-        <div class="scard-meter-sub">الإشارات الفنية <span class="help" data-tip="الإشارات الفنية: ميل المؤشرات الفنية التسعة فقط (MACD, RSI, EMA, ADX...) — إيجابي/محايد/سلبي. تحليل فني بحت لحركة السعر. تعليمي لا توصية شراء أو بيع.">؟</span></div>
+        <div class="scard-meter-sub">الإشارات الفنية <span class="help-q" data-tip="الإشارات الفنية: ميل المؤشرات الفنية التسعة فقط (MACD, RSI, EMA, ADX...) — إيجابي/محايد/سلبي. تحليل فني بحت لحركة السعر. تعليمي لا توصية شراء أو بيع.">👁</span></div>
       </div>
     {% endif %}
   </div>
