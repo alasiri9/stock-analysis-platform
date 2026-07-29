@@ -267,42 +267,74 @@ def compute_atr(candles, period=14):
     return sum(trs[-period:]) / period
 
 
-def nearest_resistance(candles, current_price, left=5, right=5):
-    """يجد أقرب «مقاومة فنية» فوق السعر الحالي من قمم الشارت السابقة.
+def _pivot_levels(candles, kind="high", left=5, right=5):
+    """يستخرج القمم (high) أو القيعان (low) المحورية مع حجمها.
 
-    المقاومة = «قمة محورية» (pivot high): يومٌ إغلاقه/قمته أعلى من `left` أيام قبله
-    و`right` أيام بعده — أي نقطة توقّف عندها الصعود وارتد السعر. أقرب قمة فوق
-    السعر الحالي = أول عائق منطقي أمام الصعود، فتصلح هدفاً.
-
-    candles: أيام (الأحدث أولاً)، كل يوم فيه high. يُرجع سعر أقرب مقاومة أو None.
+    قمة محورية = يومٌ قمته أعلى من `left` أيام قبله و`right` بعده (نقطة انعكاس).
+    قاع محوري = نظيرها للأسفل. يُرجع قائمة (price, volume).
     """
-    if not candles or current_price is None:
-        return None
     rows = list(reversed(candles))  # الأقدم أولاً
-    highs = [r.get("high") for r in rows]
-    n = len(highs)
-    pivots = []
+    n = len(rows)
+    out = []
     for i in range(left, n - right):
-        window = highs[i - left:i + right + 1]
-        if any(x is None for x in window):
+        window = rows[i - left:i + right + 1]
+        vals = [r.get(kind) for r in window]
+        if any(v is None for v in vals):
             continue
-        h = highs[i]
-        # قمة محورية فوق السعر الحالي (توقّف عندها الصعود سابقاً)
-        if h == max(window) and h > current_price:
-            pivots.append(h)
+        pv = rows[i].get(kind)
+        vol = rows[i].get("volume") or 0
+        if (kind == "high" and pv == max(vals)) or (kind == "low" and pv == min(vals)):
+            out.append((pv, vol))
+    return out
+
+
+def _cluster_levels(pivots, tol):
+    """يجمّع القمم/القيعان المتقاربة (فرقها ≤ tol) في «مناطق» أقوى.
+
+    كل منطقة: {price (متوسط), touches (عدد اللمسات), volume (أعلى حجم فيها)}.
+    المنطقة المتكرّرة اللمس أو عالية الحجم = مستوى أقوى وأدقّ.
+    """
     if not pivots:
+        return []
+    pts = sorted(pivots, key=lambda x: x[0])
+    groups = [[pts[0]]]
+    for p in pts[1:]:
+        if abs(p[0] - groups[-1][-1][0]) <= tol:
+            groups[-1].append(p)
+        else:
+            groups.append([p])
+    zones = []
+    for g in groups:
+        prices = [x[0] for x in g]
+        zones.append({
+            "price": sum(prices) / len(prices),
+            "touches": len(g),
+            "volume": max(x[1] for x in g),
+        })
+    return zones
+
+
+def _pick_level(zones, avg_vol, side):
+    """يختار أفضل مستوى: يفضّل المؤكّد (لمستان+ أو حجم فوق المتوسط)، ثم الأقرب.
+
+    side='res' → أقرب مقاومة فوق (أصغر سعر) · 'sup' → أقرب دعم تحت (أكبر سعر).
+    """
+    if not zones:
         return None
-    return min(pivots)  # أقرب مقاومة فوق السعر الحالي
+    strong = [z for z in zones if z["touches"] >= 2 or z["volume"] >= avg_vol]
+    pool = strong if strong else zones
+    return min(pool, key=lambda z: z["price"]) if side == "res" else max(pool, key=lambda z: z["price"])
 
 
 def atr_trade_plan(current_price, candles, period=14, stop_mult=1.5, target_mult=3.0):
-    """يبني خطة تداول تعليمية (دخول/وقف/هدف) من ATR.
+    """يبني خطة تداول تعليمية (دخول/وقف/هدف) بجودة فنية.
 
-    ⚠️ تعليمي فقط، ليس توصية. المضاعفات افتراضية وقابلة للتعديل.
-    - الدخول = السعر الحالي
-    - الوقف  = الدخول − stop_mult × ATR
-    - الهدف  = الدخول + target_mult × ATR
-    - نسبة العائد/المخاطرة = (الهدف−الدخول) / (الدخول−الوقف)
+    ⚠️ تعليمي فقط، ليس توصية.
+    - الدخول = السعر الحالي.
+    - الهدف = أقرب **مقاومة فنية** مؤكّدة فوق الدخول (قمم مجمّعة مرجّحة باللمسات والحجم)؛
+      وإلا مضاعف التذبذب (الدخول + target_mult×ATR) للأسهم عند قمة تاريخية.
+    - الوقف = أقرب **دعم فني** مؤكّد تحت الدخول؛ وإلا (الدخول − stop_mult×ATR).
+    - العائد/المخاطرة محسوب من المستويات الفعلية، مع تنبيه لو ضعيف (<1.5).
 
     يُرجع dict أو None لو تعذّر حساب ATR أو غاب السعر.
     """
@@ -312,20 +344,39 @@ def atr_trade_plan(current_price, candles, period=14, stop_mult=1.5, target_mult
     if atr is None:
         return None
 
-    stop = current_price - stop_mult * atr
+    tol = atr  # نطاق تجميع المستويات ≈ تذبذب يوم
+    vols = [c.get("volume") or 0 for c in candles]
+    avg_vol = (sum(vols) / len(vols)) if vols else 0
 
-    # الهدف: أقرب مقاومة فنية فوق الدخول (إن كانت بعيدة بما يكفي)، وإلا مضاعف التذبذب
-    resistance = nearest_resistance(candles, current_price)
-    if resistance is not None and resistance > current_price + 0.5 * atr:
-        target = resistance
-        target_basis = "resistance"
+    # مناطق المقاومة (فوق الدخول) والدعم (تحته) — ببُعد أدنى نصف تذبذب لتفادي التفاهة
+    res_zones = [z for z in _cluster_levels(_pivot_levels(candles, "high"), tol)
+                 if z["price"] > current_price + 0.5 * atr]
+    sup_zones = [z for z in _cluster_levels(_pivot_levels(candles, "low"), tol)
+                 if z["price"] < current_price - 0.5 * atr]
+
+    res = _pick_level(res_zones, avg_vol, "res")
+    sup = _pick_level(sup_zones, avg_vol, "sup")
+
+    # الهدف: مقاومة فعلية أو مضاعف التذبذب
+    if res is not None:
+        target, target_basis, target_touches = res["price"], "resistance", res["touches"]
+        target_strong = res["volume"] >= avg_vol
     else:
-        target = current_price + target_mult * atr
-        target_basis = "atr"
+        target, target_basis, target_touches, target_strong = (
+            current_price + target_mult * atr, "atr", None, False)
+
+    # الوقف: دعم فعلي أو مضاعف التذبذب
+    if sup is not None:
+        stop, stop_basis, stop_touches = sup["price"], "support", sup["touches"]
+        stop_strong = sup["volume"] >= avg_vol
+    else:
+        stop, stop_basis, stop_touches, stop_strong = (
+            current_price - stop_mult * atr, "atr", None, False)
 
     risk = current_price - stop
     reward = target - current_price
     rr = (reward / risk) if risk > 0 else None
+    weak_rr = (rr is not None and rr < 1.5)
 
     return {
         "atr": atr,
@@ -336,7 +387,13 @@ def atr_trade_plan(current_price, candles, period=14, stop_mult=1.5, target_mult
         "stop_mult": stop_mult,
         "target_mult": target_mult,
         "target_basis": target_basis,
+        "stop_basis": stop_basis,
+        "target_touches": target_touches,
+        "stop_touches": stop_touches,
+        "target_strong": target_strong,
+        "stop_strong": stop_strong,
         "risk_reward": rr,
+        "weak_rr": weak_rr,
     }
 
 
