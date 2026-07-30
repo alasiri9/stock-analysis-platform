@@ -23,6 +23,7 @@
               <span class="pl-price" dir="ltr">{{ "%.2f $"|format(c.price) if c.price is not none else '—' }}</span>
             </div>
             <div class="pl-name">{{ c.name or '—' }}</div>
+            {% if c.sector %}<div class="scard-sector">🏷️ {{ c.sector | sector_ar }}</div>{% endif %}
             <div class="pl-meta">
               {% if c.recent_gain is not none %}
                 <span class="pl-gain {{ 'up' if c.recent_gain >= 0 else 'down' }}" dir="ltr">صعود أسبوعين {{ "%+.1f"|format(c.recent_gain) }}%</span>

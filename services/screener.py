@@ -166,6 +166,7 @@ def early_launch_candidates(records=None, min_strategies=3):
         out.append({
             "ticker": r.get("ticker"),
             "name": r.get("name"),
+            "sector": r.get("sector"),
             "price": r.get("price"),
             "catalyst": r.get("catalyst"),
             "piotroski": r.get("piotroski"),
