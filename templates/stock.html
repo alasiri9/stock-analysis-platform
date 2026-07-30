@@ -321,7 +321,7 @@
         <label>السعر المستهدف ($){% if report.price is not none %} · السعر الآن {{ "%.2f"|format(report.price) }}{% endif %}</label>
         <input type="number" name="target_price" min="0" step="0.01" placeholder="{{ '%.2f'|format(report.price) if report.price is not none else 'مثال: 200' }}" required>
       </div>
-      <button class="btn" type="submit">➕ أضف تنبيهاً لـ {{ report.ticker }}</button>
+      <button class="btn" type="submit">➕ أضف التنبيه</button>
     </form>
   </div>
 
