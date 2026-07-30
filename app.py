@@ -543,6 +543,8 @@ def create_app():
             ("CHIEF INN,PROD&DSG OFCR", "مدير الابتكار والمنتجات والتصميم"),
             ("Chief Executive Officer", "الرئيس التنفيذي"),
             ("Chief Financial Officer", "المدير المالي"),
+            ("Chief Fin Op", "المدير المالي"),
+            ("Chief Fin Ofcr", "المدير المالي"),
             ("Chief Operating Officer", "مدير العمليات"),
             ("Chief Technology Officer", "المدير التقني"),
             ("Chief Accounting Officer", "المدير المحاسبي"),

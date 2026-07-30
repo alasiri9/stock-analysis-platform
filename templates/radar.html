@@ -33,9 +33,9 @@
             <tr>
               <td><a href="{{ url_for('stock_report', ticker=t.ticker) }}"><b>{{ t.ticker }}</b></a></td>
               <td>{{ t.owner or '—' }}</td>
-              <td>{{ t.title|position_ar }}</td>
+              <td class="muted">{{ t.title|position_ar }}</td>
               <td dir="ltr">{{ "{:,.0f}".format(t.shares) if t.shares is not none else '—' }}</td>
-              <td dir="ltr">{{ "%.2f $"|format(t.price) if t.price is not none else '—' }}</td>
+              <td>{% if t.price %}<span dir="ltr">{{ "%.2f $"|format(t.price) }}</span>{% else %}<span class="muted" style="font-size:13px">غير محدد من المصدر</span>{% endif %}</td>
               <td dir="ltr">{{ t.date or '—' }}</td>
             </tr>
           {% endfor %}
@@ -63,9 +63,9 @@
                 {% elif t.direction == 'بيع' %}<span class="pill sell">بيع</span>
                 {% else %}—{% endif %}
               </td>
-              <td>{{ t.code_label or '—' }}</td>
+              <td class="muted">{{ t.code_label or '—' }}</td>
               <td dir="ltr">{{ "{:,.0f}".format(t.shares) if t.shares is not none else '—' }}</td>
-              <td dir="ltr">{{ "%.2f $"|format(t.price) if t.price is not none else '—' }}</td>
+              <td>{% if t.price %}<span dir="ltr">{{ "%.2f $"|format(t.price) }}</span>{% else %}<span class="muted" style="font-size:13px">غير محدد من المصدر</span>{% endif %}</td>
               <td dir="ltr">{{ t.date or '—' }}</td>
             </tr>
           {% endfor %}
