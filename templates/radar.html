@@ -26,7 +26,7 @@
       <p class="panel-sub">أقوى إشارة بالرادار — المطلع يدفع من ماله الخاص لشراء سهم شركته.</p>
       <table class="insider">
         <thead>
-          <tr><th>السهم</th><th>المطلع</th><th>المنصب</th><th>الأسهم</th><th>السعر</th><th>التاريخ</th></tr>
+          <tr><th>السهم</th><th>اسم المطلع</th><th>المنصب</th><th>العملية</th><th>النوع</th><th>الأسهم</th><th>السعر</th><th>التاريخ</th></tr>
         </thead>
         <tbody>
           {% for t in open_buys %}
@@ -34,6 +34,12 @@
               <td><a href="{{ url_for('stock_report', ticker=t.ticker) }}"><b>{{ t.ticker }}</b></a></td>
               <td>{{ t.owner or '—' }}</td>
               <td class="muted">{{ t.title|position_ar }}</td>
+              <td>
+                {% if t.direction == 'شراء' %}<span class="pill buy">شراء</span>
+                {% elif t.direction == 'بيع' %}<span class="pill sell">بيع</span>
+                {% else %}—{% endif %}
+              </td>
+              <td class="muted">{{ t.code_label or '—' }}</td>
               <td dir="ltr">{{ "{:,.0f}".format(t.shares) if t.shares is not none else '—' }}</td>
               <td>{% if t.price %}<span dir="ltr">{{ "%.2f $"|format(t.price) }}</span>{% else %}<span class="muted" style="font-size:13px">غير محدد من المصدر</span>{% endif %}</td>
               <td dir="ltr">{{ t.date or '—' }}</td>
@@ -51,13 +57,14 @@
       <h3 class="perf-title">📋 كل المعاملات الأخيرة :</h3>
       <table class="insider">
         <thead>
-          <tr><th>السهم</th><th>المطلع</th><th>الاتجاه</th><th>النوع</th><th>الأسهم</th><th>السعر</th><th>التاريخ</th></tr>
+          <tr><th>السهم</th><th>اسم المطلع</th><th>المنصب</th><th>العملية</th><th>النوع</th><th>الأسهم</th><th>السعر</th><th>التاريخ</th></tr>
         </thead>
         <tbody>
           {% for t in transactions %}
             <tr>
               <td><a href="{{ url_for('stock_report', ticker=t.ticker) }}"><b>{{ t.ticker }}</b></a></td>
               <td>{{ t.owner or '—' }}</td>
+              <td class="muted">{{ t.title|position_ar }}</td>
               <td>
                 {% if t.direction == 'شراء' %}<span class="pill buy">شراء</span>
                 {% elif t.direction == 'بيع' %}<span class="pill sell">بيع</span>
