@@ -172,14 +172,16 @@ def build_indicators(candles):
 
     # --- انضغاط بولينجر: تضيّق شديد للنطاق يسبق الانفجارات السعرية غالباً ---
     # الانضغاط محايد الاتجاه بذاته — يُعدّ إيجابياً (bull) فقط إذا رافقه تأكيد صعودي
-    # مزدوج: اتجاه صاعد (EMA) + زخم إيجابي (MACD) معاً، ممّا يرجّح أن الانفكاك للأعلى.
+    # مزدوج: اتجاه صاعد (EMA) + السعر قرب قمته (قمة)، أي انضغاط فوق اتجاه صاعد وقرب
+    # القمة = تمهيد صعودي كلاسيكي (علم/راية). اخترنا «قرب القمة» بدل MACD لأن التجميع
+    # يُضعف زخم MACD بطبيعته (فيندر التأكيد)، بينما «قرب القمة» يصمد أثناء الانضغاط.
     # بدون هذا التأكيد يبقى محايداً فلا يُضخّم عدّاد الإشارات الإيجابية / قوة التأكيد.
     sq = _bollinger_squeeze(closes)
     if sq is not None:
         squeezed = sq["squeezed"]
         ema_bull = any(b.get("label") == "EMA" and b.get("status") == "bull" for b in badges)
-        macd_bull = any(b.get("label") == "MACD" and b.get("status") == "bull" for b in badges)
-        status = "bull" if (squeezed and ema_bull and macd_bull) else "neutral"
+        near_high = any(b.get("label") == "قمة" and b.get("status") == "bull" for b in badges)
+        status = "bull" if (squeezed and ema_bull and near_high) else "neutral"
         badges.append({
             "label": "انضغاط",
             "value": "نعم" if squeezed else "لا",
