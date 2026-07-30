@@ -698,9 +698,9 @@ a.stat-box:hover { filter: brightness(1.15); transform: translateY(-1px); }
 
 /* أزرار الفلترة الجاهزة (الرئيسية) */
 /* قائمة «فلتر جاهز» — صف كامل فوق مربّعات الفلترة اليدوية (اختصارات بنقرة) */
-.filter-preset { flex-basis: 100%; align-items: stretch; }
+.filter-preset { flex-basis: 100%; align-items: flex-start; }
 .filter-preset label { text-align: right; font-weight: 700; }
-.filter-preset select { width: 100%; min-width: 0; font-weight: 700; }
+.filter-preset select { width: 100%; max-width: 470px; min-width: 240px; font-weight: 700; }
 
 /* أيقونة «؟» تربط بشرح المصطلح في صفحة تعلّم */
 .help-q {
