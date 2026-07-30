@@ -142,7 +142,7 @@ def early_launch_candidates(records=None, min_strategies=3):
     out = []
     for r in records:
         badges = r.get("indicators") or []
-        squeezed = any(b.get("label") == "انضغاط" and b.get("value") == "نعم" for b in badges)
+        squeezed = any(b.get("label") == "انضغاط" and b.get("value") in ("نعم", "إيجابي") for b in badges)
         breakout = any(b.get("label") == "اختراق" and b.get("status") == "bull" for b in badges)
         if not (squeezed or breakout):
             continue  # ليس في مرحلة مبكرة

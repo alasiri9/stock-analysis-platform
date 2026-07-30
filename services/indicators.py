@@ -181,11 +181,13 @@ def build_indicators(candles):
         squeezed = sq["squeezed"]
         ema_bull = any(b.get("label") == "EMA" and b.get("status") == "bull" for b in badges)
         near_high = any(b.get("label") == "قمة" and b.get("status") == "bull" for b in badges)
-        status = "bull" if (squeezed and ema_bull and near_high) else "neutral"
+        confirmed = squeezed and ema_bull and near_high
+        # القيمة تعكس المعنى: «إيجابي» = انضغاط مؤكّد صعودياً · «نعم» = انضغاط محايد · «لا» = بلا انضغاط
+        value = "إيجابي" if confirmed else ("نعم" if squeezed else "لا")
         badges.append({
             "label": "انضغاط",
-            "value": "نعم" if squeezed else "لا",
-            "status": status,
+            "value": value,
+            "status": "bull" if confirmed else "neutral",
         })
 
     # --- التقاطع الذهبي/الموت: SMA50 مقابل SMA200 (اتجاه طويل المدى) ---
