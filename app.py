@@ -1370,10 +1370,17 @@ def create_app():
         except (TypeError, ValueError):
             target = None
         # نقبل فقط مدخلات صحيحة (سهم + اتجاه معروف + سعر موجب)
+        added = False
         if ticker and direction in ("below", "above") and target is not None and target > 0:
             db.session.add(PriceAlert(
                 ticker=ticker, direction=direction, target_price=target, user_id=current_user_id()))
             db.session.commit()
+            added = True
+        # لو جاء التنبيه من صفحة السهم (next داخلي آمن) نرجّع المستخدم إليها مع تأكيد
+        next_url = request.form.get("next", "").strip()
+        if added and next_url.startswith("/") and not next_url.startswith("//"):
+            sep = "&" if "?" in next_url else "?"
+            return redirect(next_url + sep + "alert=added")
         return redirect(url_for("alerts"))
 
     @app.route("/alerts/remove", methods=["POST"])

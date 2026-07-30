@@ -298,6 +298,33 @@
     {% endif %}
   </div>
 
+  {# ===== 🔔 تنبيه سعري سريع لهذا السهم (مربوط بالسهم الذي فلترته ودرسته) ===== #}
+  <div class="section">
+    <h2>🔔 نبّهني على هذا السهم
+      <span class="help-q" data-tip="أضف تنبيهاً سعرياً لهذا السهم مباشرةً — يصلك على تلغرام عند وصوله للسعر الذي تحدّده. يُفحص مرة يومياً بعد تحديث الأسعار. تعليمي فقط.">👁</span>
+    </h2>
+    {% if request.args.get('alert') == 'added' %}
+      <div class="soon" style="border-color:var(--green); color:var(--green)">✅ تم إضافة التنبيه لـ {{ report.ticker }} — يصلك على تلغرام عند تحقّقه. تابع تنبيهاتك في <a href="{{ url_for('alerts') }}">صفحة التنبيهات</a>.</div>
+    {% endif %}
+    <form class="filters" action="{{ url_for('alerts_add') }}" method="post">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="hidden" name="ticker" value="{{ report.ticker }}">
+      <input type="hidden" name="next" value="{{ url_for('stock_report', ticker=report.ticker) }}">
+      <div class="filter">
+        <label>الشرط</label>
+        <select name="direction">
+          <option value="below">نزل تحت</option>
+          <option value="above">صعد فوق</option>
+        </select>
+      </div>
+      <div class="filter">
+        <label>السعر المستهدف ($){% if report.price is not none %} · السعر الآن {{ "%.2f"|format(report.price) }}{% endif %}</label>
+        <input type="number" name="target_price" min="0" step="0.01" placeholder="{{ '%.2f'|format(report.price) if report.price is not none else 'مثال: 200' }}" required>
+      </div>
+      <button class="btn" type="submit">➕ أضف تنبيهاً لـ {{ report.ticker }}</button>
+    </form>
+  </div>
+
   {# ===== أسهم من نفس القطاع (من الكاش — بلا API) ===== #}
   {% if peers %}
     <div class="section">
