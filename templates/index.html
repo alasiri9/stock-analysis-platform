@@ -44,7 +44,6 @@
             <td colspan="3">
               <span class="mm-label">حالة السوق الأمريكي <span class="mkt-sub">(مؤشر S&amp;P 500)</span>:</span>
               <b>{{ market_dir.label }} {{ market_dir.emoji }}</b>
-              {% if market_dir.change_20 is not none %}<span class="mm-chg" dir="ltr">{{ "%+.1f"|format(market_dir.change_20) }}% خلال شهر</span>{% endif %}
             </td>
           </tr>
         </tfoot>
