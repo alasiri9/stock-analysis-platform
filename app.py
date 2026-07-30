@@ -542,6 +542,9 @@ def create_app():
         phrases = [
             ("CHIEF INN,PROD&DSG OFCR", "مدير الابتكار والمنتجات والتصميم"),
             ("Chief Executive Officer", "الرئيس التنفيذي"),
+            ("Chief Financial & Operating Officer", "المدير المالي والتشغيلي"),
+            ("Chief Fin & Op Officer", "المدير المالي والتشغيلي"),
+            ("Chief Fin & Op Ofcr", "المدير المالي والتشغيلي"),
             ("Chief Financial Officer", "المدير المالي"),
             ("Chief Fin Op", "المدير المالي"),
             ("Chief Fin Ofcr", "المدير المالي"),
