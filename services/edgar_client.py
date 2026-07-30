@@ -50,6 +50,11 @@ _CODE_LABELS = {
     "U": "تصرّف عبر عرض استحواذ",
 }
 
+# اتجاه المعاملة يُشتقّ من الكود (نفس مصدر «النوع») ليتطابق معه دائماً ويُزال التعارض
+# النادر في بيانات SEC (كود «شراء» مع علم «تخلّص»). للأكواد غير الحاسمة نرجع لعلم A/D.
+_BUY_CODES = {"P", "M"}       # شراء واضح (سوق مفتوح / خيارات)
+_SELL_CODES = {"S", "F", "D"}  # بيع/تخلّص واضح (سوق / ضريبة / استرداد)
+
 
 def _load_cik_map():
     """يحمّل خريطة الرموز -> CIK من SEC (مرة واحدة)."""
@@ -119,7 +124,9 @@ def _parse_form4(xml_text):
             "date": t.findtext(".//transactionDate/value"),
             "code": code,
             "code_label": _CODE_LABELS.get(code, "معاملة أخرى") if code else None,
-            "direction": "شراء" if ad == "A" else ("بيع" if ad == "D" else None),
+            "direction": ("شراء" if code in _BUY_CODES else
+                          ("بيع" if code in _SELL_CODES else
+                           ("شراء" if ad == "A" else ("بيع" if ad == "D" else None)))),
             "shares": _num(t.findtext(".//transactionAmounts/transactionShares/value")),
             "price": _num(t.findtext(".//transactionAmounts/transactionPricePerShare/value")),
         })
