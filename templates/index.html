@@ -163,8 +163,9 @@
   {% if breakouts %}
   <section class="panel">
     <div class="panel-head">
-      <h2>🚀 اخترقت مؤخراً :</h2>
-      <p class="panel-sub">أسهم اخترقت أعلى نطاق آخر 20 يوماً <b>بحجم عالٍ</b> (اختراق مؤكّد) — الأحدث أولاً. تعليمي، ليس توصية.</p>
+      <h2>🚀 اخترقت مؤخراً :
+        <span class="help-q" data-tip="أسهم اخترقت أعلى نطاق آخر 20 يوماً بحجم عالٍ (اختراق مؤكّد) — الأحدث أولاً. تعليمي، ليس توصية.">👁</span>
+      </h2>
     </div>
     <div class="screener-cards">
       {% for r in breakouts %}{% set rank = loop.index %}{% include "_scard.html" %}{% endfor %}
