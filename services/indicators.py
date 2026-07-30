@@ -171,12 +171,19 @@ def build_indicators(candles):
             badges.append({"label": "قمة", "value": f"{price / peak * 100:.0f}%", "status": status})
 
     # --- انضغاط بولينجر: تضيّق شديد للنطاق يسبق الانفجارات السعرية غالباً ---
+    # الانضغاط محايد الاتجاه بذاته — يُعدّ إيجابياً (bull) فقط إذا رافقه تأكيد صعودي
+    # مزدوج: اتجاه صاعد (EMA) + زخم إيجابي (MACD) معاً، ممّا يرجّح أن الانفكاك للأعلى.
+    # بدون هذا التأكيد يبقى محايداً فلا يُضخّم عدّاد الإشارات الإيجابية / قوة التأكيد.
     sq = _bollinger_squeeze(closes)
     if sq is not None:
+        squeezed = sq["squeezed"]
+        ema_bull = any(b.get("label") == "EMA" and b.get("status") == "bull" for b in badges)
+        macd_bull = any(b.get("label") == "MACD" and b.get("status") == "bull" for b in badges)
+        status = "bull" if (squeezed and ema_bull and macd_bull) else "neutral"
         badges.append({
             "label": "انضغاط",
-            "value": "نعم" if sq["squeezed"] else "لا",
-            "status": "bull" if sq["squeezed"] else "neutral",
+            "value": "نعم" if squeezed else "لا",
+            "status": status,
         })
 
     # --- التقاطع الذهبي/الموت: SMA50 مقابل SMA200 (اتجاه طويل المدى) ---
