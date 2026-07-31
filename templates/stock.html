@@ -80,6 +80,12 @@
             {% else %}
               <li>🎯 الأفق صافٍ فوقه — لا مقاومة أسبوعية/شهرية سابقة قريبة، فمجال الصعود مفتوح.</li>
             {% endif %}
+            {# عوامل مؤيّدة إضافية — تظهر تلقائياً كلٌّ حسب توفّره لهذا السهم #}
+            {% if scan and scan.money_flow and scan.money_flow.status == 'bull' %}<li>💧 سيولة داخلة (تجميع) — أموال تدخل السهم تدعم صعوده.</li>{% endif %}
+            {% if scan and scan.rel_strength is not none and scan.rel_strength > 0 %}<li>↑ أقوى من السوق بـ {{ "%+.0f"|format(scan.rel_strength) }}٪ خلال آخر 3 أشهر (متفوّق على المؤشر).</li>{% endif %}
+            {% if cluster_buyers is defined and cluster_buyers.get(report.ticker) %}<li>👥 شراء عنقودي — {{ cluster_buyers[report.ticker] }} مطلعين يشترون من السوق المفتوح (قناعة جماعية).</li>{% endif %}
+            {% if scan and is_golden(scan) %}<li>🥇 إشارة ذهبية — جودة مالية + سيولة داخلة + اختراق مجتمعة.</li>{% endif %}
+            {% if report.indicators | selectattr('label', 'equalto', 'MACD') | selectattr('status', 'equalto', 'bull') | list %}<li>📊 زخم إيجابي — مؤشر MACD صاعد.</li>{% endif %}
           </ul>
         </div>
         {# موضع الدخول — احترازاً من مطاردة سهم ممتد بعيداً عن نقطته #}
