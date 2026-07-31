@@ -22,6 +22,23 @@
       {% endif %}
     </div>
 
+    {% if clusters %}
+      <h3 class="perf-title">💎 شراء عنقودي — أكثر من مطلع اشترى :
+        <span class="help-q" data-tip="أقوى إشارة ثقة على الإطلاق: أسهم اشترى فيها مطلعان مختلفان أو أكثر من السوق المفتوح بأموالهم الخاصة — قناعة جماعية من عدة أشخاص يعرفون الشركة من الداخل، لا رأي فرد واحد. تعليمي، ليس توصية.">👁</span>
+      </h3>
+      <div class="cluster-grid">
+        {% for c in clusters %}
+          <a class="cluster-card" href="{{ url_for('stock_report', ticker=c.ticker) }}">
+            <div class="cluster-head">
+              <span class="cluster-ticker">{{ c.ticker }}</span>
+              <span class="cluster-badge">👥 {{ c.count }} مطلعين</span>
+            </div>
+            <div class="cluster-owners" dir="ltr">{{ c.owners | join(' · ') }}</div>
+          </a>
+        {% endfor %}
+      </div>
+    {% endif %}
+
     {% if open_buys %}
       <h3 class="perf-title">🔥 مشتريات المطلعين من السوق المفتوح :
         <span class="help-q" data-tip="شراء المطلع أسهم شركته من السوق المفتوح بأمواله الخاصة يعطي السهم قوة أكبر — لأنه يشتري بسعر السوق عن قناعة حقيقية بشركته. بخلاف المشتريات الأخرى (كشراء الخيارات بسعر خاص) المندرجة تحت «كل المعاملات الأخيرة»، فهي إشارة أضعف. لذلك بعض المشتريات تظهر هناك فقط ولا تظهر هنا. تعليمي، ليس توصية.">👁</span>

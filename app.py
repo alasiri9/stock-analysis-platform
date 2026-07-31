@@ -1120,9 +1120,18 @@ def create_app():
     def radar_page():
         # رادار المحفزات: معاملات المطلعين من كاش EDGAR (بلا استدعاءات عند العرض)
         transactions, open_buys, latest = radar.load_radar()
+        # 💎 شراء عنقودي: أسهم اشترى فيها مطلعان مختلفان أو أكثر من السوق المفتوح (أقوى إشارة)
+        _buyers = {}
+        for t in open_buys:
+            if t.get("owner"):
+                _buyers.setdefault(t["ticker"], set()).add(t["owner"])
+        clusters = [{"ticker": tk, "count": len(owners), "owners": sorted(owners)}
+                    for tk, owners in _buyers.items() if len(owners) >= 2]
+        clusters.sort(key=lambda c: c["count"], reverse=True)
         return render_template(
             "radar.html",
             transactions=transactions, open_buys=open_buys, latest=latest,
+            clusters=clusters,
         )
 
     @app.route("/radar/refresh", methods=["POST"])
