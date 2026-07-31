@@ -1042,10 +1042,13 @@ a.stat-box:hover { filter: brightness(1.15); transform: translateY(-1px); }
 .gauge-svg-box { position: relative; }
 .gauge-hub-eye {
   position: absolute; left: 50%; top: 83.3%; transform: translate(-50%, -50%);
-  font-size: 11px; line-height: 1; cursor: help; z-index: 2;
+  margin: 0; cursor: help; z-index: 2;  /* الإيموجي مخفي (font-size:0 من .help-q) — نعرض العين المرسومة */
 }
-.gauge-lg .gauge-hub-eye { font-size: 13px; }
-.g-hub-eye { r: 6.5px; fill: var(--text); }  /* دائرة تحتوي العين في مركزها */
+.gauge-lg .gauge-hub-eye { width: 18px; height: 18px; }
+/* عيون الأمبيرات: إطار عودي + بؤبؤ أسود (تخصيص عن باقي عيون المنصة) */
+.gauge-hub-eye::before { background-color: #c08a2e; }
+.gauge-hub-eye::after { background: #111; }
+.g-hub-eye { r: 6.5px; fill: var(--text); }  /* بياض العين — دائرة تحتوي العين في مركزها */
 .gauge-needle {
   stroke: var(--text); stroke-width: 3; stroke-linecap: round;
   transform-box: view-box; transform-origin: 50px 50px;
