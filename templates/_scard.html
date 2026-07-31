@@ -68,7 +68,7 @@
     {% endif %}
     {% if cluster_buyers is defined and cluster_buyers.get(r.ticker) %}
       <div class="scard-cluster">
-        <span class="cl-t">💎 شراء عنقودي <span class="help-q" data-tip="شراء عنقودي: اشترى هذا السهم مطلعان مختلفان أو أكثر من السوق المفتوح بأموالهم الخاصة — أقوى إشارة ثقة (قناعة جماعية من عدة أشخاص يعرفون الشركة). تعليمي، ليس توصية.">👁</span></span>
+        <span class="cl-t">شراء عنقودي <span class="help-q" data-tip="شراء عنقودي: اشترى هذا السهم مطلعان مختلفان أو أكثر من السوق المفتوح بأموالهم الخاصة — أقوى إشارة ثقة (قناعة جماعية من عدة أشخاص يعرفون الشركة). تعليمي، ليس توصية.">👁</span></span>
         <b class="cl-n">👥 {{ cluster_buyers[r.ticker] }} مطلعين</b>
       </div>
     {% endif %}
