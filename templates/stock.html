@@ -58,15 +58,22 @@
     </div>
   </div>
 
-  {# ===== الملخّص الذكي (حالة الاختراق/الكسر + نقاط القوة/الحذر) تحت عنوان واحد ===== #}
-  {% if (summary and (summary.strengths or summary.cautions)) or report.break_status %}
+  {# ===== حالة السهم: الحكم الفني + أبرز الإشارات + الدرجات + القوة/الحذر في مكان واحد ===== #}
+  {% if (summary and (summary.strengths or summary.cautions)) or report.break_status or report.sustained or meter or scan %}
     <div class="section smart-summary">
-      <h2>🧠 ملخّص ذكي للسهم
-        <span class="help-q" data-tip="ملخّص وصفي تعليمي مُولّد آلياً من بيانات السهم — ليس توصية ولا تنبؤاً.">👁</span>
+      <h2>📊 حالة السهم
+        <span class="help-q" data-tip="حالة السهم: نظرة شاملة مُولّدة آلياً — الحكم الفني + أبرز الإشارات + الدرجات + نقاط القوة والحذر في مكان واحد. وصفي تعليمي، ليس توصية ولا تنبؤاً.">👁</span>
       </h2>
 
-      {# اختراق مستمر — يُعرض بدل شارة «اختراق مؤكّد» عند تحقّق استمرار الصعود #}
+      {# ① الحكم السريع — سطر واحد يلخّص الحالة الفنية والحدث الأبرز #}
       {% set sb = report.sustained %}
+      {% if meter %}
+      <div class="verdict-line vd-{{ meter.kind }}">
+        <span class="vd-lead">الحالة الفنية:</span> <b>{{ meter.label }}</b>{% if sb and sb.sustained %} <span class="vd-ev">· الحدث الأبرز: 📈 اختراق مستمر</span>{% elif report.break_status and report.break_status.dir == 'breakout' and report.break_status.confirmed %} <span class="vd-ev">· الحدث الأبرز: 🚀 اختراق مؤكّد</span>{% elif report.break_status and report.break_status.dir == 'breakdown' and report.break_status.confirmed %} <span class="vd-ev">· الحدث الأبرز: ⚠️ كسر مؤكّد</span>{% endif %}<span class="vd-note"> — وصفي تعليمي، لا توصية</span>
+      </div>
+      {% endif %}
+
+      {# ② أبرز الإشارات — اختراق مستمر يُعرض بدل شارة «اختراق مؤكّد» عند تحقّقه #}
       {% if sb and sb.sustained %}
         <div class="break-badge up">📈 اختراق مستمر — اخترق قاعدته ويواصل صعوده بثبات منذ <b>{{ sb.days_held }}</b> جلسة.<span class="help-q" data-tip="اختراق مستمر: السهم اخترق قمته بحجم مؤكّد ولا يزال يواصل صعوده بثبات (لا اختراق لحظي). أقوى تأكيد على استمرار الحركة. تعليمي، ليس توصية.">👁</span></div>
         <div class="ss-group ss-pos sustain-detail">
@@ -112,6 +119,39 @@
         {% endif %}
       {% endif %}
 
+      {# ③ عدّادات القرار — نظرة رقمية سريعة (نُقلت للأعلى ضمن حالة السهم) #}
+      <div class="score-cards">
+        {% if scan %}
+        <div class="score-card">
+          <div class="cap">قوة التأكيد <span class="help-q" data-tip="قوة التأكيد: كم عاملاً إيجابياً اجتمع على السهم من أصل 16 (مؤشرات فنية + مالية + سيولة + تفوّق على السوق). كلما زاد الرقم قوي التأكيد. تعليمي فقط، ليس توصية.">👁</span></div>
+          {{ gauge(measures_met(scan), 16, '', 'lg') }}
+          <div class="cap">عدد العوامل الإيجابية المجتمعة</div>
+        </div>
+        {% endif %}
+        <div class="score-card">
+          {% if report.piotroski.score >= 8 %}<div class="badge-gem">💎 جوهرة</div>{% endif %}
+          <div class="cap">الجودة المالية (Piotroski) <span class="help-q" data-tip="الجودة المالية (Piotroski): درجة من 0 إلى 9 تقيس صحة الشركة المالية (ربحيتها وديونها وكفاءتها). 8 أو 9 تُعتبر قوية.">👁</span></div>
+          {{ gauge(report.piotroski.score, 9, '', 'lg') }}
+          {% if report.piotroski.computable < 9 %}
+            <div class="cap">أمكن حساب {{ report.piotroski.computable }} نقاط فقط</div>
+          {% endif %}
+        </div>
+        <div class="score-card">
+          <div class="cap">النمو (Catalyst) <span class="help-q" data-tip="النمو (Catalyst): درجة من 0 إلى 100 تقيس سرعة نمو الشركة (مبيعات وأرباح). 🟢 قوي 80+ · 🟡 متوسط 40–79 · 🔴 ضعيف أقل من 40.">👁</span></div>
+          {{ gauge(report.catalyst.score, 100, '', 'lg') }}
+          <div class="cap">📊 مقياس مساعد — اجتهادي للإرشاد</div>
+        </div>
+      </div>
+      {% if meter %}
+        {% from "_techmeter.html" import techmeter %}
+        <div class="tmeter-wrap tmeter-inline">
+          {{ techmeter(meter.frac) }}
+          <div class="tmeter-ends"><span>سلبي</span><span>محايد</span><span>إيجابي</span></div>
+          <div class="tmeter-state {{ meter.kind }}">ميزان الإشارات الفنية <span class="help-q" data-tip="ميزان الإشارات الفنية: يلخّص ميل السهم الفني — كم مؤشراً يعطي إشارة إيجابية مقابل محايدة (لم تُحسم) أو سلبية. الإبرة تميل للأخضر كلما زادت الإيجابية، وللأحمر مع السلبية. تعليمي، ليس توصية شراء أو بيع.">👁</span></div>
+        </div>
+      {% endif %}
+
+      {# ④ نقاط القوة / الحذر #}
       {% if summary and (summary.strengths or summary.cautions) %}
       <div class="ss-cols">
         {% if summary.strengths %}
@@ -157,44 +197,7 @@
     {% endif %}
   </div>
 
-  {# ===== الدرجات الكبيرة ===== #}
-  <div class="section">
-    <div class="score-cards">
-      {% if scan %}
-      <div class="score-card">
-        <div class="cap">قوة التأكيد <span class="help-q" data-tip="قوة التأكيد: كم عاملاً إيجابياً اجتمع على السهم من أصل 16 (مؤشرات فنية + مالية + سيولة + تفوّق على السوق). كلما زاد الرقم قوي التأكيد. تعليمي فقط، ليس توصية.">👁</span></div>
-        {{ gauge(measures_met(scan), 16, '', 'lg') }}
-        <div class="cap">عدد العوامل الإيجابية المجتمعة</div>
-      </div>
-      {% endif %}
-      <div class="score-card">
-        {% if report.piotroski.score >= 8 %}<div class="badge-gem">💎 جوهرة</div>{% endif %}
-        <div class="cap">الجودة المالية (Piotroski) <span class="help-q" data-tip="الجودة المالية (Piotroski): درجة من 0 إلى 9 تقيس صحة الشركة المالية (ربحيتها وديونها وكفاءتها). 8 أو 9 تُعتبر قوية.">👁</span></div>
-        {{ gauge(report.piotroski.score, 9, '', 'lg') }}
-        {% if report.piotroski.computable < 9 %}
-          <div class="cap">أمكن حساب {{ report.piotroski.computable }} نقاط فقط</div>
-        {% endif %}
-      </div>
-      <div class="score-card">
-        <div class="cap">النمو (Catalyst) <span class="help-q" data-tip="النمو (Catalyst): درجة من 0 إلى 100 تقيس سرعة نمو الشركة (مبيعات وأرباح). 🟢 قوي 80+ · 🟡 متوسط 40–79 · 🔴 ضعيف أقل من 40.">👁</span></div>
-        {{ gauge(report.catalyst.score, 100, '', 'lg') }}
-        <div class="cap">📊 مقياس مساعد — اجتهادي للإرشاد</div>
-      </div>
-    </div>
-  </div>
-
-  {# ===== ميزان الإشارات الفنية الحي (تعليمي) ===== #}
-  {% if meter %}
-    {% from "_techmeter.html" import techmeter %}
-    <div class="section tmeter-section">
-      <h2>🌡️ ميزان الإشارات الفنية</h2>
-      <div class="tmeter-wrap">
-        {{ techmeter(meter.frac) }}
-        <div class="tmeter-ends"><span>سلبي</span><span>محايد</span><span>إيجابي</span></div>
-        <div class="tmeter-state {{ meter.kind }}">{{ meter.label }} <span class="help-q" data-tip="ميزان الإشارات الفنية: يلخّص ميل السهم الفني — كم مؤشراً يعطي إشارة إيجابية مقابل محايدة (لم تُحسم) أو سلبية. الإبرة تميل للأخضر كلما زادت الإيجابية، وللأحمر مع السلبية. تعليمي، ليس توصية شراء أو بيع.">👁</span></div>
-      </div>
-    </div>
-  {% endif %}
+  {# ملاحظة: الدرجات الكبيرة وميزان الإشارات الفنية نُقلا لأعلى داخل «حالة السهم» #}
 
   {# ===== المؤشرات الفنية المتحققة (الصاعدة فقط) ===== #}
   {% if report.indicators %}
