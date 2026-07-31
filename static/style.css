@@ -496,6 +496,7 @@ a.stat-box:hover { filter: brightness(1.15); transform: translateY(-1px); }
 .score-card {
   background: var(--panel-2); border: 1px solid var(--border);
   border-radius: var(--radius); padding: 18px 22px; min-width: 200px; flex: 1;
+  display: flex; flex-direction: column; justify-content: center;
 }
 .score-card .big { font-size: 52px; font-weight: 900; }
 .score-card .out { color: var(--muted); font-size: 21px; font-weight: 600; }
