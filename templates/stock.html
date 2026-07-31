@@ -65,8 +65,27 @@
         <span class="help-q" data-tip="ملخّص وصفي تعليمي مُولّد آلياً من بيانات السهم — ليس توصية ولا تنبؤاً.">👁</span>
       </h2>
 
-      {# سطر حالة الاختراق / الكسر — أهم خبر عن حركة السهم الآن #}
-      {% if report.break_status %}
+      {# اختراق مستمر — يُعرض بدل شارة «اختراق مؤكّد» عند تحقّق استمرار الصعود #}
+      {% set sb = report.sustained %}
+      {% if sb and sb.sustained %}
+        <div class="break-badge up">📈 اختراق مستمر — اخترق قاعدته ويواصل صعوده بثبات منذ <b>{{ sb.days_held }}</b> جلسة.<span class="help-q" data-tip="اختراق مستمر: السهم اخترق قمته بحجم مؤكّد ولا يزال يواصل صعوده بثبات (لا اختراق لحظي). أقوى تأكيد على استمرار الحركة. تعليمي، ليس توصية.">👁</span></div>
+        <div class="ss-group ss-pos sustain-detail">
+          <div class="ss-title">لماذا يُعدّ استمراره صحّياً؟</div>
+          <ul>
+            <li>ثابت فوق مستوى الاختراق{% if sb.level %} ({{ "%.2f $"|format(sb.level) }}){% endif %} — لم يعُد تحته.</li>
+            {% if sb.avwap %}<li>فوق متوسط سعره المرجّح بالحجم منذ الاختراق ({{ "%.2f $"|format(sb.avwap) }}) — كل من اشترى بعد الاختراق رابح.</li>{% endif %}
+            <li>اتجاهه صاعد وقوّته مؤكّدة (EMA صاعد + ADX قوي).</li>
+            {% if sb.next_resistance %}
+              <li>مساحة حرة فوقه — أقرب مقاومة سابقة عند {{ "%.2f $"|format(sb.next_resistance) }} (تبعد {{ "%.0f"|format(sb.resistance_pct * 100) }}٪).</li>
+            {% else %}
+              <li>الأفق صافٍ فوقه — لا مقاومة أسبوعية/شهرية قريبة تعيق الصعود.</li>
+            {% endif %}
+          </ul>
+        </div>
+      {% endif %}
+
+      {# سطر حالة الاختراق / الكسر — أهم خبر عن حركة السهم الآن (يُخفى عند عرض «اختراق مستمر» فهو يغنيه) #}
+      {% if report.break_status and not (sb and sb.sustained) %}
         {% set bk = report.break_status %}
         {% if bk.dir == 'breakout' and bk.confirmed %}
           <div class="break-badge up">🚀 اخترق أعلى نطاق آخر 20 يوماً <b>بحجم عالٍ</b> — اختراق مؤكّد (زخم صعود) · اخترق <b>{{ bk.days_ago | recency_ar }}</b>.<span class="help-q" data-tip="مقارنة إغلاق السهم اليوم بأعلى/أدنى نطاق آخر 20 يوم تداول، مع حجم التداول. الاختراق أو الكسر «المؤكّد» = بحجم عالٍ (≥1.5× المتوسط) = اهتمام حقيقي من السوق. تعليمي فقط، ليس توصية.">👁</span></div>
