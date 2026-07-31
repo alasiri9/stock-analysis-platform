@@ -76,3 +76,17 @@ def load_radar():
     open_buys = [t for t in all_tx if t.get("code") == "P"]
 
     return all_tx, open_buys, latest
+
+
+def cluster_buyers(min_insiders=2):
+    """خريطة {رمز: عدد المطلعين} للأسهم التي اشترى فيها مطلعان مختلفان أو أكثر من السوق المفتوح.
+
+    الشراء العنقودي = أقوى إشارة ثقة (قناعة جماعية). تُستخدم كشارة على بطاقات الأسهم في المنصة.
+    """
+    _, open_buys, _ = load_radar()
+    buyers = {}
+    for t in open_buys:
+        if t.get("owner"):
+            buyers.setdefault(t.get("ticker"), set()).add(t["owner"])
+    return {tk: len(owners) for tk, owners in buyers.items()
+            if tk and len(owners) >= min_insiders}

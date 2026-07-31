@@ -278,6 +278,14 @@ def create_app():
         return {"sub_status": info, "is_admin": is_admin(), "recovery_on": recovery_on,
                 "latest_message": latest_message, "msg_ids": msg_ids}
 
+    @app.context_processor
+    def inject_clusters():
+        # خريطة الشراء العنقودي {رمز: عدد المطلعين} — متاحة لكل بطاقات الأسهم في المنصة
+        try:
+            return {"cluster_buyers": radar.cluster_buyers()}
+        except Exception:  # noqa: BLE001 — لا نُسقط أي صفحة بسبب الرادار
+            return {"cluster_buyers": {}}
+
     @app.route("/announcement/save", methods=["POST"])
     def announcement_save():
         # إرسال رسالة جديدة لكل المستخدمين (تُحفظ في صندوق الرسائل) — للمدير فقط

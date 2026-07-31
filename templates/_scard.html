@@ -66,6 +66,12 @@
     {% elif bk and bk.confirmed and bk.dir == 'breakdown' %}
       <div class="scard-brk down">⚠️ كسر مؤكّد بحجم عالٍ · {{ bk.days_ago | recency_ar }}</div>
     {% endif %}
+    {% if cluster_buyers is defined and cluster_buyers.get(r.ticker) %}
+      <div class="scard-cluster">
+        <span class="cl-t">💎 شراء عنقودي <span class="help-q" data-tip="شراء عنقودي: اشترى هذا السهم مطلعان مختلفان أو أكثر من السوق المفتوح بأموالهم الخاصة — أقوى إشارة ثقة (قناعة جماعية من عدة أشخاص يعرفون الشركة). تعليمي، ليس توصية.">👁</span></span>
+        <b class="cl-n">👥 {{ cluster_buyers[r.ticker] }} مطلعين</b>
+      </div>
+    {% endif %}
     {% set dte = r.get('days_to_earnings') %}
     {% if dte is not none %}
       <div class="scard-earn {{ 'soon' if dte <= 7 }}">📅 أرباح {{ 'اليوم' if dte == 0 else ('بعد يوم' if dte == 1 else 'بعد ' ~ dte ~ ' يوم') }} <span class="help-q" data-tip-accent="{{ 'var(--red)' if dte <= 7 else 'var(--gold)' }}" data-tip="تنبيه: قرب إعلان الأرباح يتسبب في حركة سعرية متقلّبة للسهم صعوداً أو نزولاً. اللون الأصفر يعني أكثر من 7 أيام، واللون الأحمر خلال 7 أيام.">👁</span></div>
