@@ -12,13 +12,13 @@
 
     <form action="{{ url_for('radar_refresh') }}" method="post" style="margin-bottom:12px">
   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-      <button class="btn" type="submit">🔄 تحديث الرادار</button>
+      <button class="btn" type="submit">🔄 تحديث بيانات الرادار</button>
     </form>
     <div class="confidence" style="margin-bottom:14px">
       {% if latest %}
 آخر تحديث لبيانات الرادار (الجدولان) <span dir="ltr">{{ latest | ksa_time }}</span> بتوقيت السعودية
       {% else %}
-        لا توجد بيانات بعد — اضغط "تحديث الرادار" (قد يحتاج أكثر من ضغطة لتغطية كل الأسهم).
+        لا توجد بيانات بعد — اضغط "تحديث بيانات الرادار" (قد يحتاج أكثر من ضغطة لتغطية كل الأسهم).
       {% endif %}
     </div>
 
