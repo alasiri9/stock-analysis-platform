@@ -384,28 +384,72 @@ def _anchored_vwap(window):
     return (num / den) if den else None
 
 
-def _overhead_resistance(rows, price, left=10, right=10, cap=0.5):
-    """أقرب مقاومة سابقة فوق السعر (قمة محورية على فريم أعلى).
+def _resample(candles, period="W"):
+    """يجمّع الشموع اليومية إلى أسبوعية/شهرية (معيار OHLC — نفس ما يبني به أي شارت).
 
-    قمة محورية = يومٌ قمته أعلى من `left` أيام قبله و`right` بعده — تمثّل قمماً
-    أسبوعية/شهرية سابقة. نأخذ أقربها فوق السعر (ضمن سقف cap فوقه، فتُهمَل القمم
-    البعيدة جداً). يُرجع (المستوى، البُعد النسبي) أو (None, None) لو الأفق صافٍ.
+    candles: خام من FMP (الأحدث أولاً) فيه date/high/low/close.
+    period: 'W' أسبوعي (حسب أسبوع ISO) · 'M' شهري.
+    قمة الفترة = أعلى قمم أيامها، قاعها = أدنى قيعانها، إغلاقها = إغلاق آخر يوم فيها.
+    يُرجع قائمة شموع مجمّعة مرتّبة الأقدم أولاً: [{high, low, close}].
     """
-    highs = [r.get("high") for r in rows]
-    n = len(highs)
-    ceiling = price * (1 + cap)
-    pivots = []
-    for i in range(left, n - right):
-        h = highs[i]
-        if h is None or h <= price or h > ceiling:
+    from datetime import date
+    buckets = {}
+    for c in (candles or []):
+        d = c.get("date")
+        h, l, cl = c.get("high"), c.get("low"), c.get("close")
+        if not d or h is None or l is None:
             continue
-        window = [x for x in highs[i - left:i + right + 1] if x is not None]
-        if window and h == max(window):
-            pivots.append(h)
-    if not pivots:
-        return None, None
-    nearest = min(pivots)
-    return nearest, (nearest - price) / price
+        ds = str(d)[:10]  # "YYYY-MM-DD"
+        try:
+            y, m, day = int(ds[:4]), int(ds[5:7]), int(ds[8:10])
+            key = (y, m) if period == "M" else date(y, m, day).isocalendar()[:2]
+        except (ValueError, TypeError):
+            continue
+        b = buckets.get(key)
+        if b is None:
+            # الأحدث أولاً ⇒ أول ظهور للفترة = آخر يوم فيها ⇒ نثبّت الإغلاق منه
+            buckets[key] = {"high": h, "low": l, "close": cl}
+        else:
+            b["high"] = max(b["high"], h)
+            b["low"] = min(b["low"], l)
+    return [buckets[k] for k in sorted(buckets)]
+
+
+def _fractal_highs(bars, wing=2):
+    """قمم فراكتالية (Bill Williams): شمعة قمّتها أعلى من `wing` شموع قبلها وبعدها.
+
+    bars: شموع مرتّبة الأقدم أولاً. آخر `wing` شمعة لا تُحسب (لم تتأكد بعد).
+    يُرجع قائمة قيم القمم المؤكّدة.
+    """
+    highs = [b["high"] for b in bars]
+    n = len(highs)
+    out = []
+    for i in range(wing, n - wing):
+        h = highs[i]
+        if all(h > highs[i - k] for k in range(1, wing + 1)) and \
+           all(h > highs[i + k] for k in range(1, wing + 1)):
+            out.append(h)
+    return out
+
+
+def _overhead_target(candles, price, cap=0.6):
+    """أقرب هدف فوق السعر = أقرب قمة فراكتالية أسبوعية/شهرية سابقة (الحساب الرسمي).
+
+    عند اختراق مقاومة، أقرب هدف منطقي هو المقاومة التالية فوقها (والمخترَقة تصير دعماً).
+    نجمّع الشموع أسبوعياً وشهرياً، نستخرج قممها الفراكتالية، ونأخذ أقربها فوق السعر
+    (ضمن سقف cap فتُهمَل القمم البعيدة جداً).
+    يُرجع (المستوى، البُعد النسبي، الإطار "أسبوعية"/"شهرية") أو (None, None, None) لو الأفق صافٍ.
+    """
+    ceiling = price * (1 + cap)
+    candidates = []
+    for tf, label in (("W", "أسبوعية"), ("M", "شهرية")):
+        for lv in _fractal_highs(_resample(candles, tf)):
+            if price < lv <= ceiling:
+                candidates.append((lv, label))
+    if not candidates:
+        return None, None, None
+    lv, label = min(candidates, key=lambda x: x[0])
+    return lv, (lv - price) / price, label
 
 
 def _leg_start(rows, lookback=20):
@@ -444,9 +488,12 @@ def sustained_breakout(candles, hold_min=2, adx_min=20, clear_air_min=0.03, vol_
     (لا يزال في منطقة دخول جيدة) أو «ممتد» (صعد بعيداً، الدخول الآن متأخر ومخاطرته أعلى)
     — احترازاً من مطاردة سهم امتدّ كثيراً عن نقطة انطلاقه.
 
+    «المساحة الحرة» = أقرب هدف فوق السعر (أقرب قمة أسبوعية/شهرية فراكتالية سابقة):
+    قريبة ⇒ أفق ضيّق · بعيدة/غائبة ⇒ أفق مفتوح. وهي نفسها أقرب هدف سعري بعد الاختراق.
+
     يُرجع dict وصفي {sustained, above_avwap, avwap, ema_rising, adx_ok, clear_air,
-    next_resistance, resistance_pct, days_held, level, entry_zone, ext_atr, ext_pct}
-    أو None لو لا اختراق/بيانات ناقصة.
+    next_resistance, resistance_pct, resistance_tf, days_held, level, entry_zone,
+    ext_atr, ext_pct} أو None لو لا اختراق/بيانات ناقصة.
     """
     rows = _clean(candles)  # الأقدم أولاً
     closes = [r["close"] for r in rows]
@@ -480,8 +527,8 @@ def sustained_breakout(candles, hold_min=2, adx_min=20, clear_air_min=0.03, vol_
     adx = _adx(rows)
     adx_ok = adx is not None and adx >= adx_min
 
-    # (5) مساحة حرة فوق السهم
-    next_res, res_pct = _overhead_resistance(rows, price)
+    # (5) مساحة حرة فوق السهم: أقرب هدف = أقرب قمة أسبوعية/شهرية سابقة (الحساب الرسمي)
+    next_res, res_pct, res_tf = _overhead_target(candles, price)
     clear_air = (next_res is None) or (res_pct is not None and res_pct >= clear_air_min)
 
     # موضع الدخول: كم ابتعد السعر عن متوسطه المتحرك (EMA20) بوحدات ATR (احترازاً من مطاردة سهم ممتد).
@@ -500,8 +547,9 @@ def sustained_breakout(candles, hold_min=2, adx_min=20, clear_air_min=0.03, vol_
         "ema_rising": ema_rising,
         "adx_ok": adx_ok,
         "clear_air": clear_air,
-        "next_resistance": next_res,
-        "resistance_pct": res_pct,
+        "next_resistance": next_res,   # أقرب هدف فوق السعر (قمة أسبوعية/شهرية) أو None
+        "resistance_pct": res_pct,     # بُعد الهدف نسبةً
+        "resistance_tf": res_tf,       # إطار الهدف: "أسبوعية" / "شهرية" / None
         "days_held": days_held,
         "level": level,
         "entry_zone": entry_zone,   # "near" (دخول جيد) · "extended" (ممتد، متأخر) · None
