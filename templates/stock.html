@@ -143,9 +143,8 @@
       {% if meter %}
         {% from "_techmeter.html" import techmeter %}
         <div class="tmeter-wrap tmeter-inline">
-          {{ techmeter(meter.frac) }}
+          {{ techmeter(meter.frac, 'ميزان الإشارات الفنية: يلخّص ميل السهم الفني — كم مؤشراً يعطي إشارة إيجابية مقابل محايدة (لم تُحسم) أو سلبية. الإبرة تميل للأخضر كلما زادت الإيجابية، وللأحمر مع السلبية. تعليمي، ليس توصية شراء أو بيع.') }}
           <div class="tmeter-ends"><span>سلبي</span><span>محايد</span><span>إيجابي</span></div>
-          <div class="tmeter-state {{ meter.kind }}">ميزان الإشارات الفنية <span class="help-q" data-tip="ميزان الإشارات الفنية: يلخّص ميل السهم الفني — كم مؤشراً يعطي إشارة إيجابية مقابل محايدة (لم تُحسم) أو سلبية. الإبرة تميل للأخضر كلما زادت الإيجابية، وللأحمر مع السلبية. تعليمي، ليس توصية شراء أو بيع.">👁</span></div>
         </div>
       {% endif %}
 
