@@ -452,27 +452,34 @@ def _overhead_target(candles, price, cap=0.6):
     return lv, (lv - price) / price, label
 
 
-def _leg_start(rows, lookback=20):
-    """بداية الساق الصاعدة الحالية = اليوم الذي تلا آخر يوم بقي فيه الإغلاق دون قمة
-    الـlookback السابقة له (أي أول يوم اخترق القاعدة ولم يعُد تحتها بعده).
+def _leg_start(rows, lookback=20, max_age=30):
+    """بداية الساق الصاعدة الحالية = يوم اختراق قاعدة (قمة الـlookback) لا يزال الإغلاق
+    فوق مستواه حتى اليوم — مع **السماح بتصحيح بسيط** (المهم ألا يعود تحت المستوى).
+
+    نبحث ضمن آخر max_age جلسة عن **أبكر** يوم اخترق فيه قمة الـlookback السابقة وبقي
+    الإغلاق فوق ذلك المستوى في كل الجلسات التالية (تصحيحٌ نحو المستوى مسموح، الكسر تحته لا).
+    هذا يلتقط استمرار الصعود الواقعي بدل اشتراط تسجيل قمة جديدة كل يوم.
 
     يُرجع (index يوم الاختراق، مستوى القاعدة المخترَق) أو (None, None) لو لا اختراق قائم.
     """
     n = len(rows)
-    for i in range(n - 1, lookback - 1, -1):
-        prior_highs = [r["high"] for r in rows[i - lookback:i] if r["high"] is not None]
-        if not prior_highs:
+    closes = [r["close"] for r in rows]
+    highs = [r["high"] for r in rows]
+    start = max(lookback, n - max_age)
+    for i in range(start, n):  # الأقدم أولاً ضمن النافذة ⇒ أبكر اختراق ما زال صامداً
+        prior = [h for h in highs[i - lookback:i] if h is not None]
+        if not prior or closes[i] is None:
             continue
-        prior_high = max(prior_highs)
-        if rows[i]["close"] <= prior_high:
-            anchor = i + 1  # الاختراق بدأ في اليوم التالي
-            if anchor >= n:
-                return None, None  # اخترق اليوم فقط — لا استمرار بعد
-            return anchor, prior_high
+        level = max(prior)
+        if closes[i] > level and all(
+            (closes[j] is None) or (closes[j] > level) for j in range(i, n)
+        ):
+            return i, level
+    return None, None
     return None, None
 
 
-def sustained_breakout(candles, hold_min=2, adx_min=20, clear_air_min=0.03, vol_mult=1.5,
+def sustained_breakout(candles, hold_min=2, adx_min=15, clear_air_min=0.03, vol_mult=1.5,
                        ext_atr_max=4.0):
     """«اختراق مستمر»: سهم اخترق قاعدته بحجم مؤكّد ولا يزال يواصل صعوده بثبات.
 
