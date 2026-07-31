@@ -128,9 +128,9 @@
         </div>
         {% endif %}
         <div class="score-card">
-          {% if report.piotroski.score >= 8 %}<div class="badge-gem">💎 جوهرة</div>{% endif %}
           {{ gauge(report.piotroski.score, 9, '', 'lg') }}
           <div class="cap">الجودة المالية <span class="help-q" data-tip="الجودة المالية (Piotroski): درجة من 0 إلى 9 تقيس صحة الشركة المالية (ربحيتها وديونها وكفاءتها). 8 أو 9 تُعتبر قوية.">👁</span></div>
+          {% if report.piotroski.score >= 8 %}<div class="badge-gem">💎 جوهرة</div>{% endif %}
           {% if report.piotroski.computable < 9 %}
             <div class="cap">أمكن حساب {{ report.piotroski.computable }} نقاط فقط</div>
           {% endif %}
