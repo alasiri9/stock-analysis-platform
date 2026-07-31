@@ -129,14 +129,14 @@
         {% endif %}
         <div class="score-card">
           {% if report.piotroski.score >= 8 %}<div class="badge-gem">💎 جوهرة</div>{% endif %}
-          <div class="cap">الجودة المالية (Piotroski) <span class="help-q" data-tip="الجودة المالية (Piotroski): درجة من 0 إلى 9 تقيس صحة الشركة المالية (ربحيتها وديونها وكفاءتها). 8 أو 9 تُعتبر قوية.">👁</span></div>
+          <div class="cap">الجودة المالية <span class="help-q" data-tip="الجودة المالية (Piotroski): درجة من 0 إلى 9 تقيس صحة الشركة المالية (ربحيتها وديونها وكفاءتها). 8 أو 9 تُعتبر قوية.">👁</span></div>
           {{ gauge(report.piotroski.score, 9, '', 'lg') }}
           {% if report.piotroski.computable < 9 %}
             <div class="cap">أمكن حساب {{ report.piotroski.computable }} نقاط فقط</div>
           {% endif %}
         </div>
         <div class="score-card">
-          <div class="cap">النمو (Catalyst) <span class="help-q" data-tip="النمو (Catalyst): درجة من 0 إلى 100 تقيس سرعة نمو الشركة (مبيعات وأرباح). 🟢 قوي 80+ · 🟡 متوسط 40–79 · 🔴 ضعيف أقل من 40.">👁</span></div>
+          <div class="cap">النمو <span class="help-q" data-tip="النمو (Catalyst): درجة من 0 إلى 100 تقيس سرعة نمو الشركة (مبيعات وأرباح). 🟢 قوي 80+ · 🟡 متوسط 40–79 · 🔴 ضعيف أقل من 40.">👁</span></div>
           {{ gauge(report.catalyst.score, 100, '', 'lg') }}
         </div>
       </div>
