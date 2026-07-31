@@ -614,6 +614,7 @@ def create_app():
         "not_risen": {"recent_gain_max": screener.EARLY_MAX_RECENT_GAIN},
         "under100": {"price_max": 100},
         "breakout": {"break_dir": "breakout"},
+        "sustained": {"sustained_only": True},
         "breakdown": {"break_dir": "breakdown"},
         "high_volume": {"money_flow_bull": True},
     }
@@ -686,6 +687,7 @@ def create_app():
             "not_risen": len(screener.filter_records(records, recent_gain_max=screener.EARLY_MAX_RECENT_GAIN)),
             "under100": len(screener.filter_records(records, price_max=100)),
             "breakout": len(screener.filter_records(records, break_dir="breakout")),
+            "sustained": len(screener.filter_records(records, sustained_only=True)),
             "breakdown": len(screener.filter_records(records, break_dir="breakdown")),
             "high_volume": len(screener.filter_records(records, money_flow_bull=True)),
         }

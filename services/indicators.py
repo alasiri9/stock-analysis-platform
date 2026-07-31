@@ -368,6 +368,196 @@ def squeeze_breakout(candles):
     return rows[-1]["volume"] >= (sum(vols) / len(vols)) * 1.2
 
 
+def _anchored_vwap(window):
+    """VWAP المرتكز: متوسط السعر (النموذجي) مرجّحاً بالحجم عبر نافذة أيام معطاة.
+
+    السعر النموذجي لليوم = (قمة + قاع + إغلاق) / 3. المرساة = أول يوم بالنافذة
+    (يوم الاختراق مثلاً). يُرجع القيمة أو None لو لا حجم صالح.
+    """
+    num = den = 0.0
+    for r in window:
+        h, l, c, v = r.get("high"), r.get("low"), r.get("close"), r.get("volume")
+        if h is None or l is None or c is None or not v:
+            continue
+        num += ((h + l + c) / 3.0) * v
+        den += v
+    return (num / den) if den else None
+
+
+def _resample(candles, period="W"):
+    """يجمّع الشموع اليومية إلى أسبوعية/شهرية (معيار OHLC — نفس ما يبني به أي شارت).
+
+    candles: خام من FMP (الأحدث أولاً) فيه date/high/low/close.
+    period: 'W' أسبوعي (حسب أسبوع ISO) · 'M' شهري.
+    قمة الفترة = أعلى قمم أيامها، قاعها = أدنى قيعانها، إغلاقها = إغلاق آخر يوم فيها.
+    يُرجع قائمة شموع مجمّعة مرتّبة الأقدم أولاً: [{high, low, close}].
+    """
+    from datetime import date
+    buckets = {}
+    for c in (candles or []):
+        d = c.get("date")
+        h, l, cl = c.get("high"), c.get("low"), c.get("close")
+        if not d or h is None or l is None:
+            continue
+        ds = str(d)[:10]  # "YYYY-MM-DD"
+        try:
+            y, m, day = int(ds[:4]), int(ds[5:7]), int(ds[8:10])
+            key = (y, m) if period == "M" else date(y, m, day).isocalendar()[:2]
+        except (ValueError, TypeError):
+            continue
+        b = buckets.get(key)
+        if b is None:
+            # الأحدث أولاً ⇒ أول ظهور للفترة = آخر يوم فيها ⇒ نثبّت الإغلاق منه
+            buckets[key] = {"high": h, "low": l, "close": cl}
+        else:
+            b["high"] = max(b["high"], h)
+            b["low"] = min(b["low"], l)
+    return [buckets[k] for k in sorted(buckets)]
+
+
+def _fractal_highs(bars, wing=2):
+    """قمم فراكتالية (Bill Williams): شمعة قمّتها أعلى من `wing` شموع قبلها وبعدها.
+
+    bars: شموع مرتّبة الأقدم أولاً. آخر `wing` شمعة لا تُحسب (لم تتأكد بعد).
+    يُرجع قائمة قيم القمم المؤكّدة.
+    """
+    highs = [b["high"] for b in bars]
+    n = len(highs)
+    out = []
+    for i in range(wing, n - wing):
+        h = highs[i]
+        if all(h > highs[i - k] for k in range(1, wing + 1)) and \
+           all(h > highs[i + k] for k in range(1, wing + 1)):
+            out.append(h)
+    return out
+
+
+def _overhead_target(candles, price, cap=0.6):
+    """أقرب هدف فوق السعر = أقرب قمة فراكتالية أسبوعية/شهرية سابقة (الحساب الرسمي).
+
+    عند اختراق مقاومة، أقرب هدف منطقي هو المقاومة التالية فوقها (والمخترَقة تصير دعماً).
+    نجمّع الشموع أسبوعياً وشهرياً، نستخرج قممها الفراكتالية، ونأخذ أقربها فوق السعر
+    (ضمن سقف cap فتُهمَل القمم البعيدة جداً).
+    يُرجع (المستوى، البُعد النسبي، الإطار "أسبوعية"/"شهرية") أو (None, None, None) لو الأفق صافٍ.
+    """
+    ceiling = price * (1 + cap)
+    candidates = []
+    for tf, label in (("W", "أسبوعية"), ("M", "شهرية")):
+        for lv in _fractal_highs(_resample(candles, tf)):
+            if price < lv <= ceiling:
+                candidates.append((lv, label))
+    if not candidates:
+        return None, None, None
+    lv, label = min(candidates, key=lambda x: x[0])
+    return lv, (lv - price) / price, label
+
+
+def _leg_start(rows, lookback=20):
+    """بداية الساق الصاعدة الحالية = اليوم الذي تلا آخر يوم بقي فيه الإغلاق دون قمة
+    الـlookback السابقة له (أي أول يوم اخترق القاعدة ولم يعُد تحتها بعده).
+
+    يُرجع (index يوم الاختراق، مستوى القاعدة المخترَق) أو (None, None) لو لا اختراق قائم.
+    """
+    n = len(rows)
+    for i in range(n - 1, lookback - 1, -1):
+        prior_highs = [r["high"] for r in rows[i - lookback:i] if r["high"] is not None]
+        if not prior_highs:
+            continue
+        prior_high = max(prior_highs)
+        if rows[i]["close"] <= prior_high:
+            anchor = i + 1  # الاختراق بدأ في اليوم التالي
+            if anchor >= n:
+                return None, None  # اخترق اليوم فقط — لا استمرار بعد
+            return anchor, prior_high
+    return None, None
+
+
+def sustained_breakout(candles, hold_min=2, adx_min=20, clear_air_min=0.03, vol_mult=1.5,
+                       ext_atr_max=4.0):
+    """«اختراق مستمر»: سهم اخترق قاعدته بحجم مؤكّد ولا يزال يواصل صعوده بثبات.
+
+    الهدف: تمييز الاختراق «الصحّي المستمر» عن الاختراق الكذّاب. يشترط اجتماع:
+      1) اختراق صاعد لقاعدة (قمة 20 يوماً) **مؤكّد بالحجم** يوم بدايته، لا يزال قائماً
+         منذ ≥ hold_min جلسة (السعر لم يعُد تحت مستوى الاختراق).
+      2) السعر فوق **VWAP المرتكز** على يوم الاختراق — كل من اشترى بعد الاختراق رابح.
+      3) اتجاه صاعد: EMA20 صاعد والسعر فوقه.
+      4) قوة اتجاه: ADX ≥ adx_min.
+      5) **مساحة حرة فوقه**: لا مقاومة سابقة (قمة أسبوعية/شهرية) خلال clear_air_min فوق السعر.
+
+    كما يقيس **موضع الدخول** (entry_zone): بُعد السعر عن EMA20 بوحدات ATR — «قريب»
+    (لا يزال في منطقة دخول جيدة) أو «ممتد» (صعد بعيداً، الدخول الآن متأخر ومخاطرته أعلى)
+    — احترازاً من مطاردة سهم امتدّ كثيراً عن نقطة انطلاقه.
+
+    «المساحة الحرة» = أقرب هدف فوق السعر (أقرب قمة أسبوعية/شهرية فراكتالية سابقة):
+    قريبة ⇒ أفق ضيّق · بعيدة/غائبة ⇒ أفق مفتوح. وهي نفسها أقرب هدف سعري بعد الاختراق.
+
+    يُرجع dict وصفي {sustained, above_avwap, avwap, ema_rising, adx_ok, clear_air,
+    next_resistance, resistance_pct, resistance_tf, days_held, level, entry_zone,
+    ext_atr, ext_pct} أو None لو لا اختراق/بيانات ناقصة.
+    """
+    rows = _clean(candles)  # الأقدم أولاً
+    closes = [r["close"] for r in rows]
+    if len(closes) < 45:
+        return None
+    price = closes[-1]
+
+    anchor, level = _leg_start(rows)
+    if anchor is None:
+        return None
+    days_held = (len(rows) - 1) - anchor  # جلسات منذ يوم الاختراق
+
+    # (1) ثبات فوق مستوى الاختراق منذ عدة جلسات + حجم مؤكّد حول يوم الاختراق
+    held = days_held >= hold_min and price > level
+    base_vols = [r["volume"] for r in rows[max(0, anchor - 21):max(0, anchor - 1)] if r["volume"]]
+    avg_vol = (sum(base_vols) / len(base_vols)) if base_vols else 0
+    # طفرة الحجم تتجمّع حول الاختراق — نتسامح بيوم قبله/بعده
+    brk_vols = [rows[j]["volume"] for j in range(max(0, anchor - 1), min(len(rows), anchor + 2))
+                if rows[j]["volume"]]
+    confirmed = bool(avg_vol and brk_vols and max(brk_vols) >= avg_vol * vol_mult)
+
+    # (2) VWAP المرتكز على يوم الاختراق (من الاختراق حتى اليوم)
+    avwap = _anchored_vwap(rows[anchor:])
+    above_avwap = avwap is not None and price >= avwap
+
+    # (3) EMA20 صاعد والسعر فوقه
+    ema_s = _ema_series(closes, 20)
+    ema_rising = len(ema_s) >= 6 and ema_s[-1] > ema_s[-6] and price > ema_s[-1]
+
+    # (4) قوة الاتجاه
+    adx = _adx(rows)
+    adx_ok = adx is not None and adx >= adx_min
+
+    # (5) مساحة حرة فوق السهم: أقرب هدف = أقرب قمة أسبوعية/شهرية سابقة (الحساب الرسمي)
+    next_res, res_pct, res_tf = _overhead_target(candles, price)
+    clear_air = (next_res is None) or (res_pct is not None and res_pct >= clear_air_min)
+
+    # موضع الدخول: كم ابتعد السعر عن متوسطه المتحرك (EMA20) بوحدات ATR (احترازاً من مطاردة سهم ممتد).
+    # قريب من متوسطه = منطقة دخول أفضل · بعيد جداً = ممتد، الدخول متأخر ومخاطرته أعلى.
+    atr_val = atr(candles)
+    ema20 = ema_s[-1] if ema_s else None
+    ext_atr = ((price - ema20) / atr_val) if (ema20 is not None and atr_val) else None
+    ext_pct = ((price - ema20) / ema20 * 100.0) if ema20 else None
+    entry_zone = None if ext_atr is None else ("extended" if ext_atr > ext_atr_max else "near")
+
+    sustained = bool(confirmed and held and above_avwap and ema_rising and adx_ok and clear_air)
+    return {
+        "sustained": sustained,
+        "above_avwap": above_avwap,
+        "avwap": avwap,
+        "ema_rising": ema_rising,
+        "adx_ok": adx_ok,
+        "clear_air": clear_air,
+        "next_resistance": next_res,   # أقرب هدف فوق السعر (قمة أسبوعية/شهرية) أو None
+        "resistance_pct": res_pct,     # بُعد الهدف نسبةً
+        "resistance_tf": res_tf,       # إطار الهدف: "أسبوعية" / "شهرية" / None
+        "days_held": days_held,
+        "level": level,
+        "entry_zone": entry_zone,   # "near" (دخول جيد) · "extended" (ممتد، متأخر) · None
+        "ext_atr": ext_atr,         # بُعد السعر عن EMA20 بوحدات ATR
+        "ext_pct": ext_pct,         # البُعد نفسه كنسبة مئوية (للعرض)
+    }
+
+
 def money_flow(candles):
     """درجة تدفق السيولة الذكية (0-100) من OBV + MFI + نسبة الحجم.
 

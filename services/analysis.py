@@ -263,12 +263,14 @@ def build_stock_report(ticker):
         candles = fmp_client.get_historical_prices(ticker, limit=250)
         atr_plan = scoring.atr_trade_plan(price, candles)
         brk = scoring.break_status(candles)  # اختراق/كسر مؤكّد بالحجم
+        sustained = indicators.sustained_breakout(candles)  # اختراق مستمر (يواصل صعوده بثبات)
         tech_indicators = indicators.build_indicators(candles)
         chart = price_chart(candles, days=250)  # سياق سنة كامل — يطابق نافذة التحليل
     except Exception as e:  # noqa: BLE001
         print(f"[analysis] تعذّر حساب ATR/المؤشرات لـ {ticker}: {e}")
         atr_plan = None
         brk = None
+        sustained = None
         tech_indicators = []
         chart = None
 
@@ -305,6 +307,7 @@ def build_stock_report(ticker):
         "finnhub_price": finnhub_price,    # سعر تأكيد ثانٍ (أو None)
         "atr_plan": atr_plan,              # خطة ATR التعليمية (أو None)
         "break_status": brk,               # حالة الاختراق/الكسر المؤكّد بالحجم (أو None)
+        "sustained": sustained,            # اختراق مستمر: تفاصيل استمرار الصعود (أو None)
         "indicators": tech_indicators,     # مؤشرات فنية (قد تكون قائمة فارغة)
         "chart": chart,                    # بيانات شارت مسار السعر (أو None)
     }
