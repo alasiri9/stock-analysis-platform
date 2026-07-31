@@ -5,8 +5,9 @@
 {% block content %}
   <section class="panel">
     <div class="panel-head">
-      <h2>🎯 رادار المحفزات :</h2>
-      <p class="panel-sub">معاملات المطلعين (مدراء ومسؤولي الشركات) على أسهم شركاتهم — من سجلات SEC الرسمية.</p>
+      <h2>🎯 رادار المحفزات :
+        <span class="help-q" data-tip="معاملات المطلعين (مدراء ومسؤولي الشركات) على أسهم شركاتهم — من سجلات SEC الرسمية. شراؤهم بأموالهم غالباً إشارة ثقة، والبيع قد يكون لأسباب شخصية. تعليمي، ليس توصية.">👁</span>
+      </h2>
     </div>
 
     <form action="{{ url_for('radar_refresh') }}" method="post" style="margin-bottom:12px">
@@ -22,8 +23,9 @@
     </div>
 
     {% if open_buys %}
-      <h3 class="perf-title">🔥 مشتريات المطلعين من السوق المفتوح :</h3>
-      <p class="panel-sub">أقوى إشارة بالرادار — المطلع يدفع من ماله الخاص لشراء سهم شركته.</p>
+      <h3 class="perf-title">🔥 مشتريات المطلعين من السوق المفتوح :
+        <span class="help-q" data-tip="أقوى إشارة بالرادار — المطلع يدفع من ماله الخاص لشراء سهم شركته (شراء فعلي من السوق المفتوح). تعليمي، ليس توصية.">👁</span>
+      </h3>
       <table class="insider radar-insider">
         <thead>
           <tr><th>السهم</th><th>اسم المطلع</th><th>المنصب</th><th>العملية</th><th>النوع</th><th>الأسهم</th><th>السعر</th><th>التاريخ</th></tr>
