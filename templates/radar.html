@@ -33,6 +33,7 @@
               <span class="cluster-ticker">{{ c.ticker }}</span>
               <span class="cluster-badge">👥 {{ c.count }} مطلعين</span>
             </div>
+            {% if c.sector %}<div class="scard-sector">🏷️ {{ c.sector | sector_ar }}</div>{% endif %}
             <div class="cluster-owners" dir="ltr">{{ c.owners | join(' · ') }}</div>
           </a>
         {% endfor %}
