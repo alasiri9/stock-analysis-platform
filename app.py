@@ -1135,7 +1135,11 @@ def create_app():
         for t in open_buys:
             if t.get("owner"):
                 _buyers.setdefault(t["ticker"], set()).add(t["owner"])
-        clusters = [{"ticker": tk, "count": len(owners), "owners": sorted(owners)}
+        # خريطة القطاع لكل رمز (من سجلّات الماسح) لعرض اسم القطاع تحت كل سهم
+        _records, _ = screener.load_records()
+        _sector_by_ticker = {r["ticker"]: r.get("sector") for r in _records if r.get("ticker")}
+        clusters = [{"ticker": tk, "count": len(owners), "owners": sorted(owners),
+                     "sector": _sector_by_ticker.get(tk)}
                     for tk, owners in _buyers.items() if len(owners) >= 2]
         clusters.sort(key=lambda c: c["count"], reverse=True)
         return render_template(
