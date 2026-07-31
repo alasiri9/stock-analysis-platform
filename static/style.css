@@ -1042,10 +1042,10 @@ a.stat-box:hover { filter: brightness(1.15); transform: translateY(-1px); }
 .gauge-svg-box { position: relative; }
 .gauge-hub-eye {
   position: absolute; left: 50%; top: 83.3%; transform: translate(-50%, -50%);
-  font-size: 13px; line-height: 1; cursor: help; z-index: 2;
+  font-size: 11px; line-height: 1; cursor: help; z-index: 2;
 }
 .gauge-lg .gauge-hub-eye { font-size: 15px; }
-.g-hub-eye { fill: transparent; }  /* العين تحلّ محل النقطة البيضاء كمحور للإبرة */
+.g-hub-eye { r: 8px; fill: var(--text); }  /* دائرة أكبر تحتوي العين في مركزها */
 .gauge-needle {
   stroke: var(--text); stroke-width: 3; stroke-linecap: round;
   transform-box: view-box; transform-origin: 50px 50px;
