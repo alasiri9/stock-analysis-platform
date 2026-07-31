@@ -800,7 +800,7 @@ a.stat-box:hover { filter: brightness(1.15); transform: translateY(-1px); }
 .verdict-line.pos2 b, .verdict-line.pos1 b { color: var(--green); }
 .verdict-line.neg1 b, .verdict-line.neg2 b { color: var(--red); }
 .verdict-line.neu b { color: var(--gold); }
-.tmeter-inline { margin: 4px 0 26px; }
+.tmeter-inline { margin: 4px 0 40px; }
 .sustain-detail { margin-top: 10px; }
 .sustain-entry { margin-top: 10px; }
 .entry-tag { display: inline-block; font-size: 11px; font-weight: 900; padding: 1px 8px; border-radius: 999px; margin-inline: 4px; }
