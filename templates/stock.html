@@ -123,21 +123,21 @@
       <div class="score-cards">
         {% if scan %}
         <div class="score-card">
-          <div class="cap">قوة التأكيد <span class="help-q" data-tip="قوة التأكيد: كم عاملاً إيجابياً اجتمع على السهم من أصل 16 (مؤشرات فنية + مالية + سيولة + تفوّق على السوق). كلما زاد الرقم قوي التأكيد. تعليمي فقط، ليس توصية.">👁</span></div>
           {{ gauge(measures_met(scan), 16, '', 'lg') }}
+          <div class="cap">قوة التأكيد <span class="help-q" data-tip="قوة التأكيد: كم عاملاً إيجابياً اجتمع على السهم من أصل 16 (مؤشرات فنية + مالية + سيولة + تفوّق على السوق). كلما زاد الرقم قوي التأكيد. تعليمي فقط، ليس توصية.">👁</span></div>
         </div>
         {% endif %}
         <div class="score-card">
           {% if report.piotroski.score >= 8 %}<div class="badge-gem">💎 جوهرة</div>{% endif %}
-          <div class="cap">الجودة المالية <span class="help-q" data-tip="الجودة المالية (Piotroski): درجة من 0 إلى 9 تقيس صحة الشركة المالية (ربحيتها وديونها وكفاءتها). 8 أو 9 تُعتبر قوية.">👁</span></div>
           {{ gauge(report.piotroski.score, 9, '', 'lg') }}
+          <div class="cap">الجودة المالية <span class="help-q" data-tip="الجودة المالية (Piotroski): درجة من 0 إلى 9 تقيس صحة الشركة المالية (ربحيتها وديونها وكفاءتها). 8 أو 9 تُعتبر قوية.">👁</span></div>
           {% if report.piotroski.computable < 9 %}
             <div class="cap">أمكن حساب {{ report.piotroski.computable }} نقاط فقط</div>
           {% endif %}
         </div>
         <div class="score-card">
-          <div class="cap">النمو <span class="help-q" data-tip="النمو (Catalyst): درجة من 0 إلى 100 تقيس سرعة نمو الشركة (مبيعات وأرباح). 🟢 قوي 80+ · 🟡 متوسط 40–79 · 🔴 ضعيف أقل من 40.">👁</span></div>
           {{ gauge(report.catalyst.score, 100, '', 'lg') }}
+          <div class="cap">النمو <span class="help-q" data-tip="النمو (Catalyst): درجة من 0 إلى 100 تقيس سرعة نمو الشركة (مبيعات وأرباح). 🟢 قوي 80+ · 🟡 متوسط 40–79 · 🔴 ضعيف أقل من 40.">👁</span></div>
         </div>
       </div>
       {% if meter %}
