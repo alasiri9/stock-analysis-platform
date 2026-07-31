@@ -61,7 +61,10 @@
       <div class="scard-ready">🎯 انفجار قوي — جاهز للانطلاق <span class="help-q" data-tip="جاهز للانطلاق: درجة النمو (Catalyst) عالية جداً (≥80) — السهم في وضع قوي مرشّح للحركة. تعليمي لا توصية شراء.">👁</span></div>
     {% endif %}
     {% set bk = r.get('break_status') %}
-    {% if bk and bk.confirmed and bk.dir == 'breakout' %}
+    {% set sb = r.get('sustained') %}
+    {% if sb and sb.sustained %}
+      <div class="scard-brk up">📈 اختراق مستمر · يواصل صعوده بثبات <span class="help-q" data-tip="اختراق مستمر: السهم اخترق قمته بحجم مؤكّد ولا يزال يواصل صعوده بثبات — ثابت فوق مستوى الاختراق، وفوق متوسط سعره المرجّح بالحجم منذ الاختراق (كل من اشترى بعده رابح)، واتجاهه صاعد بقوة، وما فوقه مقاومة قريبة تعيقه. أقوى تأكيد على استمرار الحركة لا مجرد اختراق لحظي. تعليمي، ليس توصية.">👁</span></div>
+    {% elif bk and bk.confirmed and bk.dir == 'breakout' %}
       <div class="scard-brk up">🚀 اختراق مؤكّد بحجم عالٍ · {{ bk.days_ago | recency_ar }}</div>
     {% elif bk and bk.confirmed and bk.dir == 'breakdown' %}
       <div class="scard-brk down">⚠️ كسر مؤكّد بحجم عالٍ · {{ bk.days_ago | recency_ar }}</div>

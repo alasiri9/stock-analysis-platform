@@ -368,6 +368,131 @@ def squeeze_breakout(candles):
     return rows[-1]["volume"] >= (sum(vols) / len(vols)) * 1.2
 
 
+def _anchored_vwap(window):
+    """VWAP المرتكز: متوسط السعر (النموذجي) مرجّحاً بالحجم عبر نافذة أيام معطاة.
+
+    السعر النموذجي لليوم = (قمة + قاع + إغلاق) / 3. المرساة = أول يوم بالنافذة
+    (يوم الاختراق مثلاً). يُرجع القيمة أو None لو لا حجم صالح.
+    """
+    num = den = 0.0
+    for r in window:
+        h, l, c, v = r.get("high"), r.get("low"), r.get("close"), r.get("volume")
+        if h is None or l is None or c is None or not v:
+            continue
+        num += ((h + l + c) / 3.0) * v
+        den += v
+    return (num / den) if den else None
+
+
+def _overhead_resistance(rows, price, left=10, right=10, cap=0.5):
+    """أقرب مقاومة سابقة فوق السعر (قمة محورية على فريم أعلى).
+
+    قمة محورية = يومٌ قمته أعلى من `left` أيام قبله و`right` بعده — تمثّل قمماً
+    أسبوعية/شهرية سابقة. نأخذ أقربها فوق السعر (ضمن سقف cap فوقه، فتُهمَل القمم
+    البعيدة جداً). يُرجع (المستوى، البُعد النسبي) أو (None, None) لو الأفق صافٍ.
+    """
+    highs = [r.get("high") for r in rows]
+    n = len(highs)
+    ceiling = price * (1 + cap)
+    pivots = []
+    for i in range(left, n - right):
+        h = highs[i]
+        if h is None or h <= price or h > ceiling:
+            continue
+        window = [x for x in highs[i - left:i + right + 1] if x is not None]
+        if window and h == max(window):
+            pivots.append(h)
+    if not pivots:
+        return None, None
+    nearest = min(pivots)
+    return nearest, (nearest - price) / price
+
+
+def _leg_start(rows, lookback=20):
+    """بداية الساق الصاعدة الحالية = اليوم الذي تلا آخر يوم بقي فيه الإغلاق دون قمة
+    الـlookback السابقة له (أي أول يوم اخترق القاعدة ولم يعُد تحتها بعده).
+
+    يُرجع (index يوم الاختراق، مستوى القاعدة المخترَق) أو (None, None) لو لا اختراق قائم.
+    """
+    n = len(rows)
+    for i in range(n - 1, lookback - 1, -1):
+        prior_highs = [r["high"] for r in rows[i - lookback:i] if r["high"] is not None]
+        if not prior_highs:
+            continue
+        prior_high = max(prior_highs)
+        if rows[i]["close"] <= prior_high:
+            anchor = i + 1  # الاختراق بدأ في اليوم التالي
+            if anchor >= n:
+                return None, None  # اخترق اليوم فقط — لا استمرار بعد
+            return anchor, prior_high
+    return None, None
+
+
+def sustained_breakout(candles, hold_min=2, adx_min=20, clear_air_min=0.03, vol_mult=1.5):
+    """«اختراق مستمر»: سهم اخترق قاعدته بحجم مؤكّد ولا يزال يواصل صعوده بثبات.
+
+    الهدف: تمييز الاختراق «الصحّي المستمر» عن الاختراق الكذّاب. يشترط اجتماع:
+      1) اختراق صاعد لقاعدة (قمة 20 يوماً) **مؤكّد بالحجم** يوم بدايته، لا يزال قائماً
+         منذ ≥ hold_min جلسة (السعر لم يعُد تحت مستوى الاختراق).
+      2) السعر فوق **VWAP المرتكز** على يوم الاختراق — كل من اشترى بعد الاختراق رابح.
+      3) اتجاه صاعد: EMA20 صاعد والسعر فوقه.
+      4) قوة اتجاه: ADX ≥ adx_min.
+      5) **مساحة حرة فوقه**: لا مقاومة سابقة (قمة أسبوعية/شهرية) خلال clear_air_min فوق السعر.
+
+    يُرجع dict وصفي {sustained, above_avwap, avwap, ema_rising, adx_ok, clear_air,
+    next_resistance, resistance_pct, days_held, level} أو None لو لا اختراق/بيانات ناقصة.
+    """
+    rows = _clean(candles)  # الأقدم أولاً
+    closes = [r["close"] for r in rows]
+    if len(closes) < 45:
+        return None
+    price = closes[-1]
+
+    anchor, level = _leg_start(rows)
+    if anchor is None:
+        return None
+    days_held = (len(rows) - 1) - anchor  # جلسات منذ يوم الاختراق
+
+    # (1) ثبات فوق مستوى الاختراق منذ عدة جلسات + حجم مؤكّد حول يوم الاختراق
+    held = days_held >= hold_min and price > level
+    base_vols = [r["volume"] for r in rows[max(0, anchor - 21):max(0, anchor - 1)] if r["volume"]]
+    avg_vol = (sum(base_vols) / len(base_vols)) if base_vols else 0
+    # طفرة الحجم تتجمّع حول الاختراق — نتسامح بيوم قبله/بعده
+    brk_vols = [rows[j]["volume"] for j in range(max(0, anchor - 1), min(len(rows), anchor + 2))
+                if rows[j]["volume"]]
+    confirmed = bool(avg_vol and brk_vols and max(brk_vols) >= avg_vol * vol_mult)
+
+    # (2) VWAP المرتكز على يوم الاختراق (من الاختراق حتى اليوم)
+    avwap = _anchored_vwap(rows[anchor:])
+    above_avwap = avwap is not None and price >= avwap
+
+    # (3) EMA20 صاعد والسعر فوقه
+    ema_s = _ema_series(closes, 20)
+    ema_rising = len(ema_s) >= 6 and ema_s[-1] > ema_s[-6] and price > ema_s[-1]
+
+    # (4) قوة الاتجاه
+    adx = _adx(rows)
+    adx_ok = adx is not None and adx >= adx_min
+
+    # (5) مساحة حرة فوق السهم
+    next_res, res_pct = _overhead_resistance(rows, price)
+    clear_air = (next_res is None) or (res_pct is not None and res_pct >= clear_air_min)
+
+    sustained = bool(confirmed and held and above_avwap and ema_rising and adx_ok and clear_air)
+    return {
+        "sustained": sustained,
+        "above_avwap": above_avwap,
+        "avwap": avwap,
+        "ema_rising": ema_rising,
+        "adx_ok": adx_ok,
+        "clear_air": clear_air,
+        "next_resistance": next_res,
+        "resistance_pct": res_pct,
+        "days_held": days_held,
+        "level": level,
+    }
+
+
 def money_flow(candles):
     """درجة تدفق السيولة الذكية (0-100) من OBV + MFI + نسبة الحجم.
 

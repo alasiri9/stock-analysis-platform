@@ -286,6 +286,7 @@ def _build_record(ticker):
         pullback = indicators.trend_pullback(candles)  # ارتداد الترند (شراء الانخفاض)
         atr_val = indicators.atr(candles)  # تذبذب السهم — لمستويات الدخول/الوقف/الهدف بالتنبيهات
         brk = scoring.break_status(candles)  # اختراق/كسر مؤكّد بالحجم
+        sustained = indicators.sustained_breakout(candles)  # اختراق مستمر (يواصل صعوده بثبات)
         mom_63d = _period_return(closes, MOMENTUM_SESSIONS)  # زخم ~3 أشهر (للقوة النسبية مقابل السوق)
         recent_gain = _period_return(closes, RECENT_SESSIONS)  # صعود آخر أسبوعين (لفلتر "لسا ما صعد")
         _save_price_history(ticker, candles)  # نفس البيانات المجلوبة أصلاً — بلا استدعاء API إضافي
@@ -297,6 +298,7 @@ def _build_record(ticker):
         pullback = False
         atr_val = None
         brk = None
+        sustained = None
         mom_63d = None
         recent_gain = None
 
@@ -316,6 +318,7 @@ def _build_record(ticker):
         "trend_pullback": pullback,
         "atr": atr_val,
         "break_status": brk,
+        "sustained": sustained,
         "mom_63d": mom_63d,
         "recent_gain": recent_gain,
     }
@@ -842,7 +845,7 @@ def market_mood(records=None):
 def filter_records(records, piotroski_min=None, catalyst_min=None,
                    price_max=None, market_cap_min=None, sector=None,
                    recent_gain_max=None, float_max=None, min_measures=None,
-                   break_dir=None, money_flow_bull=None):
+                   break_dir=None, money_flow_bull=None, sustained_only=None):
     """يطبّق الفلاتر على السجلّات المخزّنة.
 
     None ≠ 0 : السجلّ الذي تكون قيمته المطلوبة None لا يجتاز فلتراً يحدّ تلك القيمة
@@ -854,6 +857,7 @@ def filter_records(records, piotroski_min=None, catalyst_min=None,
     float_shares=None يُستبعد لأن العتبة صريحة (لا حكم بلا بيانات float).
     break_dir: "breakout" أو "breakdown" — يُبقي فقط الأسهم ذات اختراق/كسر «مؤكّد» بحجم عالٍ.
     money_flow_bull: True — يُبقي فقط الأسهم ذات سيولة داخلة (تجميع).
+    sustained_only: True — يُبقي فقط الأسهم ذات «اختراق مستمر» (يواصل صعوده بثبات).
     """
     out = []
     for r in records:
@@ -889,6 +893,9 @@ def filter_records(records, piotroski_min=None, catalyst_min=None,
                 continue
         if money_flow_bull:
             if (r.get("money_flow") or {}).get("status") != "bull":
+                continue
+        if sustained_only:
+            if not (r.get("sustained") or {}).get("sustained"):
                 continue
         out.append(r)
     # ترتيب تنازلي حسب Catalyst ثم Piotroski (None في الأسفل)
