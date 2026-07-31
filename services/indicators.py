@@ -428,7 +428,8 @@ def _leg_start(rows, lookback=20):
     return None, None
 
 
-def sustained_breakout(candles, hold_min=2, adx_min=20, clear_air_min=0.03, vol_mult=1.5):
+def sustained_breakout(candles, hold_min=2, adx_min=20, clear_air_min=0.03, vol_mult=1.5,
+                       ext_atr_max=4.0):
     """«اختراق مستمر»: سهم اخترق قاعدته بحجم مؤكّد ولا يزال يواصل صعوده بثبات.
 
     الهدف: تمييز الاختراق «الصحّي المستمر» عن الاختراق الكذّاب. يشترط اجتماع:
@@ -439,8 +440,13 @@ def sustained_breakout(candles, hold_min=2, adx_min=20, clear_air_min=0.03, vol_
       4) قوة اتجاه: ADX ≥ adx_min.
       5) **مساحة حرة فوقه**: لا مقاومة سابقة (قمة أسبوعية/شهرية) خلال clear_air_min فوق السعر.
 
+    كما يقيس **موضع الدخول** (entry_zone): بُعد السعر عن EMA20 بوحدات ATR — «قريب»
+    (لا يزال في منطقة دخول جيدة) أو «ممتد» (صعد بعيداً، الدخول الآن متأخر ومخاطرته أعلى)
+    — احترازاً من مطاردة سهم امتدّ كثيراً عن نقطة انطلاقه.
+
     يُرجع dict وصفي {sustained, above_avwap, avwap, ema_rising, adx_ok, clear_air,
-    next_resistance, resistance_pct, days_held, level} أو None لو لا اختراق/بيانات ناقصة.
+    next_resistance, resistance_pct, days_held, level, entry_zone, ext_atr, ext_pct}
+    أو None لو لا اختراق/بيانات ناقصة.
     """
     rows = _clean(candles)  # الأقدم أولاً
     closes = [r["close"] for r in rows]
@@ -478,6 +484,14 @@ def sustained_breakout(candles, hold_min=2, adx_min=20, clear_air_min=0.03, vol_
     next_res, res_pct = _overhead_resistance(rows, price)
     clear_air = (next_res is None) or (res_pct is not None and res_pct >= clear_air_min)
 
+    # موضع الدخول: كم ابتعد السعر عن متوسطه المتحرك (EMA20) بوحدات ATR (احترازاً من مطاردة سهم ممتد).
+    # قريب من متوسطه = منطقة دخول أفضل · بعيد جداً = ممتد، الدخول متأخر ومخاطرته أعلى.
+    atr_val = atr(candles)
+    ema20 = ema_s[-1] if ema_s else None
+    ext_atr = ((price - ema20) / atr_val) if (ema20 is not None and atr_val) else None
+    ext_pct = ((price - ema20) / ema20 * 100.0) if ema20 else None
+    entry_zone = None if ext_atr is None else ("extended" if ext_atr > ext_atr_max else "near")
+
     sustained = bool(confirmed and held and above_avwap and ema_rising and adx_ok and clear_air)
     return {
         "sustained": sustained,
@@ -490,6 +504,9 @@ def sustained_breakout(candles, hold_min=2, adx_min=20, clear_air_min=0.03, vol_
         "resistance_pct": res_pct,
         "days_held": days_held,
         "level": level,
+        "entry_zone": entry_zone,   # "near" (دخول جيد) · "extended" (ممتد، متأخر) · None
+        "ext_atr": ext_atr,         # بُعد السعر عن EMA20 بوحدات ATR
+        "ext_pct": ext_pct,         # البُعد نفسه كنسبة مئوية (للعرض)
     }
 
 

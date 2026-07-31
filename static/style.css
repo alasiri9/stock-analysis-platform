@@ -790,6 +790,10 @@ a.stat-box:hover { filter: brightness(1.15); transform: translateY(-1px); }
 .ss-group ul { margin: 0; padding-inline-start: 20px; }
 .ss-group li { color: var(--text); font-size: 14.5px; line-height: 1.9; }
 .sustain-detail { margin-top: 10px; }
+.sustain-entry { margin-top: 10px; }
+.entry-tag { display: inline-block; font-size: 11px; font-weight: 900; padding: 1px 8px; border-radius: 999px; margin-inline: 4px; }
+.entry-tag.near { color: var(--green); background: var(--green-dim); }
+.entry-tag.ext { color: var(--gold); background: rgba(234,179,8,.14); }
 
 /* تمييز البطاقات عالية قوة التأكيد (≥10 من 16) */
 .scard.strong { border-color: rgba(34,197,94,.5); box-shadow: 0 0 20px rgba(34,197,94,.13); }
