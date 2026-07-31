@@ -1039,6 +1039,13 @@ a.stat-box:hover { filter: brightness(1.15); transform: translateY(-1px); }
 .g-zone-y { fill: none; stroke: var(--gold); stroke-width: 3; stroke-linecap: butt; }
 .g-zone-g { fill: none; stroke: var(--green); stroke-width: 3; stroke-linecap: butt; }
 .g-hub { fill: var(--text); }
+.gauge-svg-box { position: relative; }
+.gauge-hub-eye {
+  position: absolute; left: 50%; top: 83.3%; transform: translate(-50%, -50%);
+  font-size: 13px; line-height: 1; cursor: help; z-index: 2;
+}
+.gauge-lg .gauge-hub-eye { font-size: 15px; }
+.g-hub-eye { fill: transparent; }  /* العين تحلّ محل النقطة البيضاء كمحور للإبرة */
 .gauge-needle {
   stroke: var(--text); stroke-width: 3; stroke-linecap: round;
   transform-box: view-box; transform-origin: 50px 50px;
