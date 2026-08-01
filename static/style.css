@@ -224,9 +224,10 @@ a.stat-box:hover { filter: brightness(1.15); transform: translateY(-1px); }
     0 0 0 9px #7c6fe6,
     0 0 26px 8px rgba(124, 111, 230, .45);
 }
-.framed-table th, .framed-table td {
-  border: 2.5px solid #7c6fe6;
-  border-image: linear-gradient(135deg, #22c55e, #a7c0e8, #7c6fe6) 1;
+/* شبكة داخلية هادئة (بنفسجي خافت) + توسيط المحتوى — البرواز الخارجي يبقى فخماً */
+table.framed-table th, table.framed-table td {
+  border: 1px solid rgba(124, 111, 230, .32);
+  text-align: center;
 }
 
 .mood-table {
