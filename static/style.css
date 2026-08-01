@@ -217,17 +217,17 @@ a.stat-box:hover { filter: brightness(1.15); transform: translateY(-1px); }
 /* برواز الطبقات — كلاس قابل لإعادة الاستخدام على أي جدول (أخضر·فضّي·بنفسجي + توهّج) */
 .framed-table {
   border-collapse: collapse; border-radius: 14px; overflow: hidden;
-  width: calc(100% - 24px); margin: 14px auto 28px;
+  width: auto; max-width: 100%; margin: 14px auto 28px;  /* أضيق من كامل العرض — أضغط أفقياً */
   box-shadow:
     0 0 0 3px #22c55e,
     0 0 0 6px #a7c0e8,
     0 0 0 9px #7c6fe6,
     0 0 26px 8px rgba(124, 111, 230, .45);
 }
-/* شبكة داخلية هادئة (بنفسجي خافت) + توسيط المحتوى — البرواز الخارجي يبقى فخماً */
+/* شبكة داخلية عودية هادئة + توسيط المحتوى + حشو أفقي أصغر — البرواز الخارجي يبقى فخماً */
 table.framed-table th, table.framed-table td {
-  border: 1px solid rgba(124, 111, 230, .32);
-  text-align: center;
+  border: 1px solid rgba(192, 138, 46, .5);
+  text-align: center; padding: 9px 12px;
 }
 
 .mood-table {
