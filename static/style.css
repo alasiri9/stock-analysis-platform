@@ -215,6 +215,8 @@ a.stat-box:hover { filter: brightness(1.15); transform: translateY(-1px); }
 
 /* ---------- مزاج الأسهم: جدول (الحالة/العدد/النسبة) بصفوف ملوّنة + سطر حالة السوق ---------- */
 /* برواز الطبقات لأي صندوق (نفس الجدول) — يحتاج مسافة حوله لتظهر الطبقات والتوهّج */
+/* محاذاة رأس التقرير اليومي والمربعات مع الحافة اليمنى للجدول (نفس عرض .framed-table) */
+.dr-align { width: 100%; max-width: 1200px; margin: 0 auto; }
 .framed-row { gap: 22px !important; padding: 6px 4px; }
 .framed-box {
   border-radius: 14px;
