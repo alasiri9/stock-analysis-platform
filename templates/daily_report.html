@@ -11,8 +11,8 @@
 
       <div class="stat-row framed-row">
         <div class="stat-box framed-box"><div class="label">👁 إجمالي الأسهم المفحوصة</div><div class="value">{{ stats.total }}</div></div>
-        <div class="stat-box gem-box framed-box"><div class="label">💎 الجواهر</div><div class="value">{{ stats.gems }}</div></div>
-        <div class="stat-box framed-box"><div class="label">⚡ إشارة قوية</div><div class="value">{{ stats.strong }}</div></div>
+        <a href="{{ url_for('index', preset='quality') }}#screener" class="stat-box gem-box framed-box"><div class="label">💎 الجواهر</div><div class="value">{{ stats.gems }}</div></a>
+        <a href="{{ url_for('index', preset='growth') }}#screener" class="stat-box framed-box"><div class="label">⚡ إشارة قوية</div><div class="value">{{ stats.strong }}</div></a>
       </div>
 
       <div class="confidence" style="margin-bottom:18px">
