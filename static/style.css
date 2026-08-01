@@ -218,6 +218,7 @@ a.stat-box:hover { filter: brightness(1.15); transform: translateY(-1px); }
 .framed-row { gap: 22px !important; padding: 6px 4px; }
 .framed-box {
   border-radius: 14px;
+  text-align: center;
   box-shadow:
     0 0 0 1.5px #22c55e,
     0 0 0 3px #a7c0e8,
