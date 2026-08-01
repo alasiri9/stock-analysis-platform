@@ -4,22 +4,24 @@
 
 {% block content %}
   <section class="panel">
-    <div class="panel-head">
-      <h2>📅 التقرير اليومي <span class="help-q" data-tip="ملخّص سريع لحالة الماسح اليوم: إجمالي الأسهم المفحوصة، وعدد الجواهر، وعدد الإشارات القوية، مع قائمة بآخر الإشارات التي رصدها الماسح.">👁</span></h2>
-    </div>
+    <div class="dr-align">
+      <div class="panel-head">
+        <h2>📅 التقرير اليومي <span class="help-q" data-tip="ملخّص سريع لحالة الماسح اليوم: إجمالي الأسهم المفحوصة، وعدد الجواهر، وعدد الإشارات القوية، مع قائمة بآخر الإشارات التي رصدها الماسح.">👁</span></h2>
+      </div>
 
-    <div class="stat-row framed-row">
-      <div class="stat-box framed-box"><div class="label">👁 إجمالي الأسهم المفحوصة</div><div class="value">{{ stats.total }}</div></div>
-      <div class="stat-box gem-box framed-box"><div class="label">💎 الجواهر</div><div class="value">{{ stats.gems }}</div></div>
-      <div class="stat-box framed-box"><div class="label">⚡ إشارة قوية</div><div class="value">{{ stats.strong }}</div></div>
-    </div>
+      <div class="stat-row framed-row">
+        <div class="stat-box framed-box"><div class="label">👁 إجمالي الأسهم المفحوصة</div><div class="value">{{ stats.total }}</div></div>
+        <div class="stat-box gem-box framed-box"><div class="label">💎 الجواهر</div><div class="value">{{ stats.gems }}</div></div>
+        <div class="stat-box framed-box"><div class="label">⚡ إشارة قوية</div><div class="value">{{ stats.strong }}</div></div>
+      </div>
 
-    <div class="confidence" style="margin-bottom:18px">
-      {% if latest %}
-        آخر تحديث للماسح <span dir="ltr">{{ latest | ksa_time }}</span> بتوقيت السعودية
-      {% else %}
-        لا توجد بيانات بعد — حدّث الماسح من الرئيسية أولاً.
-      {% endif %}
+      <div class="confidence" style="margin-bottom:18px">
+        {% if latest %}
+          آخر تحديث للماسح <span dir="ltr">{{ latest | ksa_time }}</span> بتوقيت السعودية
+        {% else %}
+          لا توجد بيانات بعد — حدّث الماسح من الرئيسية أولاً.
+        {% endif %}
+      </div>
     </div>
 
     <h3 class="perf-title" style="text-align:center">⚡ آخر الإشارات <span class="help-q" data-tip="أحدث الإشارات التي رصدها الماسح في آخر تحديث — نوع كل إشارة (اختراق/كسر/انفجار وشيك/تقاطع ذهبي/جودة أو نمو قوي) مع سعر السهم وقت الإشارة وتاريخها. تعليمي، ليس توصية.">👁</span></h3>
