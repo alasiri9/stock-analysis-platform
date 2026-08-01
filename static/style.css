@@ -219,10 +219,10 @@ a.stat-box:hover { filter: brightness(1.15); transform: translateY(-1px); }
 .framed-box {
   border-radius: 14px;
   box-shadow:
-    0 0 0 3px #22c55e,
-    0 0 0 6px #a7c0e8,
-    0 0 0 9px #7c6fe6,
-    0 0 22px 6px rgba(124, 111, 230, .4);
+    0 0 0 1.5px #22c55e,
+    0 0 0 3px #a7c0e8,
+    0 0 0 4.5px #7c6fe6,
+    0 0 14px 3px rgba(124, 111, 230, .32);
 }
 
 /* برواز الطبقات — كلاس قابل لإعادة الاستخدام على أي جدول (أخضر·فضّي·بنفسجي + توهّج) */
