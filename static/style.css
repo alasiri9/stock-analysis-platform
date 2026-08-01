@@ -227,7 +227,7 @@ a.stat-box:hover { filter: brightness(1.15); transform: translateY(-1px); }
 /* شبكة داخلية عودية هادئة + توسيط المحتوى + حشو أفقي أصغر — البرواز الخارجي يبقى فخماً */
 table.framed-table th, table.framed-table td {
   border: 1px solid rgba(192, 138, 46, .5);
-  text-align: center; padding: 8px 10px; font-size: 18px;
+  text-align: center; padding: 8px 10px; font-size: 20px;
 }
 
 .mood-table {
