@@ -256,7 +256,7 @@
           <div class="check pass">
             <div class="ic">✓</div>
             <div>
-              <div>[{{ c.n }}] {{ c.name }}</div>
+              <div>[{{ c.n }}] {{ c.name }}{% if c.tip %} <span class="help-q" data-tip="{{ c.tip }}">👁</span>{% endif %}</div>
               <div class="detail">{{ c.detail }}</div>
             </div>
           </div>
