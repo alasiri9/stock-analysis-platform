@@ -214,6 +214,21 @@ a.stat-box:hover { filter: brightness(1.15); transform: translateY(-1px); }
 .mood-gauges .gauge-label { font-size: 15px; }
 
 /* ---------- مزاج الأسهم: جدول (الحالة/العدد/النسبة) بصفوف ملوّنة + سطر حالة السوق ---------- */
+/* برواز الطبقات — كلاس قابل لإعادة الاستخدام على أي جدول (أخضر·فضّي·بنفسجي + توهّج) */
+.framed-table {
+  border-collapse: collapse; border-radius: 14px; overflow: hidden;
+  width: calc(100% - 24px); margin: 14px auto 28px;
+  box-shadow:
+    0 0 0 3px #22c55e,
+    0 0 0 6px #a7c0e8,
+    0 0 0 9px #7c6fe6,
+    0 0 26px 8px rgba(124, 111, 230, .45);
+}
+.framed-table th, .framed-table td {
+  border: 2.5px solid #7c6fe6;
+  border-image: linear-gradient(135deg, #22c55e, #a7c0e8, #7c6fe6) 1;
+}
+
 .mood-table {
   flex: 0 0 46%; width: 46%; border-collapse: collapse; margin: 16px 6px 24px 0;  /* مصغّر، يميناً داخل الصف */
   border-radius: 14px; overflow: hidden;
