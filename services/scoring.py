@@ -118,7 +118,7 @@ def piotroski_score(financials):
     add(5, "ΔLeverage < 0",
         delta_lev_ok,
         f"الرافعة: {lev1:.4f} → {lev0:.4f}" if delta_lev_ok is not None else "بيانات غير متوفّرة",
-        "Leverage (الرافعة المالية = نسبة الديون). ΔLeverage < 0 يعني الديون قلّت نسبياً هذه السنة (وضع أأمن).")
+        "Leverage (الرافعة المالية = نسبة الديون). ΔLeverage < 0 يعني الديون قلّت نسبياً هذه السنة (وضع أكثر أماناً).")
 
     # 6) ΔLiquidity > 0  (تحسّن نسبة السيولة الجارية)
     delta_liq_ok = (cr0 > cr1) if (cr0 is not None and cr1 is not None) else None
