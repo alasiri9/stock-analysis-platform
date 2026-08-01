@@ -83,61 +83,70 @@ def piotroski_score(financials):
 
     components = []
 
-    def add(n, name, passed, detail):
-        components.append({"n": n, "name": name, "passed": passed, "detail": detail})
+    def add(n, name, passed, detail, tip=""):
+        components.append({"n": n, "name": name, "passed": passed, "detail": detail, "tip": tip})
 
     # 1) ROA > 0
     add(1, "ROA > 0",
         (roa0 > 0) if roa0 is not None else None,
-        f"ROA = صافي الربح/الأصول = {roa0:.4f}" if roa0 is not None else "بيانات غير متوفّرة")
+        f"ROA = صافي الربح/الأصول = {roa0:.4f}" if roa0 is not None else "بيانات غير متوفّرة",
+        "ROA (العائد على الأصول): كم ربحاً تحقّقه الشركة مقابل أصولها. موجب = الشركة رابحة.")
 
     # 2) CFO > 0  (التدفق النقدي التشغيلي موجب)
     add(2, "CFO > 0",
         (cfo0 > 0) if cfo0 is not None else None,
-        f"CFO = {cfo0:,.0f}" if cfo0 is not None else "بيانات غير متوفّرة")
+        f"CFO = {cfo0:,.0f}" if cfo0 is not None else "بيانات غير متوفّرة",
+        "CFO (التدفق النقدي التشغيلي): النقد الحقيقي الذي تولّده عمليات الشركة. موجب = تدرّ نقداً فعلياً لا أرباحاً ورقية.")
 
     # 3) ΔROA > 0  (تحسّن العائد على الأصول)
     delta_roa_ok = (roa0 > roa1) if (roa0 is not None and roa1 is not None) else None
     add(3, "ΔROA > 0",
         delta_roa_ok,
-        f"ROA: {roa1:.4f} → {roa0:.4f}" if delta_roa_ok is not None else "بيانات غير متوفّرة")
+        f"ROA: {roa1:.4f} → {roa0:.4f}" if delta_roa_ok is not None else "بيانات غير متوفّرة",
+        "Δ (دلتا) = التغيّر عن السنة السابقة. ΔROA > 0 يعني تحسّن العائد على الأصول هذه السنة (ربحية أفضل).")
 
     # 4) Accruals = CFO/Assets − ROA < 0  (جودة الأرباح: تدفق نقدي يفوق الربح المحاسبي)
+    _accr_tip = "Accruals (جودة الأرباح): مقارنة النقد الفعلي بالربح المحاسبي. سالب = النقد يفوق الربح الورقي = أرباح حقيقية عالية الجودة."
     if cfo_assets0 is not None and roa0 is not None:
         accr = cfo_assets0 - roa0
-        add(4, "Accruals < 0", accr < 0, f"CFO/Assets − ROA = {accr:.4f}")
+        add(4, "Accruals < 0", accr < 0, f"CFO/Assets − ROA = {accr:.4f}", _accr_tip)
     else:
-        add(4, "Accruals < 0", None, "بيانات غير متوفّرة")
+        add(4, "Accruals < 0", None, "بيانات غير متوفّرة", _accr_tip)
 
     # 5) ΔLeverage < 0  (انخفاض الرافعة المالية = دين أقل نسبياً)
     delta_lev_ok = (lev0 < lev1) if (lev0 is not None and lev1 is not None) else None
     add(5, "ΔLeverage < 0",
         delta_lev_ok,
-        f"الرافعة: {lev1:.4f} → {lev0:.4f}" if delta_lev_ok is not None else "بيانات غير متوفّرة")
+        f"الرافعة: {lev1:.4f} → {lev0:.4f}" if delta_lev_ok is not None else "بيانات غير متوفّرة",
+        "Leverage (الرافعة المالية = نسبة الديون). ΔLeverage < 0 يعني الديون قلّت نسبياً هذه السنة (وضع أأمن).")
 
     # 6) ΔLiquidity > 0  (تحسّن نسبة السيولة الجارية)
     delta_liq_ok = (cr0 > cr1) if (cr0 is not None and cr1 is not None) else None
     add(6, "ΔLiquidity > 0",
         delta_liq_ok,
-        f"نسبة السيولة: {cr1:.2f} → {cr0:.2f}" if delta_liq_ok is not None else "بيانات غير متوفّرة")
+        f"نسبة السيولة: {cr1:.2f} → {cr0:.2f}" if delta_liq_ok is not None else "بيانات غير متوفّرة",
+        "Liquidity (نسبة السيولة الجارية): قدرة الشركة على سداد التزاماتها القصيرة. ΔLiquidity > 0 = تحسّنت القدرة.")
 
     # 7) لا إصدار أسهم جديدة  (عدد الأسهم لم يزد)
     no_dilution = (shares0 <= shares1) if (shares0 is not None and shares1 is not None) else None
     add(7, "لا إصدار أسهم جديدة",
         no_dilution,
-        f"الأسهم: {shares1:,.0f} → {shares0:,.0f}" if no_dilution is not None else "بيانات غير متوفّرة")
+        f"الأسهم: {shares1:,.0f} → {shares0:,.0f}" if no_dilution is not None else "بيانات غير متوفّرة",
+        "عدد الأسهم لم يزد — الشركة لم تُصدر أسهماً جديدة تخفّف حصص المساهمين الحاليين (لا يقلّ نصيبك).")
 
     # 8) ΔGross Margin > 0  (تحسّن الهامش الإجمالي)
     delta_gm_ok = (gm0 > gm1) if (gm0 is not None and gm1 is not None) else None
     add(8, "ΔGross Margin > 0",
         delta_gm_ok,
-        f"الهامش الإجمالي: {gm1:.4f} → {gm0:.4f}" if delta_gm_ok is not None else "بيانات غير متوفّرة")
+        f"الهامش الإجمالي: {gm1:.4f} → {gm0:.4f}" if delta_gm_ok is not None else "بيانات غير متوفّرة",
+        "Gross Margin (الهامش الإجمالي): ربح المبيعات بعد تكلفتها المباشرة. ΔGross Margin > 0 = ربحية أعلى على كل بيعة.")
 
     # 9) ΔAsset Turnover > 0  (تحسّن كفاءة استخدام الأصول)
     delta_at_ok = (at0 > at1) if (at0 is not None and at1 is not None) else None
     add(9, "ΔAsset Turnover > 0",
         delta_at_ok,
-        f"دوران الأصول: {at1:.4f} → {at0:.4f}" if delta_at_ok is not None else "بيانات غير متوفّرة")
+        f"دوران الأصول: {at1:.4f} → {at0:.4f}" if delta_at_ok is not None else "بيانات غير متوفّرة",
+        "Asset Turnover (دوران الأصول): كفاءة استخدام الأصول لتوليد المبيعات. ΔAsset Turnover > 0 = كفاءة أعلى.")
 
     score = sum(1 for c in components if c["passed"] is True)
     computable = sum(1 for c in components if c["passed"] is not None)
