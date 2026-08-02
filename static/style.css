@@ -1000,7 +1000,7 @@ table.framed-table th, table.framed-table td {
 .cs-warn { color: var(--gold); font-size: 13px; line-height: 1.8; }
 
 /* صفحة الرابحون والخاسرون */
-.movers-cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 40px; }
+.movers-cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 40px; margin-top: 20px; }
 /* برواز الطبقات حول كل قائمة (رابحون/خاسرون) — نفس ثيم الجداول */
 .framed-col {
   border-radius: 16px; padding: 18px 18px 12px;
