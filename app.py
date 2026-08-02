@@ -1081,9 +1081,16 @@ def create_app():
             step = (W - 2 * pad) / (n - 1)
             coords = [(pad + i * step, pad + (H - 2 * pad) * (1 - (v - lo) / rng))
                       for i, v in enumerate(vals)]
-            segs = [{"x1": round(coords[i][0], 1), "y1": round(coords[i][1], 1),
-                     "x2": round(coords[i + 1][0], 1), "y2": round(coords[i + 1][1], 1),
-                     "up": vals[i + 1] >= vals[i]} for i in range(n - 1)]
+            # عتبة «العرضي» تتكيّف مع حركة كل رسم: أقل من ثلث متوسط الحركة اليومية = شبه مسطّحة
+            deltas = [vals[i + 1] - vals[i] for i in range(n - 1)]
+            avg_move = (sum(abs(d) for d in deltas) / len(deltas)) if deltas else 0.0
+            flat = 0.35 * avg_move
+            segs = []
+            for i, d in enumerate(deltas):
+                state = "side" if abs(d) <= flat else ("up" if d > 0 else "down")
+                segs.append({"x1": round(coords[i][0], 1), "y1": round(coords[i][1], 1),
+                             "x2": round(coords[i + 1][0], 1), "y2": round(coords[i + 1][1], 1),
+                             "dir": state})
             area = (f"{pad:.1f},{H - pad} "
                     + " ".join(f"{x:.1f},{y:.1f}" for x, y in coords)
                     + f" {pad + (n - 1) * step:.1f},{H - pad}")
