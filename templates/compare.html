@@ -10,10 +10,15 @@
 
 {% block content %}
   <h1 class="page-title">⚖️ مقارنة الأسهم</h1>
-  <p class="page-sub">قارن سهمين أو أكثر جنباً لجنب (حتى 4) — تعليمي فقط.</p>
+  <p class="page-sub">قارن حتى 4 أسهم جنباً لجنب — ضع سهماً في كل خانة. تعليمي فقط.</p>
 
-  <form class="search" action="{{ url_for('compare') }}" method="get">
-    <input type="text" name="tickers" value="{{ raw }}" placeholder="رموز مفصولة بفاصلة (مثال: AAPL, MSFT, NVDA)">
+  <form class="compare-form" action="{{ url_for('compare') }}" method="get">
+    <div class="compare-inputs">
+      {% set labels = ['السهم الأول', 'السهم الثاني', 'السهم الثالث', 'السهم الرابع'] %}
+      {% for i in range(4) %}
+        <input type="text" name="t{{ i + 1 }}" value="{{ fields[i] }}" placeholder="{{ labels[i] }}" maxlength="6" dir="ltr" autocomplete="off">
+      {% endfor %}
+    </div>
     <button class="btn" type="submit">قارن</button>
   </form>
 
@@ -64,9 +69,9 @@
     </div>
 
     <div class="note">📊 «النمو» مقياس مساعد اجتهادي. كل الأرقام تعليمية، لا توصية.</div>
-  {% elif raw %}
+  {% elif fields | select | list %}
     <div class="empty">لم نعثر على بيانات للرموز المُدخلة. تأكّد من صحتها.</div>
   {% else %}
-    <div class="empty">اكتب رموز أسهم بالأعلى للمقارنة (مثال: AAPL, MSFT).</div>
+    <div class="empty">اكتب رمز سهم في كل خانة بالأعلى للمقارنة (مثال: AAPL في خانة، MSFT في أخرى).</div>
   {% endif %}
 {% endblock %}
