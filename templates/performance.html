@@ -4,7 +4,7 @@
 
 {% block content %}
   <section class="panel">
-    <div class="panel-head">
+    <div class="panel-head" style="text-align:center">
       <h2>📈 اختبار الأداء : <span class="help-q" data-tip="سجل كامل لكل إشارات المنصة منذ البداية وأداء كل واحدة منذ صدورها: نسبة النجاح، متوسط العائد، الأفضل والأسوأ، ومقارنة بالسوق (SPY) — لتعرف مصداقية كل نوع إشارة بالأرقام. تعليمي فقط، ليس توصية.">👁</span></h2>
     </div>
 
@@ -42,7 +42,7 @@
 
       {# مقارنة أنواع الإشارات #}
       {% if type_stats %}
-        <h3 class="perf-title">⚖️ أي نوع إشارة أدق؟</h3>
+        <h3 class="perf-title" style="text-align:center">⚖️ أي نوع إشارة أدق؟</h3>
         <div class="stat-row">
           {% for t, st in type_stats.items() %}
             {% if st %}
@@ -58,7 +58,7 @@
     {% endif %}
 
     {% if rows %}
-      <table class="insider">
+      <table class="insider framed-table">
         <thead>
           <tr>
             <th>السهم</th>
