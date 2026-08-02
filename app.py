@@ -1332,9 +1332,13 @@ def create_app():
 
     @app.route("/compare")
     def compare():
-        # نستقبل الرموز كنص مفصول بفواصل: ?tickers=AAPL,MSFT,NVDA
+        # أربع خانات منفصلة (سهم لكل خانة): ?t1=AAPL&t2=MSFT… مع دعم الرابط القديم ?tickers=A,B
+        fields = [request.args.get(f"t{i}", "").strip().upper() for i in range(1, 5)]
         raw = request.args.get("tickers", "").strip()
-        tickers = [t.strip().upper() for t in raw.split(",") if t.strip()][:4]  # حد أقصى 4
+        if raw and not any(fields):  # توافق مع الروابط القديمة المفصولة بفواصل
+            parts = [t.strip().upper() for t in raw.split(",") if t.strip()][:4]
+            fields = (parts + ["", "", "", ""])[:4]
+        tickers = [t for t in fields if t][:4]  # حد أقصى 4
         summaries = []
         for t in tickers:
             s = analysis.build_quick_summary(t)
@@ -1342,7 +1346,7 @@ def create_app():
                 # نقاط قوة/تنبيهات خفيفة من البيانات المتاحة (بلا استدعاء API إضافي)
                 s["summary"] = analysis.smart_summary(s)
                 summaries.append(s)
-        return render_template("compare.html", summaries=summaries, raw=raw)
+        return render_template("compare.html", summaries=summaries, fields=fields)
 
     # ===================== قائمة المتابعة =====================
 
