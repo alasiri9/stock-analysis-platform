@@ -1333,15 +1333,53 @@ def create_app():
     @app.route("/compare")
     def compare():
         # أربع خانات منفصلة (سهم لكل خانة): ?t1=AAPL&t2=MSFT… مع دعم الرابط القديم ?tickers=A,B
+        import json as _json
+        from datetime import datetime as _dt, timezone as _tz, timedelta as _td
         fields = [request.args.get(f"t{i}", "").strip().upper() for i in range(1, 5)]
         raw = request.args.get("tickers", "").strip()
         if raw and not any(fields):  # توافق مع الروابط القديمة المفصولة بفواصل
             parts = [t.strip().upper() for t in raw.split(",") if t.strip()][:4]
             fields = (parts + ["", "", "", ""])[:4]
         tickers = [t for t in fields if t][:4]  # حد أقصى 4
+
+        # المقارنة تقرأ من الكاش أولاً (بلا استهلاك حصّة FMP، ولا نتائج فارغة عند نفاد الحصّة).
+        _NULL_METRICS = {"roe": None, "roa": None, "op_margin": None, "gross_margin": None, "pe": None}
+        _recs, _ = screener.load_records()
+        _screen_by = {r["ticker"]: r for r in _recs}
+
+        def _quick(t):
+            # 1) تقرير السهم المخزّن (فيه كل المقاييس) — بلا أي طلب FMP
+            cached = db.session.get(StockCache, "report:" + t)
+            if cached:
+                up = cached.updated_at
+                up = up.replace(tzinfo=_tz.utc) if up.tzinfo is None else up
+                if (_dt.now(_tz.utc) - up) < _td(hours=24):
+                    try:
+                        rep = _json.loads(cached.data_json)
+                        return {
+                            "ticker": rep.get("ticker", t), "name": rep.get("name"),
+                            "price": rep.get("price"), "change_percent": rep.get("change_percent"),
+                            "metrics": {**_NULL_METRICS, **(rep.get("metrics") or {})},
+                            "piotroski": {"score": None, **(rep.get("piotroski") or {})},
+                            "catalyst": {"score": None, **(rep.get("catalyst") or {})},
+                        }
+                    except Exception:  # noqa: BLE001
+                        pass
+            # 2) سجل الماسح المخزّن (جودة/نمو/سعر/اسم — بلا مقاييس، بلا طلب FMP)
+            r = _screen_by.get(t)
+            if r:
+                return {
+                    "ticker": t, "name": r.get("name"), "price": r.get("price"),
+                    "change_percent": r.get("change_percent"), "metrics": dict(_NULL_METRICS),
+                    "piotroski": {"score": r.get("piotroski")},
+                    "catalyst": {"score": r.get("catalyst")},
+                }
+            # 3) جلب مباشر من FMP (نادراً) — فقط عند غياب الكاش نهائياً
+            return analysis.build_quick_summary(t)
+
         summaries = []
         for t in tickers:
-            s = analysis.build_quick_summary(t)
+            s = _quick(t)
             if s:
                 # نقاط قوة/تنبيهات خفيفة من البيانات المتاحة (بلا استدعاء API إضافي)
                 s["summary"] = analysis.smart_summary(s)
