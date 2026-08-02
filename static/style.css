@@ -1014,10 +1014,12 @@ table.framed-table th, table.framed-table td {
 /* كل الصفوف في شبكة واحدة ⇒ الأعمدة تتحاذى تماماً بين الصفوف (مربعات منتظمة).
    الفراغ 1px يكشف اللون العودي فيصير شبكة نظيفة أفقياً وعمودياً. */
 .movers-list {
-  display: grid; grid-template-columns: 1fr auto auto; gap: 1px;
+  display: grid; grid-template-columns: auto auto 1fr; gap: 1px;
   background: rgba(192, 138, 46, .5); border: 1px solid rgba(192, 138, 46, .5);
   border-radius: var(--radius); overflow: hidden;
 }
+/* الخلايا الثلاث ملتصقة، والفراغ المطّاط ينتقل لطرف الجدول (لا بين الرمز والسعر) */
+.mover-chg { justify-content: flex-end; }
 .mover-row { display: contents; text-decoration: none; }
 .mover-row > * { background: var(--card); padding: 12px 14px; display: flex; align-items: center; transition: filter .1s; }
 .mover-row:hover > * { filter: brightness(1.18); }
