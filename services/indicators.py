@@ -32,6 +32,7 @@ def _clean(candles):
             "high": r.get("high"),
             "low": r.get("low"),
             "volume": r.get("volume"),
+            "date": r.get("date"),
         })
     return rows
 
@@ -548,7 +549,11 @@ def sustained_breakout(candles, hold_min=2, adx_min=15, clear_air_min=0.03, vol_
 
     sustained = bool(confirmed and held and above_avwap and ema_rising and adx_ok and clear_air)
     return {
-        "sustained": sustained,
+        "rising": True,             # يوجد ساق صاعدة قائمة (السعر فوق مستوى الاختراق حتى اليوم)
+        "sustained": sustained,     # اكتملت كل شروط التأكيد ⇒ «اختراق مستمر»
+        "confirmed": confirmed,     # حجم مؤكّد يوم الاختراق
+        "held": held,               # ثابت فوق مستوى الاختراق منذ عدة جلسات
+        "start_date": rows[anchor].get("date"),  # تاريخ بداية موجة الصعود (يوم)
         "above_avwap": above_avwap,
         "avwap": avwap,
         "ema_rising": ema_rising,

@@ -833,6 +833,10 @@ table.framed-table th, table.framed-table td {
 .tmeter-wrap.tmeter-inline { margin: 4px auto 40px; }  /* أولوية أعلى من .tmeter-wrap لتطبيق الفراغ السفلي */
 .sustain-detail { margin-top: 10px; }
 .sustain-entry { margin-top: 10px; }
+/* قائمة معايير حالة السهم — كل معيار متحقّق (✅) أو ناقص (❌) بلا نقاط تعداد */
+.crit-list { list-style: none; padding-inline-start: 4px !important; margin: 0 0 4px !important; }
+.crit-list li { line-height: 1.95; }
+.crit-list .crit-no { color: var(--muted); }
 .entry-tag { display: inline-block; font-size: 11px; font-weight: 900; padding: 1px 8px; border-radius: 999px; margin-inline: 4px; }
 .entry-tag.near { color: var(--green); background: var(--green-dim); }
 .entry-tag.ext { color: var(--gold); background: rgba(234,179,8,.14); }
