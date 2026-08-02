@@ -1,20 +1,19 @@
 {% extends "base.html" %}
 {% set active = 'earnings' %}
-{% block title %}رزنامة الأرباح — Algomatix{% endblock %}
+{% block title %}مواعيد الأرباح — Algomatix{% endblock %}
 
 {% block content %}
   <section class="panel">
-    <div class="panel-head">
-      <h2>📅 رزنامة الأرباح القادمة</h2>
-      <p class="panel-sub">مواعيد إعلان أرباح أسهم المنصة، مرتّبة بالأقرب. الأرباح تحرّك السهم بقوة — انتبه للتذبذب قربها. (تعليمي فقط)</p>
+    <div class="panel-head" style="text-align:center">
+      <h2>📅 مواعيد الأرباح القادمة <span class="help-q" data-tip="مواعيد إعلان أرباح أسهم المنصة، مرتّبة بالأقرب. الأرباح تحرّك السهم بقوة — انتبه للتذبذب قربها. تعليمي فقط، ليس توصية.">👁</span></h2>
     </div>
 
     {% if upcoming %}
-      <table class="insider">
+      <table class="insider framed-table">
         <thead>
           <tr>
             <th>السهم</th>
-            <th>الشركة</th>
+            <th>القطاع</th>
             <th>الموعد</th>
             <th>المتبقّي</th>
           </tr>
@@ -24,7 +23,7 @@
             {% set dte = r.days_to_earnings %}
             <tr>
               <td><a href="{{ url_for('stock_report', ticker=r.ticker) }}">{{ r.ticker }}</a></td>
-              <td>{{ r.name or '—' }}</td>
+              <td>{{ (r.sector | sector_ar) if r.sector else '—' }}</td>
               <td dir="ltr">{{ r.earnings_date or '—' }}</td>
               <td>
                 <span class="pill {{ 'buy' if dte <= 7 else '' }}">
