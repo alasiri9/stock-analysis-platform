@@ -1012,12 +1012,14 @@ table.framed-table th, table.framed-table td {
 }
 .framed-col .learn-group { text-align: center; margin-top: 2px; }
 .mover-row {
-  display: grid; grid-template-columns: auto 1fr auto auto; align-items: center; gap: 10px;
-  text-decoration: none; padding: 11px 14px; margin-bottom: 8px;
-  background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
+  display: grid; grid-template-columns: auto 1fr auto auto; align-items: stretch; gap: 1px;
+  text-decoration: none; padding: 0; margin-bottom: 10px; overflow: hidden;
+  background: rgba(192, 138, 46, .5); border: 1px solid rgba(192, 138, 46, .5); border-radius: var(--radius);
 }
-.mover-row:hover { border-color: var(--accent); }
-.mover-tk { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; }
+/* كل خلية مربّع مستقل، والفراغ 1px يكشف اللون العودي فيصير شبكة نظيفة */
+.mover-row > * { background: var(--card); padding: 12px 14px; display: flex; align-items: center; }
+.mover-row:hover > * { background: rgba(255, 255, 255, .04); }
+.mover-tk { flex-direction: column; align-items: flex-start; justify-content: center; gap: 2px; }
 .mover-ticker { color: var(--accent); font-weight: 900; font-size: 17px; }
 .mover-sector { color: var(--muted); font-size: 12px; white-space: nowrap; }
 .mover-name { color: var(--muted); font-size: 13.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
