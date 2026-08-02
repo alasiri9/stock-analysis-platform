@@ -16,7 +16,7 @@
     <div class="compare-inputs">
       {% set labels = ['السهم الأول', 'السهم الثاني', 'السهم الثالث', 'السهم الرابع'] %}
       {% for i in range(4) %}
-        <input type="text" name="t{{ i + 1 }}" value="{{ fields[i] }}" placeholder="{{ labels[i] }}" maxlength="6" dir="ltr" autocomplete="off" list="universe-list">
+        <input type="text" name="t{{ i + 1 }}" value="{{ fields[i] }}" placeholder="{{ labels[i] }}" maxlength="6" dir="ltr" list="universe-list">
       {% endfor %}
     </div>
     <button class="btn" type="submit">قارن</button>
