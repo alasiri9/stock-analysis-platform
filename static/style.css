@@ -996,7 +996,17 @@ table.framed-table th, table.framed-table td {
 .cs-warn { color: var(--gold); font-size: 13px; line-height: 1.8; }
 
 /* صفحة الرابحون والخاسرون */
-.movers-cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; }
+.movers-cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 40px; }
+/* برواز الطبقات حول كل قائمة (رابحون/خاسرون) — نفس ثيم الجداول */
+.framed-col {
+  border-radius: 16px; padding: 18px 18px 12px;
+  box-shadow:
+    0 0 0 2px #22c55e,
+    0 0 0 4px #a7c0e8,
+    0 0 0 6px #7c6fe6,
+    0 0 22px 6px rgba(124, 111, 230, .4);
+}
+.framed-col .learn-group { text-align: center; margin-top: 2px; }
 .mover-row {
   display: grid; grid-template-columns: auto 1fr auto auto; align-items: center; gap: 10px;
   text-decoration: none; padding: 11px 14px; margin-bottom: 8px;
