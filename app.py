@@ -1073,27 +1073,31 @@ def create_app():
     @app.route("/pulse")
     def pulse():
         # نبض السوق التاريخي: نسبة الأسهم الصاعدة عبر الأيام (من لقطات المزاج المخزّنة)
+        # يبني قطع الخط ملوّنة حسب اتجاه كل موجة (صاعدة خضراء · هابطة حمراء)
+        def _series(vals, lo, hi):
+            W, H, pad = 900, 260, 14
+            rng = (hi - lo) or 1.0
+            n = len(vals)
+            step = (W - 2 * pad) / (n - 1)
+            coords = [(pad + i * step, pad + (H - 2 * pad) * (1 - (v - lo) / rng))
+                      for i, v in enumerate(vals)]
+            segs = [{"x1": round(coords[i][0], 1), "y1": round(coords[i][1], 1),
+                     "x2": round(coords[i + 1][0], 1), "y2": round(coords[i + 1][1], 1),
+                     "up": vals[i + 1] >= vals[i]} for i in range(n - 1)]
+            area = (f"{pad:.1f},{H - pad} "
+                    + " ".join(f"{x:.1f},{y:.1f}" for x, y in coords)
+                    + f" {pad + (n - 1) * step:.1f},{H - pad}")
+            return {"segments": segs, "area_points": area, "width": W, "height": H}
+
+        # نبض السوق التاريخي: نسبة الأسهم الصاعدة عبر الأيام (من لقطات المزاج المخزّنة)
         snaps = MarketMoodSnapshot.query.order_by(MarketMoodSnapshot.date.asc()).all()
         chart = None
         if len(snaps) >= 2:
-            W, H, pad = 900, 260, 14
             vals = [s.bull_pct for s in snaps]
-            n = len(vals)
-            step = (W - 2 * pad) / (n - 1)
-            pts = []
-            for i, v in enumerate(vals):
-                x = pad + i * step
-                y = pad + (H - 2 * pad) * (1 - v / 100.0)
-                pts.append(f"{x:.1f},{y:.1f}")
-            chart = {
-                "points": " ".join(pts),
-                "area_points": f"{pad:.1f},{H - pad} " + " ".join(pts) + f" {pad + (n - 1) * step:.1f},{H - pad}",
-                "width": W, "height": H, "days": n,
-                "first_date": snaps[0].date.strftime("%Y-%m-%d"),
-                "last_date": snaps[-1].date.strftime("%Y-%m-%d"),
-                "first_pct": vals[0], "last_pct": vals[-1],
-                "up": vals[-1] >= vals[0],
-            }
+            chart = {**_series(vals, 0, 100), "days": len(vals),
+                     "first_date": snaps[0].date.strftime("%Y-%m-%d"),
+                     "last_date": snaps[-1].date.strftime("%Y-%m-%d"),
+                     "first_pct": vals[0], "last_pct": vals[-1]}
         # مؤشر السوق الحقيقي (S&P 500 / SPY) — المرجع المعياري لتمثيل السوق (من price_point، بلا API)
         market = screener.market_direction()
         mchart = None
@@ -1102,25 +1106,10 @@ def create_app():
         sp = [(r.date, r.price) for r in spy_rows if r.price is not None][-60:]
         if len(sp) >= 2:
             prices = [pr for _, pr in sp]
-            lo, hi = min(prices), max(prices)
-            rng = (hi - lo) or 1.0
-            W, H, pad = 900, 260, 14
-            n = len(prices)
-            step = (W - 2 * pad) / (n - 1)
-            pts = []
-            for i, pr in enumerate(prices):
-                x = pad + i * step
-                y = pad + (H - 2 * pad) * (1 - (pr - lo) / rng)
-                pts.append(f"{x:.1f},{y:.1f}")
-            mchart = {
-                "points": " ".join(pts),
-                "area_points": f"{pad:.1f},{H - pad} " + " ".join(pts) + f" {pad + (n - 1) * step:.1f},{H - pad}",
-                "width": W, "height": H, "days": n,
-                "first_date": sp[0][0].strftime("%Y-%m-%d"),
-                "last_date": sp[-1][0].strftime("%Y-%m-%d"),
-                "first_price": prices[0], "last_price": prices[-1],
-                "up": prices[-1] >= prices[0],
-            }
+            mchart = {**_series(prices, min(prices), max(prices)), "days": len(prices),
+                      "first_date": sp[0][0].strftime("%Y-%m-%d"),
+                      "last_date": sp[-1][0].strftime("%Y-%m-%d"),
+                      "first_price": prices[0], "last_price": prices[-1]}
         return render_template("pulse.html", snaps=snaps, chart=chart, market=market, mchart=mchart)
 
     @app.route("/movers")
