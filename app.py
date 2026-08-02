@@ -1370,7 +1370,8 @@ def create_app():
             if r:
                 return {
                     "ticker": t, "name": r.get("name"), "price": r.get("price"),
-                    "change_percent": r.get("change_percent"), "metrics": dict(_NULL_METRICS),
+                    "change_percent": r.get("change_percent"),
+                    "metrics": {**_NULL_METRICS, **(r.get("metrics") or {})},
                     "piotroski": {"score": r.get("piotroski")},
                     "catalyst": {"score": r.get("catalyst")},
                 }

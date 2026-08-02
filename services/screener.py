@@ -302,6 +302,26 @@ def _build_record(ticker):
         mom_63d = None
         recent_gain = None
 
+    # مقاييس مالية للمقارنة (نفس حساب analysis.build_quick_summary) — تُخزَّن ليقرأها جدول
+    # المقارنة من الكاش مباشرة بلا أي طلب FMP إضافي (البيانات المالية مجلوبة أصلاً أعلاه).
+    _inc = financials.get("income") if financials else None
+    _bal = financials.get("balance") if financials else None
+    _ni = _inc[0].get("netIncome") if _inc else None
+    _rev = _inc[0].get("revenue") if _inc else None
+    _gross = _inc[0].get("grossProfit") if _inc else None
+    _op = _inc[0].get("operatingIncome") if _inc else None
+    _eps = _inc[0].get("eps") if _inc else None
+    _assets = _bal[0].get("totalAssets") if _bal else None
+    _equity = _bal[0].get("totalStockholdersEquity") if _bal else None
+    _price = quote.get("price") if quote else None
+    metrics = {
+        "roe": (None if scoring._safe_div(_ni, _equity) is None else scoring._safe_div(_ni, _equity) * 100.0),
+        "roa": (None if scoring._safe_div(_ni, _assets) is None else scoring._safe_div(_ni, _assets) * 100.0),
+        "op_margin": (None if scoring._safe_div(_op, _rev) is None else scoring._safe_div(_op, _rev) * 100.0),
+        "gross_margin": (None if scoring._safe_div(_gross, _rev) is None else scoring._safe_div(_gross, _rev) * 100.0),
+        "pe": scoring._safe_div(_price, _eps) if _eps not in (None, 0) else None,
+    }
+
     return {
         "ticker": ticker,
         "name": (quote.get("name") if quote else None) or (profile.get("name") if profile else None),
@@ -311,6 +331,7 @@ def _build_record(ticker):
         "market_cap": quote.get("market_cap") if quote else None,
         "piotroski": scoring.piotroski_score(financials)["score"],
         "catalyst": catalyst["score"],
+        "metrics": metrics,
         "indicators": tech,
         "money_flow": flow,
         "squeeze_breakout": squeeze_bo,
