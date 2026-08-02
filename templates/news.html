@@ -12,23 +12,26 @@
     {% if items %}
       <div class="news-grid">
         {% for n in items %}
-          <a class="news-card" href="{{ n.url }}" target="_blank" rel="noopener">
-            {% if n.image %}
-              <img class="news-img" src="{{ n.image }}" alt="" loading="lazy" onerror="this.style.display='none'">
-            {% endif %}
-            <div class="news-body">
-              <div class="news-headline" dir="ltr">{{ n.headline }}</div>
-              {% if n.summary %}
-                <div class="news-summary" dir="ltr">{{ n.summary[:180] }}{{ '…' if n.summary|length > 180 }}</div>
+          <div class="news-card">
+            <a class="news-card-main" href="{{ n.url }}" target="_blank" rel="noopener">
+              {% if n.image %}
+                <img class="news-img" src="{{ n.image }}" alt="" loading="lazy" onerror="this.style.display='none'">
               {% endif %}
-              <div class="news-meta" dir="ltr">
-                <span class="news-source">{{ n.source }}</span>
-                {% if n.datetime %}
-                  · <span>{{ n.datetime | ts_ago }}</span>
+              <div class="news-body">
+                <div class="news-headline" dir="ltr">{{ n.headline }}</div>
+                {% if n.summary %}
+                  <div class="news-summary" dir="ltr">{{ n.summary[:180] }}{{ '…' if n.summary|length > 180 }}</div>
                 {% endif %}
               </div>
+            </a>
+            <div class="news-foot">
+              <div class="news-meta" dir="ltr">
+                <span class="news-source">{{ n.source }}</span>
+                {% if n.datetime %} · <span>{{ n.datetime | ts_ago }}</span>{% endif %}
+              </div>
+              <a class="news-translate" href="https://translate.google.com/translate?sl=en&tl=ar&u={{ n.url | urlencode }}" target="_blank" rel="noopener" title="افتح الخبر مترجماً للعربية عبر Google Translate">🌐 ترجم</a>
             </div>
-          </a>
+          </div>
         {% endfor %}
       </div>
     {% else %}
