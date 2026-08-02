@@ -16,7 +16,7 @@
       </div>
     {% endif %}
     {% if mchart %}
-      <div class="big-chart {{ 'up' if mchart.up else 'down' }}">
+      <div class="big-chart">
         <div class="big-chart-meta">
           <span>الآن: <b dir="ltr">{{ "%.2f $"|format(mchart.last_price) }}</b></span>
           <span>قبل {{ mchart.days }} يوم: <b dir="ltr">{{ "%.2f $"|format(mchart.first_price) }}</b></span>
@@ -24,12 +24,12 @@
         <svg viewBox="0 0 {{ mchart.width }} {{ mchart.height }}" preserveAspectRatio="none" class="big-chart-svg">
           <defs>
             <linearGradient id="mktFill" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stop-color="currentColor" stop-opacity="0.25"/>
-              <stop offset="100%" stop-color="currentColor" stop-opacity="0"/>
+              <stop offset="0%" stop-color="#7c8bb5" stop-opacity="0.18"/>
+              <stop offset="100%" stop-color="#7c8bb5" stop-opacity="0"/>
             </linearGradient>
           </defs>
           <polygon points="{{ mchart.area_points }}" fill="url(#mktFill)"/>
-          <polyline points="{{ mchart.points }}" fill="none" stroke="currentColor" stroke-width="2.5"/>
+          {% for s in mchart.segments %}<line x1="{{ s.x1 }}" y1="{{ s.y1 }}" x2="{{ s.x2 }}" y2="{{ s.y2 }}" stroke="{{ '#22c55e' if s.up else '#ef4444' }}" stroke-width="2.6" stroke-linecap="round"/>{% endfor %}
         </svg>
         <div class="big-chart-dates" dir="ltr">
           <span>{{ mchart.first_date }}</span>
@@ -44,7 +44,7 @@
     {# ② اتساع أسهم المنصة — مقياس مكمّل (كم سهم صاعد من 32) #}
     <h3 class="perf-title" style="text-align:center;margin-top:26px">📊 اتساع أسهم المنصة <span class="help-q" data-tip="نسبة الأسهم الصاعدة من أسهم المنصة الـ32 عبر الأيام — مقياس مكمّل يوضّح هل الصعود واسع (أغلب الأسهم) أم محصور في قلّة. تعليمي فقط.">👁</span></h3>
     {% if chart %}
-      <div class="big-chart {{ 'up' if chart.up else 'down' }}">
+      <div class="big-chart">
         <div class="big-chart-meta">
           <span>الآن: <b dir="ltr">{{ "%.0f"|format(chart.last_pct) }}% صاعد</b></span>
           <span>البداية: <b dir="ltr">{{ "%.0f"|format(chart.first_pct) }}%</b></span>
@@ -53,12 +53,12 @@
         <svg viewBox="0 0 {{ chart.width }} {{ chart.height }}" preserveAspectRatio="none" class="big-chart-svg">
           <defs>
             <linearGradient id="pulseFill" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stop-color="currentColor" stop-opacity="0.25"/>
-              <stop offset="100%" stop-color="currentColor" stop-opacity="0"/>
+              <stop offset="0%" stop-color="#7c8bb5" stop-opacity="0.18"/>
+              <stop offset="100%" stop-color="#7c8bb5" stop-opacity="0"/>
             </linearGradient>
           </defs>
           <polygon points="{{ chart.area_points }}" fill="url(#pulseFill)"/>
-          <polyline points="{{ chart.points }}" fill="none" stroke="currentColor" stroke-width="2.5"/>
+          {% for s in chart.segments %}<line x1="{{ s.x1 }}" y1="{{ s.y1 }}" x2="{{ s.x2 }}" y2="{{ s.y2 }}" stroke="{{ '#22c55e' if s.up else '#ef4444' }}" stroke-width="2.6" stroke-linecap="round"/>{% endfor %}
         </svg>
         <div class="big-chart-dates" dir="ltr">
           <span>{{ chart.first_date }}</span>
