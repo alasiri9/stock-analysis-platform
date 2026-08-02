@@ -181,6 +181,10 @@ a.stat-box:hover { filter: brightness(1.15); transform: translateY(-1px); }
 }
 .compare-inputs input::placeholder { color: var(--muted); letter-spacing: 0; font-size: 13px; }
 @media (max-width: 560px) { .compare-inputs { grid-template-columns: repeat(2, 1fr); } }
+.compare-actions { display: flex; gap: 10px; align-items: center; }
+.btn-clear { color: var(--muted); background: rgba(255,255,255,.04); border-color: rgba(255,255,255,.18);
+  text-decoration: none; display: inline-flex; align-items: center; }
+.btn-clear:hover { color: var(--red); border-color: rgba(239,68,68,.4); }
 .btn {
   background: rgba(34,197,94,.12); color: var(--green); border: 1px solid rgba(34,197,94,.3); font-weight: 900;
   padding: 12px 20px; border-radius: 10px; cursor: pointer; font-size: 19px;

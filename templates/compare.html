@@ -19,7 +19,10 @@
         <input type="text" name="t{{ i + 1 }}" value="{{ fields[i] }}" placeholder="{{ labels[i] }}" maxlength="6" dir="ltr" list="universe-list">
       {% endfor %}
     </div>
-    <button class="btn" type="submit">قارن</button>
+    <div class="compare-actions">
+      <button class="btn" type="submit">قارن</button>
+      <a class="btn btn-clear" href="{{ url_for('compare') }}">🗑️ مسح</a>
+    </div>
   </form>
 
   {% if summaries %}
