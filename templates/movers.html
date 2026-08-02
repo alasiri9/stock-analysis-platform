@@ -5,7 +5,10 @@
 {% macro mover_row(r) %}
   {% set chp = r.change_percent %}
   <a class="mover-row" href="{{ url_for('stock_report', ticker=r.ticker) }}">
-    <span class="mover-ticker">{{ r.ticker }}</span>
+    <span class="mover-tk">
+      <span class="mover-ticker">{{ r.ticker }}</span>
+      {% if r.sector %}<span class="mover-sector">🏷️ {{ r.sector | sector_ar }}</span>{% endif %}
+    </span>
     <span class="mover-name">{{ r.name or '—' }}</span>
     <span class="mover-price" dir="ltr">{{ "%.2f $"|format(r.price) if r.price is not none else '—' }}</span>
     <span class="mover-chg {{ 'up' if chp >= 0 else 'down' }}" dir="ltr">{{ '▲' if chp >= 0 else '▼' }} {{ "%.2f"|format(chp) }}%</span>
