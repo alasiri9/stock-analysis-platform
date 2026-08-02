@@ -1018,11 +1018,11 @@ table.framed-table th, table.framed-table td {
 }
 .mover-row:hover { border-color: var(--accent); }
 .mover-tk { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; }
-.mover-ticker { color: var(--accent); font-weight: 900; font-size: 16px; }
-.mover-sector { color: var(--muted); font-size: 11px; white-space: nowrap; }
-.mover-name { color: var(--muted); font-size: 12.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.mover-price { color: var(--text); font-size: 13px; }
-.mover-chg { font-weight: 900; font-size: 14px; }
+.mover-ticker { color: var(--accent); font-weight: 900; font-size: 17px; }
+.mover-sector { color: var(--muted); font-size: 12px; white-space: nowrap; }
+.mover-name { color: var(--muted); font-size: 13.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mover-price { color: var(--text); font-size: 14px; }
+.mover-chg { font-weight: 900; font-size: 15px; }
 .mover-chg.up { color: var(--green); }
 .mover-chg.down { color: var(--red); }
 
