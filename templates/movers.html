@@ -21,12 +21,12 @@
 
     {% if gainers or losers %}
       <div class="movers-cols">
-        <div class="movers-col">
+        <div class="movers-col framed-col">
           <h3 class="learn-group" style="color:var(--green)">🟢 أعلى ارتفاعاً</h3>
           {% if gainers %}{% for r in gainers %}{{ mover_row(r) }}{% endfor %}
           {% else %}<div class="empty">لا يوجد.</div>{% endif %}
         </div>
-        <div class="movers-col">
+        <div class="movers-col framed-col">
           <h3 class="learn-group" style="color:var(--red)">🔴 أعلى انخفاضاً</h3>
           {% if losers %}{% for r in losers %}{{ mover_row(r) }}{% endfor %}
           {% else %}<div class="empty">لا يوجد.</div>{% endif %}
