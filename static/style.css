@@ -1018,7 +1018,8 @@ table.framed-table th, table.framed-table td {
 }
 /* كل خلية مربّع مستقل، والفراغ 1px يكشف اللون العودي فيصير شبكة نظيفة */
 .mover-row > * { background: var(--card); padding: 12px 14px; display: flex; align-items: center; }
-.mover-row:hover > * { background: rgba(255, 255, 255, .04); }
+.mover-row { transition: filter .1s; }
+.mover-row:hover { filter: brightness(1.15); }
 .mover-tk { flex-direction: column; align-items: flex-start; justify-content: center; gap: 2px; }
 .mover-ticker { color: var(--accent); font-weight: 900; font-size: 17px; }
 .mover-sector { color: var(--muted); font-size: 12px; white-space: nowrap; }
