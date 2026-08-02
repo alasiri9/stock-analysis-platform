@@ -1094,7 +1094,34 @@ def create_app():
                 "first_pct": vals[0], "last_pct": vals[-1],
                 "up": vals[-1] >= vals[0],
             }
-        return render_template("pulse.html", snaps=snaps, chart=chart)
+        # مؤشر السوق الحقيقي (S&P 500 / SPY) — المرجع المعياري لتمثيل السوق (من price_point، بلا API)
+        market = screener.market_direction()
+        mchart = None
+        spy_rows = (PricePoint.query.filter_by(ticker=screener.MARKET_BENCHMARK)
+                    .order_by(PricePoint.date.asc()).all())
+        sp = [(r.date, r.price) for r in spy_rows if r.price is not None][-60:]
+        if len(sp) >= 2:
+            prices = [pr for _, pr in sp]
+            lo, hi = min(prices), max(prices)
+            rng = (hi - lo) or 1.0
+            W, H, pad = 900, 260, 14
+            n = len(prices)
+            step = (W - 2 * pad) / (n - 1)
+            pts = []
+            for i, pr in enumerate(prices):
+                x = pad + i * step
+                y = pad + (H - 2 * pad) * (1 - (pr - lo) / rng)
+                pts.append(f"{x:.1f},{y:.1f}")
+            mchart = {
+                "points": " ".join(pts),
+                "area_points": f"{pad:.1f},{H - pad} " + " ".join(pts) + f" {pad + (n - 1) * step:.1f},{H - pad}",
+                "width": W, "height": H, "days": n,
+                "first_date": sp[0][0].strftime("%Y-%m-%d"),
+                "last_date": sp[-1][0].strftime("%Y-%m-%d"),
+                "first_price": prices[0], "last_price": prices[-1],
+                "up": prices[-1] >= prices[0],
+            }
+        return render_template("pulse.html", snaps=snaps, chart=chart, market=market, mchart=mchart)
 
     @app.route("/movers")
     def movers():

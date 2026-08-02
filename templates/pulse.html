@@ -5,10 +5,44 @@
 {% block content %}
   <section class="panel">
     <div class="panel-head">
-      <h2>💓 نبض السوق التاريخي</h2>
-      <p class="panel-sub">نسبة الأسهم الصاعدة من أسهم المنصة عبر الأيام — هل السوق يتحسّن أم يضعف؟ تعليمي فقط.</p>
+      <h2>💓 نبض السوق التاريخي <span class="help-q" data-tip="نظرة على حالة السوق الأمريكي: أداء مؤشر S&P 500 الفعلي (المرجع المعياري للسوق)، مع اتساع أسهم المنصة (كم سهم صاعد من 32) كمقياس مكمّل. تعليمي فقط — لا توصية.">👁</span></h2>
     </div>
 
+    {# ① مؤشر السوق الحقيقي (S&P 500) — النموذج المعياري لتمثيل السوق #}
+    <h3 class="perf-title" style="text-align:center">📈 مؤشر السوق الأمريكي (S&P 500)</h3>
+    {% if market %}
+      <div class="verdict-line vd-{{ 'pos2' if market.cls == 'bull' else ('neg2' if market.cls == 'bear' else 'neu') }}" style="text-align:center">
+        <span class="vd-lead">حالة السوق الآن:</span> <b>{{ market.emoji }} {{ market.label }}</b>{% if market.change_20 is not none %} <span class="vd-ev">· {{ "%+.1f"|format(market.change_20) }}٪ خلال آخر شهر</span>{% endif %}<span class="vd-note"> — قياس اتجاه المؤشر مقابل متوسطيه 20 و50 يوماً. تعليمي، لا توصية</span>
+      </div>
+    {% endif %}
+    {% if mchart %}
+      <div class="big-chart {{ 'up' if mchart.up else 'down' }}">
+        <div class="big-chart-meta">
+          <span>الآن: <b dir="ltr">{{ "%.2f $"|format(mchart.last_price) }}</b></span>
+          <span>قبل {{ mchart.days }} يوم: <b dir="ltr">{{ "%.2f $"|format(mchart.first_price) }}</b></span>
+        </div>
+        <svg viewBox="0 0 {{ mchart.width }} {{ mchart.height }}" preserveAspectRatio="none" class="big-chart-svg">
+          <defs>
+            <linearGradient id="mktFill" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="currentColor" stop-opacity="0.25"/>
+              <stop offset="100%" stop-color="currentColor" stop-opacity="0"/>
+            </linearGradient>
+          </defs>
+          <polygon points="{{ mchart.area_points }}" fill="url(#mktFill)"/>
+          <polyline points="{{ mchart.points }}" fill="none" stroke="currentColor" stroke-width="2.5"/>
+        </svg>
+        <div class="big-chart-dates" dir="ltr">
+          <span>{{ mchart.first_date }}</span>
+          <span>{{ mchart.last_date }}</span>
+        </div>
+      </div>
+      <div class="note">📌 هذا هو أداء مؤشر السوق الأمريكي الفعلي (S&P 500) — المرجع المعياري لحالة السوق. صاعد = السوق قوي، هابط = ضعيف.</div>
+    {% else %}
+      <div class="empty">📈 يُبنى تاريخ المؤشر تدريجياً — يظهر الرسم بعد تسجيل عدة أيام من التحديث الليلي.</div>
+    {% endif %}
+
+    {# ② اتساع أسهم المنصة — مقياس مكمّل (كم سهم صاعد من 32) #}
+    <h3 class="perf-title" style="text-align:center;margin-top:26px">📊 اتساع أسهم المنصة <span class="help-q" data-tip="نسبة الأسهم الصاعدة من أسهم المنصة الـ32 عبر الأيام — مقياس مكمّل يوضّح هل الصعود واسع (أغلب الأسهم) أم محصور في قلّة. تعليمي فقط.">👁</span></h3>
     {% if chart %}
       <div class="big-chart {{ 'up' if chart.up else 'down' }}">
         <div class="big-chart-meta">
@@ -31,9 +65,9 @@
           <span>{{ chart.last_date }}</span>
         </div>
       </div>
-      <div class="note">📌 الخط الأعلى = سوق صاعد (أغلب الأسهم صاعدة). الخط الأدنى = سوق ضعيف. يُبنى نقطة كل ليلة.</div>
+      <div class="note">📌 الخط الأعلى = صعود واسع (أغلب الأسهم صاعدة). الخط الأدنى = صعود محصور. يُبنى نقطة كل ليلة.</div>
     {% else %}
-      <div class="empty">💓 نبض السوق يُبنى تدريجياً — يظهر الرسم بعد تسجيل يومين على الأقل من التحديث الليلي.</div>
+      <div class="empty">💓 اتساع الأسهم يُبنى تدريجياً — يظهر الرسم بعد تسجيل يومين على الأقل من التحديث الليلي.</div>
     {% endif %}
   </section>
 {% endblock %}
