@@ -29,14 +29,14 @@
             </linearGradient>
           </defs>
           <polygon points="{{ mchart.area_points }}" fill="url(#mktFill)"/>
-          {% for s in mchart.segments %}<line x1="{{ s.x1 }}" y1="{{ s.y1 }}" x2="{{ s.x2 }}" y2="{{ s.y2 }}" stroke="{{ '#22c55e' if s.up else '#ef4444' }}" stroke-width="2.6" stroke-linecap="round"/>{% endfor %}
+          {% for s in mchart.segments %}<line x1="{{ s.x1 }}" y1="{{ s.y1 }}" x2="{{ s.x2 }}" y2="{{ s.y2 }}" stroke="{{ '#22c55e' if s.dir == 'up' else ('#ef4444' if s.dir == 'down' else '#eab308') }}" stroke-width="2.6" stroke-linecap="round"/>{% endfor %}
         </svg>
         <div class="big-chart-dates" dir="ltr">
           <span>{{ mchart.first_date }}</span>
           <span>{{ mchart.last_date }}</span>
         </div>
       </div>
-      <div class="note">📌 هذا هو أداء مؤشر السوق الأمريكي الفعلي (S&P 500) — المرجع المعياري لحالة السوق. صاعد = السوق قوي، هابط = ضعيف.</div>
+      <div class="note">📌 هذا هو أداء مؤشر السوق الأمريكي الفعلي (S&P 500) — المرجع المعياري لحالة السوق. الموجة <b style="color:#22c55e">الخضراء</b> صعود · <b style="color:#ef4444">الحمراء</b> هبوط · <b style="color:#eab308">الصفراء</b> عرضية (بلا اتجاه واضح).</div>
     {% else %}
       <div class="empty">📈 يُبنى تاريخ المؤشر تدريجياً — يظهر الرسم بعد تسجيل عدة أيام من التحديث الليلي.</div>
     {% endif %}
@@ -58,14 +58,14 @@
             </linearGradient>
           </defs>
           <polygon points="{{ chart.area_points }}" fill="url(#pulseFill)"/>
-          {% for s in chart.segments %}<line x1="{{ s.x1 }}" y1="{{ s.y1 }}" x2="{{ s.x2 }}" y2="{{ s.y2 }}" stroke="{{ '#22c55e' if s.up else '#ef4444' }}" stroke-width="2.6" stroke-linecap="round"/>{% endfor %}
+          {% for s in chart.segments %}<line x1="{{ s.x1 }}" y1="{{ s.y1 }}" x2="{{ s.x2 }}" y2="{{ s.y2 }}" stroke="{{ '#22c55e' if s.dir == 'up' else ('#ef4444' if s.dir == 'down' else '#eab308') }}" stroke-width="2.6" stroke-linecap="round"/>{% endfor %}
         </svg>
         <div class="big-chart-dates" dir="ltr">
           <span>{{ chart.first_date }}</span>
           <span>{{ chart.last_date }}</span>
         </div>
       </div>
-      <div class="note">📌 الخط الأعلى = صعود واسع (أغلب الأسهم صاعدة). الخط الأدنى = صعود محصور. يُبنى نقطة كل ليلة.</div>
+      <div class="note">📌 الخط الأعلى = صعود واسع (أغلب الأسهم صاعدة). الخط الأدنى = صعود محصور. الموجة <b style="color:#22c55e">الخضراء</b> اتساع يتحسّن · <b style="color:#ef4444">الحمراء</b> يضعف · <b style="color:#eab308">الصفراء</b> ثابت. يُبنى نقطة كل ليلة.</div>
     {% else %}
       <div class="empty">💓 اتساع الأسهم يُبنى تدريجياً — يظهر الرسم بعد تسجيل يومين على الأقل من التحديث الليلي.</div>
     {% endif %}
