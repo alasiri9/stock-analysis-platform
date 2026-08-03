@@ -230,6 +230,20 @@
   </div>
   {% endif %}
 
+  {# ===== شمعة انعكاس على آخر جلسة (Price Action) — تنبيه معرفي فقط، لا يدخل عدّاد المؤشرات ===== #}
+  {% if report.reversal %}
+  {% set rv = report.reversal %}
+  <div class="section">
+    <h2>🕯️ شمعة انعكاس
+      <span class="help-q" data-tip="شمعة الانعكاس: شكل حركة السعر في آخر جلسة (ابتلاع · مطرقة · شهاب · دوجي) قد يمهّد لتغيّر الاتجاه. تنبيه معرفي فقط وليس توصية — شمعة واحدة دليل ضعيف ما لم تؤكّدها الجلسات بعدها. لا تدخل ضمن عدّاد المؤشرات الفنية.">👁</span>
+    </h2>
+    <div class="tech-badges">
+      <span class="tbadge {{ rv.status }}">{{ rv.pattern }}</span>
+    </div>
+    <div class="soon">{{ rv.note }}.</div>
+  </div>
+  {% endif %}
+
   {# ===== المقاييس المالية (نعرض المتوفّرة فقط + عدّاد X من 6) ===== #}
   {% set mlist = [
     {'label': 'ROE (العائد على حقوق الملكية)', 'val': report.metrics.roe, 'suf': '%', 'dig': 1},
