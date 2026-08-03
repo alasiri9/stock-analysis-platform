@@ -905,11 +905,6 @@ def create_app():
         ]
         return render_template("learn.html", glossary=glossary)
 
-    @app.route("/how")
-    def how():
-        # صفحة تعليمية: كيف تعمل المنصة (محتوى ثابت — بلا استدعاءات API)
-        return render_template("how.html")
-
     @app.route("/health")
     def health():
         # لوحة صحة المنصة — للمدير فقط (من قاعدة البيانات، بلا استدعاء API)
