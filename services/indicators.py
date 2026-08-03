@@ -863,6 +863,28 @@ def reversal_pattern(candles):
     return None
 
 
+def resistance_warning(candles, near_pct=0.02):
+    """قاعدة الانتظار (من الدورة): تنبيه حين يكون السعر ملاصقاً لمقاومة سابقة لم تُخترق بعد.
+
+    الشراء على مستوى قمة/مقاومة سابقة يكثر عنده الارتداد — فالأفضل انتظار تأكيد الاختراق.
+    نستخدم أقرب مقاومة فوق السعر (أقرب قمة فراكتالية أسبوعية/شهرية سابقة) — نفس حساب الهدف.
+
+    يُرجع {"level", "pct", "tf"} إذا كانت المقاومة على بُعد ≤ near_pct فوق السعر، وإلا None.
+    تنبيه معرفي وصفي فقط، لا توصية.
+    """
+    rows = _clean(candles)
+    closes = [r["close"] for r in rows if r["close"] is not None]
+    if len(closes) < 45:
+        return None
+    price = closes[-1]
+    level, pct, tf = _overhead_target(candles, price)
+    if level is None or pct is None:
+        return None
+    if pct <= near_pct:
+        return {"level": level, "pct": pct, "tf": tf}
+    return None
+
+
 def atr(candles, period=14):
     """ATR (متوسط المدى الحقيقي، تمهيد Wilder) — مقياس تذبذب السهم بالدولار.
 

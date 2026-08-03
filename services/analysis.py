@@ -196,6 +196,16 @@ def smart_summary(report, scan=None):
     if pe is not None and pe > 40:
         cautions.append(f"تقييم مرتفع نسبياً (P/E {pe:.0f})")
 
+    # قاعدة الانتظار (من الدورة): السعر ملاصق لمقاومة سابقة لم تُخترق بعد — يكثر عندها الارتداد
+    nr = report.get("near_resistance")
+    if nr and nr.get("level") is not None:
+        tf = nr.get("tf")
+        tf_txt = f" {tf}" if tf else ""
+        cautions.append(
+            f"السعر قريب جداً من مقاومة{tf_txt} عند {nr['level']:.2f}$ — "
+            "يُفضّل انتظار تأكيد الاختراق قبل الدخول"
+        )
+
     return {"strengths": strengths, "cautions": cautions}
 
 
@@ -266,6 +276,7 @@ def build_stock_report(ticker):
         sustained = indicators.sustained_breakout(candles)  # اختراق مستمر (يواصل صعوده بثبات)
         tech_indicators = indicators.build_indicators(candles)
         reversal = indicators.reversal_pattern(candles)  # شمعة انعكاس على آخر جلسة (تنبيه معرفي)
+        near_res = indicators.resistance_warning(candles)  # قاعدة الانتظار: السعر ملاصق لمقاومة
         chart = price_chart(candles, days=250)  # سياق سنة كامل — يطابق نافذة التحليل
     except Exception as e:  # noqa: BLE001
         print(f"[analysis] تعذّر حساب ATR/المؤشرات لـ {ticker}: {e}")
@@ -274,6 +285,7 @@ def build_stock_report(ticker):
         sustained = None
         tech_indicators = []
         reversal = None
+        near_res = None
         chart = None
 
     # --- معاملات المطلعين من SEC EDGAR (لا تكسر الصفحة لو فشلت) ---
@@ -312,5 +324,6 @@ def build_stock_report(ticker):
         "sustained": sustained,            # اختراق مستمر: تفاصيل استمرار الصعود (أو None)
         "indicators": tech_indicators,     # مؤشرات فنية (قد تكون قائمة فارغة)
         "reversal": reversal,              # شمعة انعكاس على آخر جلسة (أو None) — تنبيه معرفي
+        "near_resistance": near_res,       # السعر ملاصق لمقاومة سابقة (أو None) — قاعدة الانتظار
         "chart": chart,                    # بيانات شارت مسار السعر (أو None)
     }
