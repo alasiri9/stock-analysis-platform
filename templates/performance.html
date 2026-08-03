@@ -11,29 +11,29 @@
     {% if overall %}
       <div class="stat-row">
         <div class="stat-box">
-          <div class="label">إجمالي الإشارات</div>
+          <div class="label">إجمالي الإشارات <span class="help-q" data-tip="عدد الإشارات الناضجة (مرّ عليها 3 أيام فأكثر) الداخلة في الحساب — هي نفسها صفوف الجدول تحت (عدا الطازجة). كلما كبر العدد زادت مصداقية بقية الأرقام.">👁</span></div>
           <div class="value">{{ overall.count }}</div>
         </div>
         <div class="stat-box">
-          <div class="label">متوسط العائد</div>
+          <div class="label">متوسط العائد <span class="help-q" data-tip="متوسط ربح/خسارة الإشارة الواحدة منذ صدورها حتى الآن (يشمل الرابحة والخاسرة معاً). موجب = المنصة بالمتوسط رابحة. تعليمي، ليس ربحاً مضموناً.">👁</span></div>
           <div class="value {{ 'pos' if overall.avg >= 0 else 'neg' }}" dir="ltr">{{ "%+.1f"|format(overall.avg) }}%</div>
         </div>
         <div class="stat-box">
-          <div class="label">نسبة النجاح</div>
+          <div class="label">نسبة النجاح <span class="help-q" data-tip="كم إشارة ربحت من الإجمالي (الصاعدة: صعد السهم؛ الهابطة: نزل). تقيس «كم مرة أصابت» — لا حجم الربح (لذلك اقرأها مع متوسط العائد).">👁</span></div>
           <div class="value" dir="ltr">{{ "%.0f"|format(overall.win_rate) }}%</div>
           <div class="sub">({{ overall.win_count }} من {{ overall.count }})</div>
         </div>
         <div class="stat-box">
-          <div class="label">أفضل إشارة</div>
+          <div class="label">أفضل إشارة <span class="help-q" data-tip="أعلى عائد حقّقته إشارة واحدة في السجل — أفضل حالة (ليست المتوسط).">👁</span></div>
           <div class="value pos" dir="ltr">{{ "%+.1f"|format(overall.best) }}%</div>
         </div>
         <div class="stat-box">
-          <div class="label">أسوأ إشارة</div>
+          <div class="label">أسوأ إشارة <span class="help-q" data-tip="أكبر خسارة سجّلتها إشارة واحدة — أسوأ حالة. يذكّرك أن الإشارات تخطئ وأن إدارة المخاطرة مهمة.">👁</span></div>
           <div class="value {{ 'neg' if overall.worst < 0 else 'pos' }}" dir="ltr">{{ "%+.1f"|format(overall.worst) }}%</div>
         </div>
         {% if overall.avg_alpha is defined and overall.avg_alpha is not none %}
           <div class="stat-box {{ 'beat-box' if overall.avg_alpha >= 0 }}">
-            <div class="label">⚔️ مقابل السوق (SPY)</div>
+            <div class="label">⚔️ مقابل السوق (SPY) <span class="help-q" data-tip="هل تفوّقت الإشارات على مؤشر السوق الأمريكي (S&P 500) عن نفس الفترة؟ موجب = أداؤها أفضل من مجرّد شراء السوق. مقارنة عادلة بنفس النافذة الزمنية لكل إشارة.">👁</span></div>
             <div class="value {{ 'pos' if overall.avg_alpha >= 0 else 'neg' }}" dir="ltr">{{ "%+.1f"|format(overall.avg_alpha) }}%</div>
             <div class="sub">تفوقت {{ overall.beat_market }} من {{ overall.alpha_count }} إشارة على السوق</div>
           </div>
@@ -42,7 +42,7 @@
 
       {# مقارنة أنواع الإشارات #}
       {% if type_stats %}
-        <h3 class="perf-title">⚖️ أي نوع إشارة أدق؟</h3>
+        <h3 class="perf-title">⚖️ أي نوع إشارة أدق؟ <span class="help-q" data-tip="أداء كل نوع إشارة على حدة (اختراق/كسر/شراء انخفاض/جاهز للانطلاق/ذهبية...): متوسط عائده ونسبة نجاحه وعدد إشاراته الناضجة. يساعدك تعرف أي الإشارات أثبتت جدارتها. انتبه للأعداد الصغيرة — أقل دلالة.">👁</span></h3>
         <div class="stat-row">
           {% for t, st in type_stats.items() %}
             {% if st %}
