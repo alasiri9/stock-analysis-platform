@@ -265,6 +265,7 @@ def build_stock_report(ticker):
         brk = scoring.break_status(candles)  # اختراق/كسر مؤكّد بالحجم
         sustained = indicators.sustained_breakout(candles)  # اختراق مستمر (يواصل صعوده بثبات)
         tech_indicators = indicators.build_indicators(candles)
+        reversal = indicators.reversal_pattern(candles)  # شمعة انعكاس على آخر جلسة (تنبيه معرفي)
         chart = price_chart(candles, days=250)  # سياق سنة كامل — يطابق نافذة التحليل
     except Exception as e:  # noqa: BLE001
         print(f"[analysis] تعذّر حساب ATR/المؤشرات لـ {ticker}: {e}")
@@ -272,6 +273,7 @@ def build_stock_report(ticker):
         brk = None
         sustained = None
         tech_indicators = []
+        reversal = None
         chart = None
 
     # --- معاملات المطلعين من SEC EDGAR (لا تكسر الصفحة لو فشلت) ---
@@ -309,5 +311,6 @@ def build_stock_report(ticker):
         "break_status": brk,               # حالة الاختراق/الكسر المؤكّد بالحجم (أو None)
         "sustained": sustained,            # اختراق مستمر: تفاصيل استمرار الصعود (أو None)
         "indicators": tech_indicators,     # مؤشرات فنية (قد تكون قائمة فارغة)
+        "reversal": reversal,              # شمعة انعكاس على آخر جلسة (أو None) — تنبيه معرفي
         "chart": chart,                    # بيانات شارت مسار السعر (أو None)
     }

@@ -69,6 +69,11 @@
     {% elif bk and bk.confirmed and bk.dir == 'breakdown' %}
       <div class="scard-brk down">⚠️ كسر مؤكّد بحجم عالٍ · {{ bk.days_ago | recency_ar }}</div>
     {% endif %}
+    {# شمعة انعكاس (Price Action) — نعرض الاتجاهية فقط على البطاقة؛ الدوجي يبقى بصفحة السهم #}
+    {% set rv = r.get('reversal') %}
+    {% if rv and rv.status in ['bull', 'bear'] %}
+      <div class="scard-brk {{ 'up' if rv.status == 'bull' else 'down' }}">🕯️ شمعة {{ rv.pattern }} <span class="help-q" data-tip="شمعة انعكاس: شكل آخر جلسة تداول (ابتلاع/مطرقة/شهاب) قد يمهّد لتغيّر الاتجاه. تنبيه معرفي فقط لا توصية — شمعة واحدة دليل ضعيف حتى تؤكّدها الجلسات بعدها، ولا تدخل عدّاد «قوة التأكيد».">👁</span></div>
+    {% endif %}
     {% if cluster_buyers is defined and cluster_buyers.get(r.ticker) %}
       <div class="scard-cluster">
         <span class="cl-t">شراء عنقودي <span class="help-q" data-tip="شراء عنقودي: اشترى هذا السهم مطلعان مختلفان أو أكثر من السوق المفتوح بأموالهم الخاصة — أقوى إشارة ثقة (قناعة جماعية من عدة أشخاص يعرفون الشركة). تعليمي، ليس توصية.">👁</span></span>

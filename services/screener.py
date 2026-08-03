@@ -280,6 +280,7 @@ def _build_record(ticker):
         candles = fmp_client.get_historical_prices(ticker, limit=250)
         tech = indicators.build_indicators(candles)
         flow = indicators.money_flow(candles)  # تدفق السيولة — من نفس الشموع، بلا استدعاء إضافي
+        reversal = indicators.reversal_pattern(candles)  # شمعة انعكاس على آخر جلسة (تنبيه معرفي)
         squeeze_bo = indicators.squeeze_breakout(candles)  # استراتيجية الانفجار الوشيك
         closes = [c["close"] for c in reversed(candles or []) if c.get("close") is not None]
         gc = indicators.golden_cross(closes)  # التقاطع الذهبي SMA50/SMA200
@@ -293,6 +294,7 @@ def _build_record(ticker):
     except Exception:  # noqa: BLE001
         tech = []
         flow = None
+        reversal = None
         squeeze_bo = False
         gc = None
         pullback = False
@@ -334,6 +336,7 @@ def _build_record(ticker):
         "metrics": metrics,
         "indicators": tech,
         "money_flow": flow,
+        "reversal": reversal,
         "squeeze_breakout": squeeze_bo,
         "golden_cross": (gc or {}).get("cross"),
         "trend_pullback": pullback,

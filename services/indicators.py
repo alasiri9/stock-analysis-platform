@@ -796,6 +796,73 @@ def trend_pullback(candles):
     return closes[-1] > closes[-2]  # بدأ يرتد فعلاً
 
 
+def reversal_pattern(candles):
+    """كشف «شمعة انعكاس» على آخر جلسة (Price Action) — من نفس شموع FMP بلا استدعاء إضافي.
+
+    تعليمي فقط: ينبّه المتعلّم أن آخر شمعة تحمل شكلاً انعكاسياً معروفاً عند المحللين
+    (ابتلاع · مطرقة · شهاب · دوجي) — ليس توصية شراء/بيع. الشمعة الانعكاسية أقوى دلالة
+    حين تظهر عكس اتجاه قصير سابق (مطرقة بعد هبوط، شهاب بعد صعود).
+
+    مقصود ألا يدخل هذا في عدّاد المؤشرات الاثني عشر ولا في «قوة التأكيد»: شمعة واحدة
+    دليل ضعيف بذاته، فلا نُدخلها لتُعيد ترتيب جودة الأسهم — نعرضها كتنبيه معرفي فقط.
+
+    يُرجع dict {"pattern", "status", "note"} أو None لو لا نمط واضح.
+      status ∈ {bull, bear, neutral} — للون الشارة فقط.
+    """
+    rows = []
+    for r in reversed(candles or []):  # FMP الأحدث أولاً ⇒ نعكسها للأقدم أولاً
+        o, h, l, c = r.get("open"), r.get("high"), r.get("low"), r.get("close")
+        if None in (o, h, l, c):
+            continue
+        rows.append({"open": o, "high": h, "low": l, "close": c})
+    if len(rows) < 5:
+        return None  # نحتاج اتجاهاً قصيراً سابقاً حتى يكون للانعكاس معنى
+
+    cur, prev = rows[-1], rows[-2]
+    o, h, l, c = cur["open"], cur["high"], cur["low"], cur["close"]
+    rng = h - l
+    if rng <= 0:
+        return None
+    body = abs(c - o)
+    upper = h - max(o, c)   # الظل العلوي
+    lower = min(o, c) - l   # الظل السفلي
+    cur_green = c > o
+    cur_red = c < o
+    prev_green = prev["close"] > prev["open"]
+    prev_red = prev["close"] < prev["open"]
+
+    # اتجاه قصير سابق (إغلاق ما قبل الشمعة الحالية مقابل إغلاق ~٣ جلسات قبله)
+    trend_down = prev["close"] < rows[-5]["close"]
+    trend_up = prev["close"] > rows[-5]["close"]
+
+    # 1) الابتلاع الصاعد: شمعة خضراء تبتلع جسم شمعة حمراء قبلها (انعكاس صعودي كلاسيكي)
+    if cur_green and prev_red and o <= prev["close"] and c >= prev["open"] and body >= 0.5 * rng:
+        return {"pattern": "ابتلاع صاعد", "status": "bull",
+                "note": "شمعة صعود ابتلعت هبوط أمس — إشارة انعكاس صعودي محتملة"}
+
+    # 2) الابتلاع الهابط: شمعة حمراء تبتلع جسم شمعة خضراء قبلها (انعكاس هبوطي)
+    if cur_red and prev_green and o >= prev["close"] and c <= prev["open"] and body >= 0.5 * rng:
+        return {"pattern": "ابتلاع هابط", "status": "bear",
+                "note": "شمعة هبوط ابتلعت صعود أمس — إشارة انعكاس هبوطي محتملة"}
+
+    # 3) المطرقة: جسم صغير أعلى الشمعة وظلّ سفلي طويل بعد هبوط قصير (رفض للنزول)
+    if body > 0 and lower >= 2 * body and upper <= 0.15 * rng and body <= 0.35 * rng and trend_down:
+        return {"pattern": "مطرقة", "status": "bull",
+                "note": "ذيل سفلي طويل بعد هبوط — رفض للنزول وانعكاس صعودي محتمل"}
+
+    # 4) الشهاب: جسم صغير أسفل الشمعة وظلّ علوي طويل بعد صعود قصير (رفض للصعود)
+    if body > 0 and upper >= 2 * body and lower <= 0.15 * rng and body <= 0.35 * rng and trend_up:
+        return {"pattern": "شهاب", "status": "bear",
+                "note": "ذيل علوي طويل بعد صعود — رفض للارتفاع وانعكاس هبوطي محتمل"}
+
+    # 5) الدوجي: جسم شبه معدوم (فتح ≈ إغلاق) = تردّد وتوازن قد يسبق انعكاساً
+    if body <= 0.1 * rng:
+        return {"pattern": "دوجي", "status": "neutral",
+                "note": "فتح ≈ إغلاق — تردّد بين البائعين والمشترين قد يسبق انعكاساً"}
+
+    return None
+
+
 def atr(candles, period=14):
     """ATR (متوسط المدى الحقيقي، تمهيد Wilder) — مقياس تذبذب السهم بالدولار.
 
