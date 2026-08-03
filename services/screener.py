@@ -498,6 +498,9 @@ MARKET_BENCHMARK = "SPY"
 # إشارات هبوطية (تحذير بيع/تفادٍ) — يُقاس أداؤها معكوساً: نزول السهم بعدها = نجاح.
 BEARISH_SIGNALS = {"breakdown_confirmed"}
 
+# الحدّ الأدنى لعمر الإشارة (أيام) حتى تدخل الإحصائيات — الأصغر «لم تنضج» (لم يمرّ وقت كافٍ للحكم).
+MATURE_MIN_DAYS = 3
+
 
 def _benchmark_return(sessions):
     """عائد مؤشر السوق (SPY) عبر آخر `sessions` جلسة (%) من price_point.
@@ -660,6 +663,12 @@ def signals_performance():
     alphas = []
     by_type = {}  # signal_type -> list of returns
     for s in sigs:
+        triggered_at = s.triggered_at
+        if triggered_at.tzinfo is None:  # SQLite محلياً بلا tzinfo
+            triggered_at = triggered_at.replace(tzinfo=timezone.utc)
+        days = (now - triggered_at).days
+        mature = days >= MATURE_MIN_DAYS  # نضجت؟ (مرّ وقت كافٍ للحكم) — الطازجة لا تدخل الإحصائيات
+
         current = price_by_ticker.get(s.ticker)
         # الإشارات الهابطة (كسر مؤكّد) تُقاس معكوسة: نزول السهم بعدها = نجاح (فائدة تحذير البيع/التفادي).
         # sign = -1 يقلب العائد فيصير النزول عائداً موجباً، والصعود سلبياً — كما يحصل للصاعدة بالعكس.
@@ -667,11 +676,9 @@ def signals_performance():
         ret = None
         if current is not None and s.price_at_signal:
             ret = sign * (current - s.price_at_signal) / s.price_at_signal * 100.0
-            all_returns.append(ret)
-            by_type.setdefault(s.signal_type, []).append(ret)
-        triggered_at = s.triggered_at
-        if triggered_at.tzinfo is None:  # SQLite محلياً بلا tzinfo
-            triggered_at = triggered_at.replace(tzinfo=timezone.utc)
+            if mature:  # الطازجة (< MATURE_MIN_DAYS) تُعرض في الجدول لكن لا تدخل الإحصائيات
+                all_returns.append(ret)
+                by_type.setdefault(s.signal_type, []).append(ret)
 
         # عائد السوق عن نفس الفترة + الألفا (تفوق الإشارة على السوق)
         spy_ret = alpha = None
@@ -679,16 +686,18 @@ def signals_performance():
             spy_start = _spy_on(triggered_at.date())
             if spy_start:
                 spy_ret = (spy_last - spy_start) / spy_start * 100.0  # حركة السوق الفعلية (للعرض)
-                # الألفا بنفس اتجاه الإشارة: شراء للصاعدة، تفادٍ/بيع للهابطة (نطرح مساهمة السوق بنفس الإشارة)
+                # الألفا بنفس اتجاه الإشارة: شراء للصاعدة, تفادٍ/بيع للهابطة (نطرح مساهمة السوق بنفس الإشارة)
                 alpha = ret - sign * spy_ret
-                alphas.append(alpha)
+                if mature:
+                    alphas.append(alpha)
 
         rows.append({
             "ticker": s.ticker,
             "name": name_by_ticker.get(s.ticker),
             "signal_type": s.signal_type,
             "date": s.triggered_at,
-            "days": (now - triggered_at).days,
+            "days": days,
+            "mature": mature,
             "price_at_signal": s.price_at_signal,
             "current": current,
             "return_pct": ret,
