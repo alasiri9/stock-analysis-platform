@@ -96,6 +96,14 @@ def _auto_refresh(app):
         except Exception as e:  # noqa: BLE001
             print(f"[scheduler] تعذّر تذكير المشترك بانتهاء اشتراكه: {e}")
 
+        # تنظيف الرسائل القديمة: خاصة تُحذف بعد 30 يوماً من اختفائها، عامة بعد 90 يوماً
+        try:
+            n = _cleanup_messages()
+            if n:
+                print(f"[scheduler] حُذفت {n} رسالة قديمة نهائياً")
+        except Exception as e:  # noqa: BLE001
+            print(f"[scheduler] تعذّر تنظيف الرسائل القديمة: {e}")
+
         # لقطة يومية لمزاج السوق (لرسم نبض السوق التاريخي)
         try:
             from models import db, MarketMoodSnapshot
@@ -310,6 +318,58 @@ def _notify_subs_expiry_inbox():
     if sent:
         db.session.commit()
     return sent
+
+
+def _cleanup_messages():
+    """حذف تلقائي نهائي للرسائل القديمة (تنظيف قاعدة البيانات):
+
+    - 👤 رسالة خاصة (subscriber_id ليس فارغاً): تُحذف نهائياً بعد مرور 30 يوماً على
+      اختفائها من عند المشترك. لحظة "الاختفاء" هي إمّا وقت التصفية اليدوية (cleared_at)،
+      أو — لو تُركت بالسلة — وقت الإدخال + 30 يوماً (التصفير التلقائي). فالحذف الفعلي
+      يحصل بعد 30 يوماً من أيّهما تحقّق. لو لم يُنقل للسلة أصلاً، لا تُحذف (تبقى بصندوقه).
+    - 📢 رسالة عامة (subscriber_id فارغ): مشتركة بين الجميع، فتُحذف للكل بعد 90 يوماً
+      من إرسالها (created_at) — مدة كافية ليطّلع عليها الجميع.
+    - تُحذف صفوف MessageTrash التابعة لأي رسالة محذوفة (وأي صف يتيم بلا رسالة).
+
+    يُرجع عدد الرسائل المحذوفة نهائياً.
+    """
+    from models import db, Message, MessageTrash
+    now = datetime.now(timezone.utc)
+    deleted = 0
+
+    def _aware(dt):
+        return dt.replace(tzinfo=timezone.utc) if dt.tzinfo is None else dt
+
+    for m in Message.query.all():
+        if m.subscriber_id is None:
+            # 📢 عامة: حذف للجميع بعد 90 يوماً من الإرسال
+            if _aware(m.created_at) <= now - timedelta(days=90):
+                MessageTrash.query.filter_by(message_id=m.id).delete()
+                db.session.delete(m)
+                deleted += 1
+        else:
+            # 👤 خاصة: تعتمد على صف السلة عند المشترك المستهدف
+            tr = MessageTrash.query.filter_by(message_id=m.id).first()
+            if tr is None:
+                continue  # لم يُنقل للسلة → يبقى بصندوقه
+            gone = _aware(tr.cleared_at) if tr.cleared_at else (
+                _aware(tr.trashed_at) + timedelta(days=30))  # لحظة الاختفاء
+            if now >= gone + timedelta(days=30):
+                MessageTrash.query.filter_by(message_id=m.id).delete()
+                db.session.delete(m)
+                deleted += 1
+
+    # صفوف سلة يتيمة (رسالتها محذوفة سابقاً لأي سبب)
+    live_ids = {mid for (mid,) in db.session.query(Message.id).all()}
+    for tr in MessageTrash.query.all():
+        if tr.message_id not in live_ids:
+            db.session.delete(tr)
+
+    if deleted:
+        db.session.commit()
+    else:
+        db.session.commit()  # لحفظ حذف الصفوف اليتيمة إن وُجدت
+    return deleted
 
 
 def init_scheduler(app):
