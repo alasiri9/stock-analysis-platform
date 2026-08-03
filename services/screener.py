@@ -495,6 +495,9 @@ def check_price_alerts():
 # رمز مؤشر السوق للمقارنة المعيارية (متاح بباقة FMP المجانية — مُختبر)
 MARKET_BENCHMARK = "SPY"
 
+# إشارات هبوطية (تحذير بيع/تفادٍ) — يُقاس أداؤها معكوساً: نزول السهم بعدها = نجاح.
+BEARISH_SIGNALS = {"breakdown_confirmed"}
+
 
 def _benchmark_return(sessions):
     """عائد مؤشر السوق (SPY) عبر آخر `sessions` جلسة (%) من price_point.
@@ -658,9 +661,12 @@ def signals_performance():
     by_type = {}  # signal_type -> list of returns
     for s in sigs:
         current = price_by_ticker.get(s.ticker)
+        # الإشارات الهابطة (كسر مؤكّد) تُقاس معكوسة: نزول السهم بعدها = نجاح (فائدة تحذير البيع/التفادي).
+        # sign = -1 يقلب العائد فيصير النزول عائداً موجباً، والصعود سلبياً — كما يحصل للصاعدة بالعكس.
+        sign = -1 if s.signal_type in BEARISH_SIGNALS else 1
         ret = None
         if current is not None and s.price_at_signal:
-            ret = (current - s.price_at_signal) / s.price_at_signal * 100.0
+            ret = sign * (current - s.price_at_signal) / s.price_at_signal * 100.0
             all_returns.append(ret)
             by_type.setdefault(s.signal_type, []).append(ret)
         triggered_at = s.triggered_at
@@ -672,8 +678,9 @@ def signals_performance():
         if ret is not None and spy_last is not None:
             spy_start = _spy_on(triggered_at.date())
             if spy_start:
-                spy_ret = (spy_last - spy_start) / spy_start * 100.0
-                alpha = ret - spy_ret
+                spy_ret = (spy_last - spy_start) / spy_start * 100.0  # حركة السوق الفعلية (للعرض)
+                # الألفا بنفس اتجاه الإشارة: شراء للصاعدة، تفادٍ/بيع للهابطة (نطرح مساهمة السوق بنفس الإشارة)
+                alpha = ret - sign * spy_ret
                 alphas.append(alpha)
 
         rows.append({
