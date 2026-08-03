@@ -176,6 +176,8 @@ class Message(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     body = db.Column(db.Text, nullable=False)
+    # وجهة الرسالة: None = للجميع (كل المستخدمين)، أو رقم مشترك محدّد = لهذا المشترك فقط.
+    subscriber_id = db.Column(db.Integer, nullable=True)
     created_at = db.Column(db.DateTime(timezone=True), nullable=False, default=_utcnow)
 
     def __repr__(self):
