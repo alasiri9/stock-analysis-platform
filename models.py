@@ -198,6 +198,7 @@ class MessageTrash(db.Model):
     message_id = db.Column(db.Integer, nullable=False)
     trashed_at = db.Column(db.DateTime(timezone=True), nullable=False, default=_utcnow)
     cleared = db.Column(db.Boolean, nullable=False, default=False)  # صُفّيت يدوياً؟ (غير قابلة للاستعادة)
+    cleared_at = db.Column(db.DateTime(timezone=True), nullable=True)  # وقت التصفية اليدوية (للحذف التلقائي بعده)
 
     __table_args__ = (db.UniqueConstraint("user_id", "message_id", name="uq_msgtrash_user_msg"),)
 

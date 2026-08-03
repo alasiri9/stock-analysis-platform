@@ -374,8 +374,10 @@ def create_app():
     @app.route("/messages/empty-trash", methods=["POST"])
     def messages_empty_trash():
         # تصفية السلة يدوياً: كل ما فيها يصير غير قابل للاستعادة (يبقى مخفياً عن الصندوق، لا يؤثّر على غيره)
+        from datetime import datetime as _dt, timezone as _tz
         uid = current_user_id()
-        MessageTrash.query.filter_by(user_id=uid, cleared=False).update({"cleared": True})
+        MessageTrash.query.filter_by(user_id=uid, cleared=False).update(
+            {"cleared": True, "cleared_at": _dt.now(_tz.utc)})
         db.session.commit()
         return redirect(url_for("messages"))
 
@@ -475,7 +477,9 @@ def create_app():
                      # المفتاح المشفّر (~140 حرفاً) يتجاوز 128 — نوسّع العمود لتفادي خطأ الحفظ
                      "ALTER TABLE subscriber ALTER COLUMN fmp_api_key TYPE VARCHAR(256)",
                      # وجهة الرسالة: NULL = للجميع، أو رقم مشترك محدّد
-                     "ALTER TABLE message ADD COLUMN subscriber_id INTEGER"):
+                     "ALTER TABLE message ADD COLUMN subscriber_id INTEGER",
+                     # وقت تصفية السلة يدوياً (لحساب الحذف التلقائي بعده)
+                     "ALTER TABLE message_trash ADD COLUMN cleared_at TIMESTAMP"):
             try:
                 db.session.execute(_sql(stmt))
                 db.session.commit()
