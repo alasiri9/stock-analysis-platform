@@ -88,6 +88,14 @@ def _auto_refresh(app):
         except Exception as e:  # noqa: BLE001
             print(f"[scheduler] تعذّر إرسال تذكير التجديد: {e}")
 
+        # تذكير المشترك نفسه (رسالة في صندوقه) قبل انتهاء اشتراكه بأسبوع ثم بـ3 أيام
+        try:
+            n = _notify_subs_expiry_inbox()
+            if n:
+                print(f"[scheduler] تذكير انتهاء اشتراك للمشترك: {n} رسالة")
+        except Exception as e:  # noqa: BLE001
+            print(f"[scheduler] تعذّر تذكير المشترك بانتهاء اشتراكه: {e}")
+
         # لقطة يومية لمزاج السوق (لرسم نبض السوق التاريخي)
         try:
             from models import db, MarketMoodSnapshot
@@ -271,6 +279,37 @@ def _notify_expiring_subs():
     lines.append("https://algomatix-production.up.railway.app")
     telegram_client.send_message("\n".join(lines))
     return len(soon)
+
+
+def _notify_subs_expiry_inbox():
+    """رسائل تذكير تلقائية **للمشترك نفسه** في صندوق رسائله عند اقتراب انتهاء اشتراكه:
+    الأولى قبل الانتهاء بأسبوع (7 أيام)، والثانية قبله بـ3 أيام.
+
+    منع التكرار: لا تُرسل رسالة بنفس النص (يتضمّن تاريخ الانتهاء) لنفس المشترك مرتين —
+    فلو مُدّد الاشتراك (تغيّر التاريخ) يُرسَل تذكير جديد للفترة الجديدة. يُرجع عدد الرسائل المُنشأة.
+    """
+    from models import db, Subscriber, Message
+    sent = 0
+    for s in Subscriber.query.all():
+        if not s.is_active():
+            continue
+        d = s.days_left()
+        if d == 7:
+            body = (f"⏳ تذكير: اشتراكك في المنصة ينتهي بعد أسبوع "
+                    f"(بتاريخ {s.end_date:%Y-%m-%d}). للتجديد تواصل مع إدارة المنصة.")
+        elif d == 3:
+            body = (f"⏳ تنبيه مهم: اشتراكك ينتهي بعد 3 أيام "
+                    f"(بتاريخ {s.end_date:%Y-%m-%d}). جدّد قبلها حتى لا ينقطع وصولك للمنصة.")
+        else:
+            continue
+        # تفادي التكرار: نفس النص (بنفس تاريخ الانتهاء) لهذا المشترك لا يُرسَل مرتين
+        if Message.query.filter_by(subscriber_id=s.id, body=body).first():
+            continue
+        db.session.add(Message(body=body, subscriber_id=s.id))
+        sent += 1
+    if sent:
+        db.session.commit()
+    return sent
 
 
 def init_scheduler(app):
