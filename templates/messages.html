@@ -12,9 +12,12 @@
       <div class="msg-list">
         {% for m in messages %}
           <div class="msg-card">
-            <div class="msg-body">📢 {{ m.body }}</div>
+            <div class="msg-body">{{ '👤' if m.subscriber_id else '📢' }} {{ m.body }}</div>
             <div class="msg-foot">
               <span class="msg-date" dir="ltr">{{ m.created_at.strftime('%Y-%m-%d %H:%M') }}</span>
+              {% if is_admin %}
+                <span class="muted" style="font-size:12px">إلى: {{ ('👤 ' ~ sub_names.get(m.subscriber_id, 'مشترك محذوف')) if m.subscriber_id else '📢 الكل' }}</span>
+              {% endif %}
               {% if is_admin %}
                 <form action="{{ url_for('messages_delete') }}" method="post" style="margin:0">
                   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">

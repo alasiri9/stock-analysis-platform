@@ -269,8 +269,15 @@ def create_app():
             if sub and sub.is_active():
                 info = {"name": sub.name, "days_left": sub.days_left(),
                         "end_date": sub.end_date.strftime("%Y-%m-%d")}
-        # رسائل المدير (صندوق الرسائل): أحدث رسالة للمنبثق + معرّفات للعلامة
-        msgs = Message.query.order_by(Message.id.desc()).limit(30).all()
+        # رسائل المدير (صندوق الرسائل): أحدث رسالة للمنبثق + معرّفات للعلامة — كلٌّ يرى ما يخصّه.
+        # المشترك: العامة (للجميع) + الموجّهة له فقط. المدير/الوضع المفتوح: العامة فقط (المنبثق).
+        _cur_sub = session.get("sub_id") if session.get("role") == "sub" else None
+        _mq = Message.query
+        if _cur_sub is not None:
+            _mq = _mq.filter(db.or_(Message.subscriber_id.is_(None), Message.subscriber_id == _cur_sub))
+        else:
+            _mq = _mq.filter(Message.subscriber_id.is_(None))
+        msgs = _mq.order_by(Message.id.desc()).limit(30).all()
         latest_message = {"id": msgs[0].id, "body": msgs[0].body} if msgs else None
         msg_ids = [m.id for m in msgs]
         # هل الاستعادة عبر تلغرام مفعّلة؟ (لإظهار زر «نسيت كلمة المرور»)
@@ -292,16 +299,24 @@ def create_app():
         if not is_admin():
             return redirect(url_for("settings"))
         text = request.form.get("announcement", "").strip()
+        target = request.form.get("target", "").strip()  # "" = للجميع، وإلا رقم المشترك
+        sub_id = int(target) if target.isdigit() else None
         if text:
-            db.session.add(Message(body=text))
+            db.session.add(Message(body=text, subscriber_id=sub_id))
             db.session.commit()
         return redirect(url_for("settings"))
 
     @app.route("/messages")
     def messages():
-        # صندوق الرسائل: كل رسائل المدير (الأحدث أولاً) — يجد المستخدم ما أغلقه أو فاته
-        msgs = Message.query.order_by(Message.id.desc()).limit(100).all()
-        return render_template("messages.html", messages=msgs)
+        # صندوق الرسائل (الأحدث أولاً): المشترك يرى العامة + الموجّهة له؛ المدير يرى الكل (لإدارتها).
+        q = Message.query
+        if session.get("role") == "sub":
+            cur = session.get("sub_id")
+            q = q.filter(db.or_(Message.subscriber_id.is_(None), Message.subscriber_id == cur))
+        msgs = q.order_by(Message.id.desc()).limit(100).all()
+        # أسماء المشتركين (لعرض وجهة كل رسالة للمدير: «إلى: الكل / إلى: فلان»)
+        sub_names = {s.id: s.name for s in Subscriber.query.all()} if is_admin() else {}
+        return render_template("messages.html", messages=msgs, sub_names=sub_names)
 
     @app.route("/messages/delete", methods=["POST"])
     def messages_delete():
@@ -407,7 +422,9 @@ def create_app():
                      "ALTER TABLE subscriber ADD COLUMN fmp_api_key VARCHAR(128)",
                      "ALTER TABLE subscriber ADD COLUMN disclaimer_accepted_at TIMESTAMP",
                      # المفتاح المشفّر (~140 حرفاً) يتجاوز 128 — نوسّع العمود لتفادي خطأ الحفظ
-                     "ALTER TABLE subscriber ALTER COLUMN fmp_api_key TYPE VARCHAR(256)"):
+                     "ALTER TABLE subscriber ALTER COLUMN fmp_api_key TYPE VARCHAR(256)",
+                     # وجهة الرسالة: NULL = للجميع، أو رقم مشترك محدّد
+                     "ALTER TABLE message ADD COLUMN subscriber_id INTEGER"):
             try:
                 db.session.execute(_sql(stmt))
                 db.session.commit()
