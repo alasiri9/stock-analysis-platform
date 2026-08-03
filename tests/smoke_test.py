@@ -45,7 +45,7 @@ from app import app   # noqa: E402  (استيراده ينشئ الجداول ع
 
 # الصفحات التي نفتحها (GET، بلا معطيات إلزامية). المقبول: 200 أو تحويلة 30x.
 PAGES = [
-    "/", "/gems", "/leaders", "/prelaunch", "/signals", "/learn", "/how",
+    "/", "/gems", "/leaders", "/prelaunch", "/signals", "/learn",
     "/health", "/dashboard", "/business", "/settings", "/pulse", "/movers",
     "/earnings", "/daily-report", "/radar", "/news", "/flow", "/performance",
     "/calculator", "/compare", "/watchlist", "/alerts", "/portfolio",
