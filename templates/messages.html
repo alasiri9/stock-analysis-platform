@@ -5,7 +5,7 @@
 {% block content %}
   <section class="panel">
     <div class="panel-head">
-      <h2>📨 الرسائل <span class="help-q" data-tip="رسائل من إدارة المنصة — تجد هنا كل ما وصلك، حتى ما أغلقته أو فاتك. تظهر علامة حمراء بعدد غير المقروء، وتُصفّر عند فتح هذه الصفحة.">👁</span></h2>
+      <h2>📨 الرسائل <span class="help-q" data-tip="رسائل الإدارة — كلها محفوظة هنا. تقدر تنقل أي رسالة لسلة المهملات (تختفي من عندك فقط، بلا تأثير على غيرك)، وتُصفّى تلقائياً بعد 30 يوماً.">👁</span></h2>
     </div>
 
     {% if messages %}
@@ -17,12 +17,16 @@
               <span class="msg-date" dir="ltr">{{ m.created_at.strftime('%Y-%m-%d %H:%M') }}</span>
               {% if is_admin %}
                 <span class="muted" style="font-size:12px">إلى: {{ ('👤 ' ~ sub_names.get(m.subscriber_id, 'مشترك محذوف')) if m.subscriber_id else '📢 الكل' }}</span>
-              {% endif %}
-              {% if is_admin %}
                 <form action="{{ url_for('messages_delete') }}" method="post" style="margin:0">
                   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                   <input type="hidden" name="id" value="{{ m.id }}">
-                  <button class="btn-del" type="submit" title="حذف">🗑️</button>
+                  <button class="btn-del" type="submit" title="حذف نهائي (للجميع)">🗑️</button>
+                </form>
+              {% else %}
+                <form action="{{ url_for('messages_trash') }}" method="post" style="margin:0">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                  <input type="hidden" name="id" value="{{ m.id }}">
+                  <button class="btn-del" type="submit" title="نقل للمهملات">🗑️</button>
                 </form>
               {% endif %}
             </div>
@@ -31,6 +35,33 @@
       </div>
     {% else %}
       <div class="empty">لا توجد رسائل بعد.</div>
+    {% endif %}
+
+    {# سلة المهملات — للمشترك فقط: القابل للاستعادة (≤30 يوماً) #}
+    {% if trashed %}
+      <div class="panel-head" style="margin-top:26px;display:flex;align-items:center;justify-content:space-between;gap:12px">
+        <h3 class="perf-title" style="margin:0">🗑️ المهملات <span class="help-q" data-tip="الرسائل التي نقلتها للمهملات — مخفيّة عن صندوقك فقط. استعد أيّها خلال 30 يوماً، أو صفّها الآن. بعد 30 يوماً تُصفّى تلقائياً.">👁</span></h3>
+        <form action="{{ url_for('messages_empty_trash') }}" method="post" style="margin:0">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button class="btn btn-clear" type="submit">🧹 تصفية المهملات</button>
+        </form>
+      </div>
+      <div class="msg-list">
+        {% for m in trashed %}
+          <div class="msg-card" style="opacity:.75">
+            <div class="msg-body">{{ '👤' if m.subscriber_id else '📢' }} {{ m.body }}</div>
+            <div class="msg-foot">
+              <span class="msg-date" dir="ltr">{{ m.created_at.strftime('%Y-%m-%d %H:%M') }}</span>
+              <form action="{{ url_for('messages_restore') }}" method="post" style="margin:0">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="id" value="{{ m.id }}">
+                <button class="btn-del" type="submit" title="استعادة" style="color:var(--green)">↩️</button>
+              </form>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+      <div class="note" style="margin-top:10px">🗑️ المهملات تُصفّى تلقائياً بعد 30 يوماً — استعد ما تريده قبلها.</div>
     {% endif %}
   </section>
 

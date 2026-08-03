@@ -184,6 +184,27 @@ class Message(db.Model):
         return f"<Message {self.id}>"
 
 
+class MessageTrash(db.Model):
+    """سلة مهملات الرسائل — خاصة بكل مستخدم (إخفاء لا يؤثّر على غيره).
+
+    نقل الرسالة للمهملات = صف هنا (user_id, message_id). تبقى مخفية عن صندوق المستخدم للأبد،
+    وقابلة للاستعادة خلال 30 يوماً؛ بعدها (أو بتصفية يدوية cleared=True) تختفي من السلة نهائياً.
+    """
+
+    __tablename__ = "message_trash"
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.String(64), nullable=False)   # admin أو sub:<رقم>
+    message_id = db.Column(db.Integer, nullable=False)
+    trashed_at = db.Column(db.DateTime(timezone=True), nullable=False, default=_utcnow)
+    cleared = db.Column(db.Boolean, nullable=False, default=False)  # صُفّيت يدوياً؟ (غير قابلة للاستعادة)
+
+    __table_args__ = (db.UniqueConstraint("user_id", "message_id", name="uq_msgtrash_user_msg"),)
+
+    def __repr__(self):
+        return f"<MessageTrash u={self.user_id} m={self.message_id}>"
+
+
 class StockCache(db.Model):
     """تخزين مؤقت لبيانات سهم — نقلّل عدد استدعاءات الـ API (الباقات المجانية محدودة).
 

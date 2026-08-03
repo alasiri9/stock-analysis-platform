@@ -27,7 +27,7 @@ from flask_wtf import CSRFProtect
 
 from models import (db, Watchlist, PortfolioHolding, PriceAlert,
                     Subscriber, StockCache, Signal, PricePoint, MarketMoodSnapshot,
-                    AppSetting, Message)
+                    AppSetting, Message, MessageTrash)
 
 
 def _upsert_setting(key, value):
@@ -278,6 +278,9 @@ def create_app():
         else:
             _mq = _mq.filter(Message.subscriber_id.is_(None))
         msgs = _mq.order_by(Message.id.desc()).limit(30).all()
+        # استبعاد ما نقله المستخدم لسلة مهملاته (لا منبثق ولا علامة له)
+        _trashed = {t.message_id for t in MessageTrash.query.filter_by(user_id=current_user_id()).all()}
+        msgs = [m for m in msgs if m.id not in _trashed]
         latest_message = {"id": msgs[0].id, "body": msgs[0].body} if msgs else None
         msg_ids = [m.id for m in msgs]
         # هل الاستعادة عبر تلغرام مفعّلة؟ (لإظهار زر «نسيت كلمة المرور»)
@@ -309,23 +312,71 @@ def create_app():
     @app.route("/messages")
     def messages():
         # صندوق الرسائل (الأحدث أولاً): المشترك يرى العامة + الموجّهة له؛ المدير يرى الكل (لإدارتها).
+        from datetime import datetime as _dt, timezone as _tz, timedelta as _td
         q = Message.query
         if session.get("role") == "sub":
             cur = session.get("sub_id")
             q = q.filter(db.or_(Message.subscriber_id.is_(None), Message.subscriber_id == cur))
-        msgs = q.order_by(Message.id.desc()).limit(100).all()
+        all_msgs = q.order_by(Message.id.desc()).limit(100).all()
+        # سلة المهملات الخاصة بهذا المستخدم: نُخفي المنقولة، ونعرض القابلة للاستعادة (≤30 يوماً، غير مصفّاة)
+        uid = current_user_id()
+        trash_rows = MessageTrash.query.filter_by(user_id=uid).all()
+        trashed_ids = {t.message_id for t in trash_rows}  # كلها مخفيّة عن الصندوق
+        cutoff = _dt.now(_tz.utc) - _td(days=30)
+        recover_ids = set()
+        for t in trash_rows:
+            ta = t.trashed_at
+            if ta.tzinfo is None:
+                ta = ta.replace(tzinfo=_tz.utc)
+            if (not t.cleared) and ta >= cutoff:  # قابلة للاستعادة
+                recover_ids.add(t.message_id)
+        inbox = [m for m in all_msgs if m.id not in trashed_ids]
+        trashed = [m for m in all_msgs if m.id in recover_ids]  # ما زالت في السلة (قابلة للاستعادة)
         # أسماء المشتركين (لعرض وجهة كل رسالة للمدير: «إلى: الكل / إلى: فلان»)
         sub_names = {s.id: s.name for s in Subscriber.query.all()} if is_admin() else {}
-        return render_template("messages.html", messages=msgs, sub_names=sub_names)
+        return render_template("messages.html", messages=inbox, trashed=trashed, sub_names=sub_names)
 
     @app.route("/messages/delete", methods=["POST"])
     def messages_delete():
+        # حذف نهائي (للجميع) — للمدير فقط
         if not is_admin():
             return redirect(url_for("messages"))
         m = db.session.get(Message, request.form.get("id"))
         if m:
             db.session.delete(m)
             db.session.commit()
+        return redirect(url_for("messages"))
+
+    @app.route("/messages/trash", methods=["POST"])
+    def messages_trash():
+        # نقل رسالة إلى سلة مهملات المستخدم الحالي (إخفاء خاص به — لا يؤثّر على غيره)
+        uid = current_user_id()
+        mid = request.form.get("id")
+        if mid and mid.isdigit():
+            mid = int(mid)
+            if not MessageTrash.query.filter_by(user_id=uid, message_id=mid).first():
+                db.session.add(MessageTrash(user_id=uid, message_id=mid))
+                db.session.commit()
+        return redirect(url_for("messages"))
+
+    @app.route("/messages/restore", methods=["POST"])
+    def messages_restore():
+        # استعادة رسالة من السلة إلى الصندوق (تُحذف من سلة هذا المستخدم)
+        uid = current_user_id()
+        mid = request.form.get("id")
+        if mid and mid.isdigit():
+            row = MessageTrash.query.filter_by(user_id=uid, message_id=int(mid)).first()
+            if row:
+                db.session.delete(row)
+                db.session.commit()
+        return redirect(url_for("messages"))
+
+    @app.route("/messages/empty-trash", methods=["POST"])
+    def messages_empty_trash():
+        # تصفية السلة يدوياً: كل ما فيها يصير غير قابل للاستعادة (يبقى مخفياً عن الصندوق، لا يؤثّر على غيره)
+        uid = current_user_id()
+        MessageTrash.query.filter_by(user_id=uid, cleared=False).update({"cleared": True})
+        db.session.commit()
         return redirect(url_for("messages"))
 
     @app.route("/recovery/toggle", methods=["POST"])
