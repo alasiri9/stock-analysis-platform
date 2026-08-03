@@ -77,7 +77,7 @@
               <td><a href="{{ url_for('stock_report', ticker=r.ticker) }}"><b>{{ r.ticker }}</b></a></td>
               <td>{{ r.signal_type | signal_name }}</td>
               <td dir="ltr">{{ r.date.strftime('%Y-%m-%d') }}</td>
-              <td dir="ltr">{{ r.days }}</td>
+              <td dir="ltr">{{ r.days }}{% if not r.mature %} <span class="muted" style="font-size:11px">(لم تنضج)</span>{% endif %}</td>
               <td dir="ltr">{{ "%.2f $"|format(r.price_at_signal) if r.price_at_signal is not none else '—' }}</td>
               <td dir="ltr">{{ "%.2f $"|format(r.current) if r.current is not none else '—' }}</td>
               <td dir="ltr">
@@ -98,7 +98,8 @@
       </table>
       <div class="note" style="margin-top:14px">
         ℹ️ السجل يكبر تلقائياً كل يوم مع التحديث الليلي — كلما طال الوقت صارت الإحصائيات أدق وأكثر دلالة.<br>
-        ⚠️ إشارة «كسر مؤكّد بحجم» إشارة <b>هبوطية</b> (تحذير)، فتُقاس <b>معكوسة</b>: نزول السهم بعدها = نجاح (عائد موجب)، وصعوده = فشل — لذلك قد يكون السعر الحالي أعلى من سعر الإشارة والعائد سالباً (كسر كاذب).
+        ⚠️ إشارة «كسر مؤكّد بحجم» إشارة <b>هبوطية</b> (تحذير)، فتُقاس <b>معكوسة</b>: نزول السهم بعدها = نجاح (عائد موجب)، وصعوده = فشل — لذلك قد يكون السعر الحالي أعلى من سعر الإشارة والعائد سالباً (كسر كاذب).<br>
+        🌱 الإشارات <b>الطازجة (أقل من {{ 3 }} أيام)</b> تظهر في الجدول بوسم «لم تنضج» لكنها <b>لا تدخل الإحصائيات العامة</b> حتى يمرّ عليها وقت كافٍ للحكم بعدل.
       </div>
     {% else %}
       <div class="empty">لا توجد إشارات مسجّلة بعد — ستظهر هنا تلقائياً مع تحديثات البيانات.</div>
