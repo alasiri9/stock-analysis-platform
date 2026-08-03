@@ -3,11 +3,11 @@
 {% block title %}قائمة المراقبة{% endblock %}
 
 {% block content %}
-  <h1 class="page-title">👁 قائمة المراقبة</h1>
+  <h1 class="page-title">👁 قائمة المراقبة <span class="help-q" data-tip="أسهم تختار متابعتها عن قرب. أضف رمز أي سهم من المنصة (اختره من القائمة المنسدلة أو اكتب أوله) وتابع سعره وحالته في مكان واحد. تعليمي فقط، ليس توصية.">👁</span></h1>
 
   <form class="search" action="{{ url_for('watchlist_add') }}" method="post">
   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-    <input type="text" name="ticker" placeholder="أضف رمز سهم (مثال: MSFT)">
+    <input type="text" name="ticker" placeholder="أضف رمز سهم (مثال: MSFT)" list="universe-list" dir="ltr" maxlength="6">
     <button class="btn" type="submit">➕ إضافة</button>
   </form>
 
