@@ -40,7 +40,7 @@
     {# سلة المهملات — للمشترك فقط: القابل للاستعادة (≤30 يوماً) #}
     {% if trashed %}
       <div class="panel-head" style="margin-top:26px;display:flex;align-items:center;justify-content:space-between;gap:12px">
-        <h3 class="perf-title" style="margin:0">🗑️ المهملات <span class="help-q" data-tip="الرسائل التي نقلتها من صندوقك — تظهر هنا لتستعيدها خلال 30 يوماً، أو صفّها الآن. بعد 30 يوماً تُصفّى تلقائياً.">👁</span></h3>
+        <h3 class="perf-title" style="margin:0">🗑️ المهملات <span class="help-q" data-tip="الرسائل المنقولة من صندوق الرسائل يتم حذفها نهائياً بعد 30 يوماً ويمكن استعادتها قبل ذلك.">👁</span></h3>
         <form action="{{ url_for('messages_empty_trash') }}" method="post" style="margin:0">
           <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
           <button class="btn btn-clear" type="submit">🧹 تصفية المهملات</button>
