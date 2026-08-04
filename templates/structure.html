@@ -52,7 +52,8 @@
             {% if ms.status == 'bull' %}<span class="pill buy">{{ ms.event_label }}</span>
             {% elif ms.status == 'bear' %}<span class="pill sell">{{ ms.event_label }}</span>
             {% else %}<span class="pill">{{ ms.event_label }}</span>{% endif %}
-            {% if ms.retest %}<span class="pill warn">🎯 إعادة اختبار</span>{% endif %}
+            {% if ms.retest_state == 'confirmed' %}<span class="pill {{ 'buy' if ms.status == 'bull' else ('sell' if ms.status == 'bear' else 'warn') }}">🎯 إعادة اختبار مؤكّدة</span>
+            {% elif ms.retest_state == 'testing' %}<span class="pill warn">🎯 إعادة اختبار جارية</span>{% endif %}
           </div>
 
           <div style="margin-top:8px;display:flex;flex-wrap:wrap;gap:6px;align-items:center">
