@@ -507,6 +507,7 @@ def _build_record(ticker):
         tech = indicators.build_indicators(candles)
         flow = indicators.money_flow(candles)  # تدفق السيولة — من نفس الشموع، بلا استدعاء إضافي
         reversal = indicators.reversal_pattern(candles)  # شمعة انعكاس على آخر جلسة (تنبيه معرفي)
+        structure = indicators.market_structure(candles)  # قراءة هيكل السوق (BOS/CHOCH/إعادة اختبار)
         squeeze_bo = indicators.squeeze_breakout(candles)  # استراتيجية الانفجار الوشيك
         closes = [c["close"] for c in reversed(candles or []) if c.get("close") is not None]
         gc = indicators.golden_cross(closes)  # التقاطع الذهبي SMA50/SMA200
@@ -523,6 +524,7 @@ def _build_record(ticker):
         tech = []
         flow = None
         reversal = None
+        structure = None
         squeeze_bo = False
         gc = None
         pullback = False
@@ -567,6 +569,7 @@ def _build_record(ticker):
         "indicators": tech,
         "money_flow": flow,
         "reversal": reversal,
+        "structure": structure,
         "squeeze_breakout": squeeze_bo,
         "golden_cross": (gc or {}).get("cross"),
         "trend_pullback": pullback,

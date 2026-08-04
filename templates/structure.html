@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% set active = 'structure' %}
+{% block title %}قراءة هيكل السوق — Algomatix{% endblock %}
+
+{% macro swing_badge(s) %}
+  {% if s.label in ['HH', 'HL'] %}<span class="tbadge bull">{{ s.label }}</span>
+  {% elif s.label in ['LH', 'LL'] %}<span class="tbadge bear">{{ s.label }}</span>
+  {% else %}<span class="tbadge neutral">{{ s.label }}</span>{% endif %}
+{% endmacro %}
+
+{% block content %}
+  <section class="panel">
+    <div class="panel-head">
+      <h2>🧭 قراءة هيكل السوق
+        <span class="help-q" data-tip="قراءة هيكل السوق (Smart Money Concepts): نتتبّع تتابع القمم والقيعان (HH قمة أعلى · HL قاع أعلى · LH قمة أدنى · LL قاع أدنى) لتحديد اتجاه كل سهم، ونكشف: BOS (كسر مع الاتجاه = استمرار) · CHOCH (أول كسر عكس الاتجاه = إنذار انعكاس) · إعادة الاختبار (عودة السعر لاختبار المستوى المكسور). تعليمي وصفي فقط — لا توصية.">👁</span>
+      </h2>
+    </div>
+
+    <p class="muted" style="margin:2px 0 12px">
+      لكل سهم: اتجاهه من تتابع القمم/القيعان + هل يواصل (BOS) أو بدأ ينعكس (CHOCH). مرتّبة: إنذارات الانعكاس أولاً. <b>تعليمي — لا توصية.</b>
+    </p>
+
+    {# مفتاح مختصر #}
+    <div class="muted" style="font-size:14px;margin-bottom:12px;line-height:2">
+      <span class="tbadge bull">HH</span> قمة أعلى ·
+      <span class="tbadge bull">HL</span> قاع أعلى ·
+      <span class="tbadge bear">LH</span> قمة أدنى ·
+      <span class="tbadge bear">LL</span> قاع أدنى &nbsp;|&nbsp;
+      <b style="color:var(--green)">BOS</b> استمرار · <b style="color:var(--red)">CHOCH</b> انعكاس
+    </div>
+
+    <div class="stat-row tight">
+      <div class="stat-box"><div class="label" style="color:var(--green)">🟢 صاعد</div><div class="value">{{ counts.up }}</div></div>
+      <div class="stat-box"><div class="label" style="color:var(--red)">🔴 هابط</div><div class="value">{{ counts.down }}</div></div>
+      <div class="stat-box"><div class="label">⚪ عرضي</div><div class="value">{{ counts.side }}</div></div>
+      <div class="stat-box"><div class="label" style="color:var(--gold)">🔄 إنذار انعكاس</div><div class="value">{{ counts.choch }}</div></div>
+      <div class="stat-box"><div class="label" style="color:var(--gold)">🎯 إعادة اختبار</div><div class="value">{{ counts.retest }}</div></div>
+    </div>
+
+    {% if items %}
+      {% for item in items %}
+        {% set r = item.rec %}{% set ms = item.ms %}
+        <div class="panel" style="margin:10px 0;padding:12px 14px;background:var(--panel-2)">
+          <div style="display:flex;flex-wrap:wrap;align-items:center;gap:10px">
+            <a href="{{ url_for('stock_report', ticker=r.ticker) }}" style="font-weight:900;font-size:20px;letter-spacing:.5px">{{ r.ticker }}</a>
+            <span class="muted" style="flex:1 1 90px;min-width:0">{{ r.name or '' }}</span>
+            {# الاتجاه #}
+            {% if ms.trend == 'up' %}<span class="pill buy">🟢 {{ ms.trend_label }}</span>
+            {% elif ms.trend == 'down' %}<span class="pill sell">🔴 {{ ms.trend_label }}</span>
+            {% else %}<span class="pill">⚪ {{ ms.trend_label }}</span>{% endif %}
+            {# الحدث #}
+            {% if ms.status == 'bull' %}<span class="pill buy">{{ ms.event_label }}</span>
+            {% elif ms.status == 'bear' %}<span class="pill sell">{{ ms.event_label }}</span>
+            {% else %}<span class="pill">{{ ms.event_label }}</span>{% endif %}
+            {% if ms.retest %}<span class="pill warn">🎯 إعادة اختبار</span>{% endif %}
+          </div>
+
+          <div style="margin-top:8px;display:flex;flex-wrap:wrap;gap:6px;align-items:center">
+            <span class="muted" style="font-size:14px">الهيكل:</span>
+            {% for s in ms.swings %}{{ swing_badge(s) }}{% endfor %}
+          </div>
+
+          {% if ms.level is not none %}
+            <div class="muted" style="margin-top:6px;font-size:14px">
+              المستوى {{ 'المخترَق' if ms.event_dir == 'up' else 'المكسور' }}:
+              <span dir="ltr">{{ "%.2f $"|format(ms.level) }}</span>
+            </div>
+          {% endif %}
+        </div>
+      {% endfor %}
+    {% else %}
+      <div class="empty">لا تتوفّر قراءة هيكل بعد — تظهر بعد أول تحديث ليلي (يحسب القمم/القيعان لكل الأسهم).</div>
+    {% endif %}
+  </section>
+{% endblock %}

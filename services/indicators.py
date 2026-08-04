@@ -902,3 +902,130 @@ def atr(candles, period=14):
     for tr in trs[period:]:
         val = (val * (period - 1) + tr) / period
     return val
+
+
+# ── قراءة هيكل السوق (Market Structure / Smart Money Concepts) ────────────────
+# نقرأ تتابع القمم والقيعان (HH/HL/LH/LL) لتحديد الاتجاه، ونكشف:
+#   • BOS (اختراق الهيكل) = كسر مع الاتجاه ⇒ استمرار.
+#   • CHOCH (تغيّر الهيكل) = أول كسر عكس الاتجاه ⇒ إنذار انعكاس.
+#   • إعادة الاختبار (Retest) = عودة السعر لاختبار المستوى المكسور ثم صموده فوقه/تحته.
+# التأكيد بإغلاق السعر خلف المستوى (لا بالفتيل) — أدقّ وأقلّ إشارات كاذبة.
+# ⚠️ تعليمي وصفي فقط — لا توصية. (بحث متحقَّق 2026-08: FXOpen · DailyPriceAction.)
+
+def _swing_points(rows, wing=2):
+    """نقاط الارتكاز (قمم/قيعان فراكتالية) مرتّبة زمنياً بالتناوب.
+
+    rows: شموع الأقدم أولاً فيها high/low. قمة فراكتالية = high أعلى من `wing` شموع
+    قبلها وبعدها، وقاع = low أدنى منها. عند تتابع نفس النوع نُبقي الأكثر تطرّفاً
+    (أعلى قمة / أدنى قاع) لنحافظ على تناوب قمة↔قاع.
+    يُرجع [{type:'H'|'L', price, idx}] زمنياً.
+    """
+    n = len(rows)
+    highs = [r["high"] for r in rows]
+    lows = [r["low"] for r in rows]
+    raw = []
+    for i in range(wing, n - wing):
+        h = highs[i]
+        if h is not None and all(highs[i - k] is not None and h > highs[i - k] for k in range(1, wing + 1)) \
+           and all(highs[i + k] is not None and h >= highs[i + k] for k in range(1, wing + 1)):
+            raw.append((i, "H", h))
+        l = lows[i]
+        if l is not None and all(lows[i - k] is not None and l < lows[i - k] for k in range(1, wing + 1)) \
+           and all(lows[i + k] is not None and l <= lows[i + k] for k in range(1, wing + 1)):
+            raw.append((i, "L", l))
+    raw.sort(key=lambda x: x[0])
+    pts = []
+    for idx, typ, price in raw:
+        if pts and pts[-1]["type"] == typ:
+            if (typ == "H" and price >= pts[-1]["price"]) or (typ == "L" and price <= pts[-1]["price"]):
+                pts[-1] = {"type": typ, "price": price, "idx": idx}
+        else:
+            pts.append({"type": typ, "price": price, "idx": idx})
+    return pts
+
+
+def market_structure(candles, wing=2):
+    """قراءة هيكل السوق من القمم/القيعان المتعاقبة (SMC).
+
+    يُرجع dict {trend, event, event_dir, level, retest, status, label, event_label,
+    last_high, last_low, swings} أو None لو البيانات غير كافية.
+      trend ∈ {up, down, side} · event ∈ {BOS, CHOCH, None} · status ∈ {bull, bear, neutral}.
+    """
+    rows = [r for r in _clean(candles)
+            if r["high"] is not None and r["low"] is not None and r["close"] is not None]
+    if len(rows) < wing * 2 + 15:
+        return None
+    swings = _swing_points(rows, wing)
+    if len(swings) < 4:
+        return None
+
+    # تصنيف كل ارتكاز مقارنةً بسابقه من نفس النوع
+    prev_h = prev_l = None
+    for s in swings:
+        if s["type"] == "H":
+            s["label"] = "HH" if (prev_h is not None and s["price"] > prev_h) else ("LH" if prev_h is not None else "H")
+            prev_h = s["price"]
+        else:
+            s["label"] = "HL" if (prev_l is not None and s["price"] > prev_l) else ("LL" if prev_l is not None else "L")
+            prev_l = s["price"]
+
+    # الاتجاه من آخر 4 ارتكازات
+    recent = [s["label"] for s in swings[-4:]]
+    up = sum(1 for x in recent if x in ("HH", "HL"))
+    down = sum(1 for x in recent if x in ("LH", "LL"))
+    trend = "up" if up > down else ("down" if down > up else "side")
+
+    price = rows[-1]["close"]
+    last_high = next((s["price"] for s in reversed(swings) if s["type"] == "H"), None)
+    last_low = next((s["price"] for s in reversed(swings) if s["type"] == "L"), None)
+
+    # BOS/CHOCH بإغلاق السعر خلف آخر ارتكاز
+    event = event_dir = level = None
+    if trend == "up":
+        if last_high is not None and price > last_high:
+            event, event_dir, level = "BOS", "up", last_high        # استمرار صعود
+        elif last_low is not None and price < last_low:
+            event, event_dir, level = "CHOCH", "down", last_low     # انعكاس هبوطي
+    elif trend == "down":
+        if last_low is not None and price < last_low:
+            event, event_dir, level = "BOS", "down", last_low        # استمرار هبوط
+        elif last_high is not None and price > last_high:
+            event, event_dir, level = "CHOCH", "up", last_high       # انعكاس صعودي
+    else:  # عرضي: أول كسر واضح
+        if last_high is not None and price > last_high:
+            event, event_dir, level = "BOS", "up", last_high
+        elif last_low is not None and price < last_low:
+            event, event_dir, level = "BOS", "down", last_low
+
+    # إعادة الاختبار: عاد السعر قرب المستوى المكسور (ضمن ATR) وما زال في جهة الكسر
+    retest = False
+    atr_v = atr(candles)
+    if event and level and atr_v:
+        if event_dir == "up":
+            retest = price >= level and (price - level) <= atr_v
+        elif event_dir == "down":
+            retest = price <= level and (level - price) <= atr_v
+
+    # الحالة اللونية + التسمية التعليمية
+    status = "bull" if event_dir == "up" else ("bear" if event_dir == "down" else "neutral")
+    trend_lbl = {"up": "صاعد", "down": "هابط", "side": "عرضي"}[trend]
+    if event == "BOS":
+        event_label = "استمرار صاعد (BOS)" if event_dir == "up" else "استمرار هابط (BOS)"
+    elif event == "CHOCH":
+        event_label = "إنذار انعكاس صاعد (CHOCH)" if event_dir == "up" else "إنذار انعكاس هبوطي (CHOCH)"
+    else:
+        event_label = "داخل الهيكل — لا كسر بعد"
+
+    return {
+        "trend": trend,
+        "trend_label": trend_lbl,
+        "event": event,
+        "event_dir": event_dir,
+        "event_label": event_label,
+        "level": level,
+        "retest": retest,
+        "status": status,
+        "last_high": last_high,
+        "last_low": last_low,
+        "swings": [{"label": s["label"], "price": s["price"]} for s in swings[-6:]],
+    }

@@ -1239,6 +1239,34 @@ def create_app():
         return render_template("plans.html", plans=plans_list, counts=counts,
                                latest=latest, active="plans")
 
+    @app.route("/structure")
+    def structure():
+        # 🧭 قراءة هيكل السوق: لكل سهم اتجاهه (HH/HL/LH/LL) + BOS/CHOCH + إعادة اختبار — من الكاش.
+        records, latest = screener.load_records()
+        items = [{"rec": r, "ms": r["structure"]} for r in records if r.get("structure")]
+
+        # الترتيب: إنذارات الانعكاس (CHOCH) أولاً، ثم إعادة الاختبار، ثم استمرار (BOS)، ثم داخل الهيكل
+        def rank(x):
+            ms = x["ms"]
+            if ms.get("event") == "CHOCH":
+                return 0
+            if ms.get("retest"):
+                return 1
+            if ms.get("event") == "BOS":
+                return 2
+            return 3
+        items.sort(key=rank)
+
+        counts = {
+            "up": sum(1 for x in items if x["ms"].get("trend") == "up"),
+            "down": sum(1 for x in items if x["ms"].get("trend") == "down"),
+            "side": sum(1 for x in items if x["ms"].get("trend") == "side"),
+            "choch": sum(1 for x in items if x["ms"].get("event") == "CHOCH"),
+            "retest": sum(1 for x in items if x["ms"].get("retest")),
+        }
+        return render_template("structure.html", items=items, counts=counts,
+                               latest=latest, active="structure")
+
     @app.route("/earnings")
     def earnings():
         # رزنامة الأرباح: الأسهم ذات موعد أرباح قادم، مرتّبة بالأقرب (من الكاش — بلا استدعاء API)
