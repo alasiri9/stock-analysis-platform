@@ -278,6 +278,7 @@ def build_stock_report(ticker):
         reversal = indicators.reversal_pattern(candles)  # شمعة انعكاس على آخر جلسة (تنبيه معرفي)
         near_res = indicators.resistance_warning(candles)  # قاعدة الانتظار: السعر ملاصق لمقاومة
         fib = indicators.fibonacci_levels(candles)  # مستويات فيبوناتشي للموجة الحالية
+        vprofile = indicators.volume_profile(candles)  # البروفايل الحجمي و POC
         chart = price_chart(candles, days=250)  # سياق سنة كامل — يطابق نافذة التحليل
     except Exception as e:  # noqa: BLE001
         print(f"[analysis] تعذّر حساب ATR/المؤشرات لـ {ticker}: {e}")
@@ -288,6 +289,7 @@ def build_stock_report(ticker):
         reversal = None
         near_res = None
         fib = None
+        vprofile = None
         chart = None
 
     # --- معاملات المطلعين من SEC EDGAR (لا تكسر الصفحة لو فشلت) ---
@@ -328,5 +330,6 @@ def build_stock_report(ticker):
         "reversal": reversal,              # شمعة انعكاس على آخر جلسة (أو None) — تنبيه معرفي
         "near_resistance": near_res,       # السعر ملاصق لمقاومة سابقة (أو None) — قاعدة الانتظار
         "fibonacci": fib,                  # مستويات فيبوناتشي للموجة الحالية (أو None)
+        "volume_profile": vprofile,        # البروفايل الحجمي و POC (أو None)
         "chart": chart,                    # بيانات شارت مسار السعر (أو None)
     }
