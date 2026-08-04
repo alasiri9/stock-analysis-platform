@@ -1214,6 +1214,31 @@ def create_app():
         losers = sorted(measured, key=lambda r: r["change_percent"])[:5]
         return render_template("movers.html", gainers=gainers, losers=losers, latest=latest)
 
+    @app.route("/plans")
+    def plans():
+        # 📋 خطط التداول الآلية: نموذج خطة التداول (من دورة سلطان الفيفي) لكل سهم — من الكاش بلا API.
+        # كل سهم: جدول استراتيجيات مسجّل + جدول قواعد + خلاصة تعليمية (لا توصية).
+        records, latest = screener.load_records()
+        plans_list = []
+        for r in records:
+            plan = screener.trading_plan(r)
+            if plan:
+                plans_list.append({"rec": r, "plan": plan})
+        # الترتيب: الأجهز أولاً (مكتمل → ناقص → ضعيف)، ثم عدد المنطبقة، ثم المجموع
+        _order = {"ready": 0, "waiting": 1, "weak": 2}
+        plans_list.sort(key=lambda x: (
+            _order.get(x["plan"]["verdict"], 3),
+            -x["plan"]["met_count"],
+            -x["plan"]["total"],
+        ))
+        counts = {
+            "ready": sum(1 for x in plans_list if x["plan"]["verdict"] == "ready"),
+            "waiting": sum(1 for x in plans_list if x["plan"]["verdict"] == "waiting"),
+            "weak": sum(1 for x in plans_list if x["plan"]["verdict"] == "weak"),
+        }
+        return render_template("plans.html", plans=plans_list, counts=counts,
+                               latest=latest, active="plans")
+
     @app.route("/earnings")
     def earnings():
         # رزنامة الأرباح: الأسهم ذات موعد أرباح قادم، مرتّبة بالأقرب (من الكاش — بلا استدعاء API)

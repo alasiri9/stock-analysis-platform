@@ -126,6 +126,226 @@ def tech_tilt(record):
     return {"frac": frac, "label": label, "kind": kind}
 
 
+# ── نموذج خطة التداول الآلية (من دورة سلطان الفيفي) ──────────────────────────
+# يحوّل حالة مؤشرات المنصة إلى «درجة انطباق من 10» لكل استراتيجية (كما يقيّمها الشيخ
+# يدوياً)، ثم يطبّق قاعدته آلياً: الدخول يحتاج ≥3 استراتيجيات درجتها ≥7.
+# ⚠️ تعليمي وصفي فقط — لا توصية. كل درجة تحمل «سبباً» ظاهراً للمتعلّم (شفافية).
+# عتبة الانطباق (درجة تُعدّ «منطبقة») — نفس عتبة الشيخ:
+PLAN_MET_SCORE = 7
+
+
+def _plan_strategy_scores(record):
+    """يحسب درجة كل استراتيجية فنية (0–10) + سببها من سجل الماسح.
+
+    يُرجع قائمة عناصر {name, status, score, reason} مرتّبة (الأقوى أولاً).
+    """
+    inds = {b.get("label"): b for b in (record.get("indicators") or [])}
+    brk = record.get("break_status") or {}
+    out = []
+
+    def add(name, status, score, reason):
+        out.append({"name": name, "status": status, "score": score, "reason": reason})
+
+    # 1) الاتجاه (المتوسطات EMA 20/50) — الشارة صاعدة فقط عند السعر > EMA20 > EMA50
+    b = inds.get("EMA")
+    if b:
+        st = b.get("status")
+        if st == "bull":
+            add("الاتجاه (متوسطات 20/50)", "bull", 9, "السعر فوق المتوسطين 20 و50 — اتجاه صاعد منظّم")
+        elif st == "bear":
+            add("الاتجاه (متوسطات 20/50)", "bear", 1, "السعر تحت المتوسطين — اتجاه هابط")
+        else:
+            add("الاتجاه (متوسطات 20/50)", "neutral", 5, "الاتجاه غير محسوم (بين المتوسطين)")
+
+    # 2) التقاطع الذهبي (SMA 50/200) — استراتيجية الشيخ «التقاطعات»
+    b = inds.get("تقاطع")
+    if b:
+        val, st = str(b.get("value") or ""), b.get("status")
+        if "ذهبي" in val:
+            add("التقاطع الذهبي (50/200)", "bull", 10, "تقاطع ذهبي حديث — أقوى إشارة اتجاه طويل")
+        elif "هابط" in val:
+            add("التقاطع الذهبي (50/200)", "bear", 0, "تقاطع الموت — إشارة خروج")
+        elif st == "bull":
+            add("التقاطع الذهبي (50/200)", "bull", 7, "المتوسط 50 فوق 200 — اتجاه صاعد قائم")
+        else:
+            add("التقاطع الذهبي (50/200)", "bear", 2, "المتوسط 50 تحت 200 — اتجاه ضعيف")
+
+    # 3) الزخم (MACD)
+    b = inds.get("MACD")
+    if b:
+        if b.get("status") == "bull":
+            add("الزخم (MACD)", "bull", 8, "الهيستوجرام موجب — زخم صاعد يدعم الاستمرار")
+        else:
+            add("الزخم (MACD)", "bear", 1, "زخم سلبي (الهيستوجرام سالب)")
+
+    # 4) القوة النسبية (RSI)
+    b = inds.get("RSI")
+    if b:
+        val, st = str(b.get("value") or ""), b.get("status")
+        if st == "bull" and "بيعي" in val:
+            add("القوة النسبية (RSI)", "bull", 9, "ارتد من تشبّع بيعي — أفضل مناطق الشراء")
+        elif st == "bull":
+            add("القوة النسبية (RSI)", "bull", 7, "قوة نسبية صحّية (فوق 50)")
+        elif st == "bear" and "شرائي" in val:
+            add("القوة النسبية (RSI)", "bear", 1, "تشبّع شرائي — احتمال تصحيح")
+        else:
+            add("القوة النسبية (RSI)", "bear", 3, "قوة نسبية أقل من 50")
+
+    # 5) قوة الاتجاه (ADX)
+    b = inds.get("ADX")
+    if b:
+        if b.get("status") == "bull":
+            add("قوة الاتجاه (ADX)", "bull", 8, f"ADX {b.get('value')} — اتجاه قوي واضح")
+        else:
+            add("قوة الاتجاه (ADX)", "neutral", 4, f"ADX {b.get('value')} — اتجاه ضعيف/عرضي")
+
+    # 6) سوبرترند
+    b = inds.get("سوبرترند")
+    if b:
+        if b.get("status") == "bull":
+            add("سوبرترند", "bull", 8, "سوبرترند صاعد — يدعم متابعة الاتجاه")
+        else:
+            add("سوبرترند", "bear", 1, "سوبرترند هابط")
+
+    # 7) الاختراق (+ تأكيد الحجم من break_status)
+    b = inds.get("اختراق")
+    if b:
+        if b.get("status") == "bull":
+            if brk.get("confirmed") and brk.get("dir") == "breakout":
+                add("الاختراق", "bull", 10, "اختراق قمة مؤكّد بحجم عالٍ")
+            else:
+                add("الاختراق", "bull", 8, "اخترق أعلى قمة 20 يوماً")
+        else:
+            add("الاختراق", "neutral", 4, "لم يخترق قمته بعد")
+
+    # 8) البولينجر (انضغاط)
+    b = inds.get("انضغاط")
+    if b:
+        val = str(b.get("value") or "")
+        if b.get("status") == "bull":
+            add("البولينجر (انضغاط)", "bull", 8, "انضغاط مؤكّد صعودياً — تمهيد لانفجار سعري")
+        elif val == "نعم":
+            add("البولينجر (انضغاط)", "neutral", 6, "انضغاط قائم — انفجار سعري محتمل قريباً")
+        else:
+            add("البولينجر (انضغاط)", "neutral", 4, "لا انضغاط حالياً")
+
+    # 9) الحجم
+    b = inds.get("الحجم")
+    if b:
+        if b.get("status") == "bull":
+            add("الحجم", "bull", 8, "حجم اليوم أعلى من المتوسط — اهتمام حقيقي")
+        else:
+            add("الحجم", "neutral", 4, f"حجم {b.get('value')}")
+
+    # 10) تراكم السيولة (OBV)
+    b = inds.get("تراكم")
+    if b:
+        st = b.get("status")
+        if st == "bull":
+            add("تراكم السيولة (OBV)", "bull", 8, "تجميع — الحجم يتراكم مع الصعود")
+        elif st == "bear":
+            add("تراكم السيولة (OBV)", "bear", 1, "تصريف — الحجم يتراكم مع الهبوط")
+        else:
+            add("تراكم السيولة (OBV)", "neutral", 4, "تراكم محايد")
+
+    # 11) السيولة الداخلة (تدفق الأموال / MFI)
+    mf = record.get("money_flow")
+    if mf:
+        st = mf.get("status")
+        if st == "bull":
+            add("السيولة (تدفق الأموال)", "bull", 8, f"سيولة داخلة (تجميع) — درجة {mf.get('score')}")
+        elif st == "bear":
+            add("السيولة (تدفق الأموال)", "bear", 1, "سيولة خارجة (تصريف)")
+        else:
+            add("السيولة (تدفق الأموال)", "neutral", 4, "تدفق سيولة محايد")
+
+    # 12) أقوى من السوق (القوة النسبية مقابل S&P 500)
+    rs = record.get("rel_strength")
+    if rs is not None:
+        if rs > 5:
+            add("أقوى من السوق", "bull", 9, f"يتفوّق على السوق بوضوح (+{rs:.0f}%)")
+        elif rs > 0:
+            add("أقوى من السوق", "bull", 7, f"أقوى من السوق (+{rs:.0f}%)")
+        else:
+            add("أقوى من السوق", "bear", 2, f"أضعف من السوق ({rs:.0f}%)")
+
+    # 13) شمعة الانعكاس (الشموع اليابانية) — داعمة لا تُعتمد وحدها (كما نصّ الشيخ)
+    rv = record.get("reversal")
+    if rv:
+        st = rv.get("status")
+        if st == "bull":
+            add("شمعة الانعكاس", "bull", 7, f"{rv.get('pattern')} — انعكاس صعودي محتمل")
+        elif st == "bear":
+            add("شمعة الانعكاس", "bear", 1, f"{rv.get('pattern')} — انعكاس هبوطي محتمل")
+        else:
+            add("شمعة الانعكاس", "neutral", 4, f"{rv.get('pattern')} — تردّد")
+
+    out.sort(key=lambda s: s["score"], reverse=True)
+    return out
+
+
+def trading_plan(record):
+    """نموذج خطة التداول الآلي لسهم — جدول استراتيجيات مسجّل + جدول قواعد + خلاصة تعليمية.
+
+    يطبّق قاعدة الشيخ آلياً: «مكتمل الشروط للدراسة» يحتاج ≥3 استراتيجيات درجتها ≥7
+    مع صفقة رابحة وبُعد عن المقاومة. ⚠️ تعليمي وصفي فقط — لا توصية بشراء أو بيع.
+    يُرجع dict {strategies, total, met_count, verdict, verdict_label, rules} أو None.
+    """
+    strategies = _plan_strategy_scores(record)
+    if not strategies:
+        return None
+
+    met_count = sum(1 for s in strategies if s["score"] >= PLAN_MET_SCORE)
+    total = sum(s["score"] for s in strategies)
+
+    plan = record.get("atr_plan") or {}
+    rr = plan.get("risk_reward")
+    rr_ok = plan.get("rr_quality") in ("ok", "good")
+    near_res = record.get("near_resistance") is not None
+
+    # قاعدة الشيخ آلياً: ≥3 استراتيجيات ≥7 = عتبة الدخول. نخفّضها لو الصفقة غير رابحة
+    # (العائد أقل من المخاطرة) أو السعر ملاصق لمقاومة (قاعدة الانتظار).
+    if met_count >= 3 and rr_ok and not near_res:
+        verdict, verdict_label = "ready", "مكتمل الشروط للدراسة"
+    elif met_count == 0:
+        verdict, verdict_label = "weak", "ضعيف — لا تتوفّر شروط"
+    else:
+        verdict, verdict_label = "waiting", "ناقص — انتظار"
+
+    # سبب الانتظار (شفافية للمتعلّم)
+    wait_reasons = []
+    if met_count < 3:
+        wait_reasons.append(f"عدد الاستراتيجيات المنطبقة {met_count} (المطلوب 3)")
+    if not rr_ok and rr is not None:
+        wait_reasons.append("العائد المتوقّع لا يتجاوز المخاطرة بوضوح")
+    if near_res:
+        wait_reasons.append("السعر ملاصق لمقاومة سابقة — انتظر تأكيد الاختراق")
+
+    ema = next((s for s in strategies if s["name"].startswith("الاتجاه")), None)
+    rules = {
+        "entry": plan.get("entry"),
+        "stop": plan.get("stop"),
+        "target": plan.get("target"),
+        "risk_reward": rr,
+        "rr_quality": plan.get("rr_quality"),
+        "trend": (ema or {}).get("status"),
+        "near_resistance": record.get("near_resistance"),
+        "rel_strength": record.get("rel_strength"),
+        "piotroski": record.get("piotroski"),
+        "catalyst": record.get("catalyst"),
+    }
+
+    return {
+        "strategies": strategies,
+        "total": total,
+        "met_count": met_count,
+        "verdict": verdict,
+        "verdict_label": verdict_label,
+        "wait_reasons": wait_reasons,
+        "rules": rules,
+    }
+
+
 def early_launch_candidates(records=None, min_strategies=3):
     """مرشّحو "قبل الانطلاق": أسهم في مرحلة مبكرة ولم تصعد بعد، مرتّبة بقوة التأكيد.
 
@@ -288,6 +508,8 @@ def _build_record(ticker):
         atr_val = indicators.atr(candles)  # تذبذب السهم — لمستويات الدخول/الوقف/الهدف بالتنبيهات
         brk = scoring.break_status(candles)  # اختراق/كسر مؤكّد بالحجم
         sustained = indicators.sustained_breakout(candles)  # اختراق مستمر (يواصل صعوده بثبات)
+        atr_plan = scoring.atr_trade_plan(quote.get("price") if quote else None, candles)  # دخول/وقف/هدف + الصفقة الرابحة
+        near_res = indicators.resistance_warning(candles)  # قرب المقاومة (قاعدة الانتظار — لخطة التداول)
         mom_63d = _period_return(closes, MOMENTUM_SESSIONS)  # زخم ~3 أشهر (للقوة النسبية مقابل السوق)
         recent_gain = _period_return(closes, RECENT_SESSIONS)  # صعود آخر أسبوعين (لفلتر "لسا ما صعد")
         _save_price_history(ticker, candles)  # نفس البيانات المجلوبة أصلاً — بلا استدعاء API إضافي
@@ -301,6 +523,8 @@ def _build_record(ticker):
         atr_val = None
         brk = None
         sustained = None
+        atr_plan = None
+        near_res = None
         mom_63d = None
         recent_gain = None
 
@@ -341,6 +565,8 @@ def _build_record(ticker):
         "golden_cross": (gc or {}).get("cross"),
         "trend_pullback": pullback,
         "atr": atr_val,
+        "atr_plan": atr_plan,
+        "near_resistance": near_res,
         "break_status": brk,
         "sustained": sustained,
         "mom_63d": mom_63d,
