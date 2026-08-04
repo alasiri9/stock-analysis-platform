@@ -253,7 +253,9 @@ def _plan_strategy_scores(record):
     if mf:
         st = mf.get("status")
         if st == "bull":
-            add("السيولة (تدفق الأموال)", "bull", 8, f"سيولة داخلة (تجميع) — درجة {mf.get('score')}")
+            _sc = mf.get("score")
+            add("السيولة (تدفق الأموال)", "bull", 8,
+                "سيولة داخلة (تجميع)" + (f" — درجة {_sc:.0f}" if _sc is not None else ""))
         elif st == "bear":
             add("السيولة (تدفق الأموال)", "bear", 1, "سيولة خارجة (تصريف)")
         else:
@@ -270,11 +272,13 @@ def _plan_strategy_scores(record):
             add("أقوى من السوق", "bear", 2, f"أضعف من السوق ({rs:.0f}%)")
 
     # 13) شمعة الانعكاس (الشموع اليابانية) — داعمة لا تُعتمد وحدها (كما نصّ الشيخ)
+    # عمداً أقصى درجة صعودية = 6 (تحت عتبة الانطباق 7): الشمعة الواحدة تأكيد داعم
+    # لا «ركيزة» مستقلّة، فلا تُكمِل وحدها شرط الدخول (3 استراتيجيات ≥7).
     rv = record.get("reversal")
     if rv:
         st = rv.get("status")
         if st == "bull":
-            add("شمعة الانعكاس", "bull", 7, f"{rv.get('pattern')} — انعكاس صعودي محتمل")
+            add("شمعة الانعكاس", "bull", 6, f"{rv.get('pattern')} — انعكاس صعودي محتمل (تأكيد داعم)")
         elif st == "bear":
             add("شمعة الانعكاس", "bear", 1, f"{rv.get('pattern')} — انعكاس هبوطي محتمل")
         else:
@@ -300,12 +304,14 @@ def trading_plan(record):
 
     plan = record.get("atr_plan") or {}
     rr = plan.get("risk_reward")
-    rr_ok = plan.get("rr_quality") in ("ok", "good")
+    # نميّز «صفقة ضعيفة مؤكّدة» (العائد < المخاطرة، بيانات موجودة) عن «بيانات ناقصة»
+    # (atr_plan لم يُحسب بعد). البيانات الناقصة لا تُخفِّض الحكم — فقط السبب المعروف يُخفّضه.
+    rr_weak = plan.get("rr_quality") == "weak"
     near_res = record.get("near_resistance") is not None
 
-    # قاعدة الشيخ آلياً: ≥3 استراتيجيات ≥7 = عتبة الدخول. نخفّضها لو الصفقة غير رابحة
-    # (العائد أقل من المخاطرة) أو السعر ملاصق لمقاومة (قاعدة الانتظار).
-    if met_count >= 3 and rr_ok and not near_res:
+    # قاعدة الشيخ آلياً: ≥3 استراتيجيات ≥7 = عتبة الدخول. تُخفَّض لسبب معروف فقط:
+    # صفقة ضعيفة مؤكّدة أو السعر ملاصق لمقاومة (قاعدة الانتظار).
+    if met_count >= 3 and not rr_weak and not near_res:
         verdict, verdict_label = "ready", "مكتمل الشروط للدراسة"
     elif met_count == 0:
         verdict, verdict_label = "weak", "ضعيف — لا تتوفّر شروط"
@@ -316,7 +322,7 @@ def trading_plan(record):
     wait_reasons = []
     if met_count < 3:
         wait_reasons.append(f"عدد الاستراتيجيات المنطبقة {met_count} (المطلوب 3)")
-    if not rr_ok and rr is not None:
+    if rr_weak:
         wait_reasons.append("العائد المتوقّع لا يتجاوز المخاطرة بوضوح")
     if near_res:
         wait_reasons.append("السعر ملاصق لمقاومة سابقة — انتظر تأكيد الاختراق")
