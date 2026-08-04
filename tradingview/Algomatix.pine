@@ -1,54 +1,106 @@
 //@version=6
 // ============================================================================
 //  Algomatix — مؤشر التلاقي (Confluence) الخاص بمنصة Algomatix
-//  يجمع أفضل المدارس في مؤشر واحد على الشارت:
-//    • هيكل السوق (BOS / CHoCH) من القمم والقيعان
-//    • الاتجاه (متوسطان متحركان EMA)
-//    • فيبوناتشي — المنطقة الذهبية (50%–61.8%)
-//    • البروفايل الحجمي — نقطة التحكم POC (تقريبية)
-//    • شموع الانعكاس (ابتلاع / مطرقة / شهاب)
-//    • الزخم (RSI)
-//    • إشارات Algomatix = تلاقي عدة عوامل (شراء / بيع) + تنبيهات
+//    • هيكل السوق (BOS/CHoCH) · الاتجاه (EMA) · فيبوناتشي (المنطقة الذهبية)
+//    • البروفايل الحجمي (POC) · شموع الانعكاس · الزخم (RSI) · تلاقي الإشارات
+//    • تحكّم كامل: ألوان · سماكة · أحجام · موضع الجدول.
 //  ⚠️ تعليمي وصفي فقط — ليس توصية بشراء أو بيع.
 // ============================================================================
 indicator("Algomatix", overlay=true, max_labels_count=500)
 
+szOpts = ["صغير جداً", "صغير", "عادي", "كبير", "كبير جداً"]
+
 // ============================== المدخلات ====================================
-gMS   = "هيكل السوق"
+gMS = "① هيكل السوق"
 swingLen = input.int(5,  "حساسية القمم/القيعان", minval=2, group=gMS)
-showMS   = input.bool(true, "إظهار BOS / CHoCH",       group=gMS)
+showMS   = input.bool(true, "إظهار BOS / CHoCH", group=gMS)
+bosUpCol = input.color(color.green, "لون الكسر الصاعد", group=gMS)
+bosDnCol = input.color(color.red,   "لون الكسر الهابط", group=gMS)
+msSizeSel = input.string("صغير جداً", "حجم لافتات الهيكل", options=szOpts, group=gMS)
 
-gTr   = "الاتجاه (المتوسطات)"
-emaFastLen = input.int(20, "المتوسط السريع EMA", minval=1, group=gTr)
-emaSlowLen = input.int(50, "المتوسط البطيء EMA", minval=1, group=gTr)
-showEMA    = input.bool(true, "إظهار المتوسطات",       group=gTr)
+gTr = "② الاتجاه (المتوسطات)"
+emaFastLen = input.int(20, "طول المتوسط السريع", minval=1, group=gTr)
+emaSlowLen = input.int(50, "طول المتوسط البطيء", minval=1, group=gTr)
+showEMA    = input.bool(true, "إظهار المتوسطات", group=gTr)
+emaFastCol = input.color(color.aqua,   "لون المتوسط السريع", group=gTr)
+emaSlowCol = input.color(color.orange, "لون المتوسط البطيء", group=gTr)
+emaWidth   = input.int(1, "سماكة المتوسطات", minval=1, maxval=5, group=gTr)
 
-gFib  = "فيبوناتشي والحجم"
+gFib = "③ فيبوناتشي والحجم"
 fibLook = input.int(50, "نافذة الموجة", minval=10, group=gFib)
 showFib = input.bool(true, "إظهار المنطقة الذهبية", group=gFib)
+fib50Col   = input.color(color.new(color.gray, 40),   "لون فيبو 50%",   group=gFib)
+fib618Col  = input.color(color.new(color.yellow, 30), "لون فيبو 61.8%", group=gFib)
+goldFillCol = input.color(color.new(color.yellow, 88), "لون تعبئة المنطقة الذهبية", group=gFib)
 showPOC = input.bool(true, "إظهار نقطة التحكم POC", group=gFib)
+pocCol   = input.color(color.fuchsia, "لون POC", group=gFib)
+pocWidth = input.int(1, "سماكة POC", minval=1, maxval=5, group=gFib)
 
-gSig  = "إشارات Algomatix"
-showSignals = input.bool(true, "إظهار الإشارات",        group=gSig)
-rsiLen      = input.int(14, "RSI",                       group=gSig)
+gRev = "④ شموع الانعكاس"
+bullRevCol = input.color(color.lime, "لون انعكاس صاعد", group=gRev)
+bearRevCol = input.color(color.red,  "لون انعكاس هابط", group=gRev)
+revSizeSel = input.string("صغير جداً", "حجم شارات الشموع", options=szOpts, group=gRev)
+
+gSig = "⑤ إشارات Algomatix"
+showSignals = input.bool(true, "إظهار الإشارات", group=gSig)
+rsiLen      = input.int(14, "RSI", group=gSig)
 minConf     = input.int(3,  "أدنى عدد عوامل للإشارة", minval=2, maxval=5, group=gSig)
+buyCol      = input.color(color.green, "لون سهم الشراء", group=gSig)
+sellCol     = input.color(color.red,   "لون سهم البيع", group=gSig)
+sigSizeSel  = input.string("صغير", "حجم أسهم الإشارات", options=szOpts, group=gSig)
 
-gTbl = "لوحة المعلومات"
+gTbl = "⑥ لوحة المعلومات"
 tblPos  = input.string("أعلى يمين", "موضع الجدول", options=["أعلى يسار", "أعلى وسط", "أعلى يمين", "منتصف يسار", "منتصف وسط", "منتصف يمين", "أسفل يسار", "أسفل وسط", "أسفل يمين"], group=gTbl)
-tblSize = input.string("صغير", "حجم الجدول", options=["صغير جداً", "صغير", "عادي", "كبير", "كبير جداً"], group=gTbl)
+tblSize = input.string("صغير", "حجم الجدول", options=szOpts, group=gTbl)
+tblHeaderCol = input.color(#7c6fe6, "لون العنوان",   group=gTbl)
+tblPanelCol  = input.color(#10192b, "لون الخلفية",   group=gTbl)
+tblLabelCol  = input.color(#a7c0e8, "لون التسميات",  group=gTbl)
+tblBullCol   = input.color(#22c55e, "لون الإيجابي",  group=gTbl)
+tblBearCol   = input.color(#ef4444, "لون السلبي",    group=gTbl)
+tblGoldCol   = input.color(#eab308, "لون الذهبي",    group=gTbl)
+
+// ===================== تحويل خيارات الحجم إلى قيم ==========================
+msSize = switch msSizeSel
+    "صغير جداً" => size.tiny
+    "صغير" => size.small
+    "عادي" => size.normal
+    "كبير" => size.large
+    "كبير جداً" => size.huge
+    => size.tiny
+revSize = switch revSizeSel
+    "صغير جداً" => size.tiny
+    "صغير" => size.small
+    "عادي" => size.normal
+    "كبير" => size.large
+    "كبير جداً" => size.huge
+    => size.tiny
+sigSize = switch sigSizeSel
+    "صغير جداً" => size.tiny
+    "صغير" => size.small
+    "عادي" => size.normal
+    "كبير" => size.large
+    "كبير جداً" => size.huge
+    => size.small
+tSize = switch tblSize
+    "صغير جداً" => size.tiny
+    "صغير" => size.small
+    "عادي" => size.normal
+    "كبير" => size.large
+    "كبير جداً" => size.huge
+    => size.small
 
 // ============================== الاتجاه =====================================
 emaFast = ta.ema(close, emaFastLen)
 emaSlow = ta.ema(close, emaSlowLen)
-plot(showEMA ? emaFast : na, "EMA سريع", color=color.new(color.aqua,   0), linewidth=1)
-plot(showEMA ? emaSlow : na, "EMA بطيء", color=color.new(color.orange, 0), linewidth=1)
+plot(showEMA ? emaFast : na, "EMA سريع", color=emaFastCol, linewidth=emaWidth)
+plot(showEMA ? emaSlow : na, "EMA بطيء", color=emaSlowCol, linewidth=emaWidth)
 trendUp   = emaFast > emaSlow and close > emaFast
 trendDown = emaFast < emaSlow and close < emaFast
 
 // ======================= هيكل السوق BOS / CHoCH =============================
-var float upLevel = na       // آخر قمة يجب اختراقها
-var float dnLevel = na       // آخر قاع يجب كسره
-var int   msTrend = 0        // 1 صاعد · -1 هابط
+var float upLevel = na
+var float dnLevel = na
+var int   msTrend = 0
 
 ph = ta.pivothigh(high, swingLen, swingLen)
 pl = ta.pivotlow(low,  swingLen, swingLen)
@@ -62,12 +114,12 @@ brokeDn = not na(dnLevel) and close < dnLevel
 
 if brokeUp
     if showMS
-        label.new(bar_index, high, msTrend < 0 ? "CHoCH" : "BOS", style=label.style_label_down, color=color.new(color.green, 0), textcolor=color.white, size=size.tiny)
+        label.new(bar_index, high, msTrend < 0 ? "CHoCH" : "BOS", style=label.style_label_down, color=bosUpCol, textcolor=color.white, size=msSize)
     msTrend := 1
     upLevel := na
 if brokeDn
     if showMS
-        label.new(bar_index, low, msTrend > 0 ? "CHoCH" : "BOS", style=label.style_label_up, color=color.new(color.red, 0), textcolor=color.white, size=size.tiny)
+        label.new(bar_index, low, msTrend > 0 ? "CHoCH" : "BOS", style=label.style_label_up, color=bosDnCol, textcolor=color.white, size=msSize)
     msTrend := -1
     dnLevel := na
 
@@ -77,15 +129,14 @@ sLo = ta.lowest(low,  fibLook)
 fibDiff = sHi - sLo
 gold50  = sHi - fibDiff * 0.5
 gold618 = sHi - fibDiff * 0.618
-p50  = plot(showFib ? gold50  : na, "فيبو 50%",   color=color.new(color.gray,   40))
-p618 = plot(showFib ? gold618 : na, "فيبو 61.8%", color=color.new(color.yellow, 30))
-fill(p50, p618, color=color.new(color.yellow, 88), title="المنطقة الذهبية")
+p50  = plot(showFib ? gold50  : na, "فيبو 50%",   color=fib50Col)
+p618 = plot(showFib ? gold618 : na, "فيبو 61.8%", color=fib618Col)
+fill(p50, p618, color=goldFillCol, title="المنطقة الذهبية")
 inGolden = close <= gold50 and close >= gold618
 
 // ================ البروفايل الحجمي — POC تقريبية ============================
-// أقرب سعر لأعلى شمعة حجماً خلال النافذة (تقريب بسيط لنقطة التحكم)
 poc = ta.valuewhen(volume >= ta.highest(volume, fibLook), hl2, 0)
-plot(showPOC ? poc : na, "POC", color=color.new(color.fuchsia, 0), style=plot.style_circles, linewidth=1)
+plot(showPOC ? poc : na, "POC", color=pocCol, style=plot.style_circles, linewidth=pocWidth)
 
 // ======================= شموع الانعكاس =====================================
 bodyHi = math.max(open, close)
@@ -102,8 +153,8 @@ hammer = body > 0 and dnSh >= 2 * body and upSh <= 0.15 * rng and body <= 0.35 *
 star   = body > 0 and upSh >= 2 * body and dnSh <= 0.15 * rng and body <= 0.35 * rng and advanced
 bullRev = bullEngulf or hammer
 bearRev = bearEngulf or star
-plotshape(bullRev, "شمعة انعكاس صاعدة", style=shape.diamond, location=location.belowbar, color=color.new(color.lime, 0), size=size.tiny)
-plotshape(bearRev, "شمعة انعكاس هابطة", style=shape.diamond, location=location.abovebar, color=color.new(color.red,  0), size=size.tiny)
+plotshape(bullRev, "شمعة انعكاس صاعدة", style=shape.diamond, location=location.belowbar, color=bullRevCol, size=revSize)
+plotshape(bearRev, "شمعة انعكاس هابطة", style=shape.diamond, location=location.abovebar, color=bearRevCol, size=revSize)
 
 // ============================== الزخم ======================================
 rsi = ta.rsi(close, rsiLen)
@@ -113,8 +164,8 @@ buyConf  = (bullRev ? 1 : 0) + (msTrend >= 0 ? 1 : 0) + (inGolden ? 1 : 0) + (rs
 sellConf = (bearRev ? 1 : 0) + (msTrend <= 0 ? 1 : 0) + (rsi > 40 ? 1 : 0) + (close < emaSlow ? 1 : 0)
 buySignal  = showSignals and bullRev and buyConf  >= minConf
 sellSignal = showSignals and bearRev and sellConf >= minConf
-plotshape(buySignal,  "Algomatix شراء", style=shape.triangleup,   location=location.belowbar, color=color.new(color.green, 0), size=size.small)
-plotshape(sellSignal, "Algomatix بيع",  style=shape.triangledown, location=location.abovebar, color=color.new(color.red,   0), size=size.small)
+plotshape(buySignal,  "Algomatix شراء", style=shape.triangleup,   location=location.belowbar, color=buyCol,  size=sigSize)
+plotshape(sellSignal, "Algomatix بيع",  style=shape.triangledown, location=location.abovebar, color=sellCol, size=sigSize)
 alertcondition(buySignal,  "Algomatix — إشارة شراء", "تلاقٍ صعودي على {{ticker}} (تعليمي لا توصية)")
 alertcondition(sellSignal, "Algomatix — إشارة بيع",  "تلاقٍ هبوطي على {{ticker}} (تعليمي لا توصية)")
 
@@ -130,43 +181,25 @@ tblPosition = switch tblPos
     "أسفل وسط"   => position.bottom_center
     "أسفل يمين"  => position.bottom_right
     => position.top_right
-// ألوان علامة Algomatix
-cPurple = #7c6fe6   // بنفسجي العلامة
-cSilver = #a7c0e8   // أزرق-فضّي
-cGreen  = #22c55e
-cRed    = #ef4444
-cGold   = #eab308
-cPanel  = #10192b   // خلفية داكنة أنيقة
 
-// حجم نص الجدول (درجات تكبير/تصغير)
-tSize = switch tblSize
-    "صغير جداً" => size.tiny
-    "صغير"      => size.small
-    "عادي"      => size.normal
-    "كبير"      => size.large
-    "كبير جداً" => size.huge
-    => size.small
-
-var table tbl = table.new(tblPosition, 2, 6, border_width=1, border_color=color.new(cPurple, 70), frame_color=color.new(cPurple, 15), frame_width=2)
+var table tbl = table.new(tblPosition, 2, 6, border_width=1, border_color=color.new(tblHeaderCol, 70), frame_color=color.new(tblHeaderCol, 15), frame_width=2)
 if barstate.islast
     trendTxt = trendUp ? "صاعد" : (trendDown ? "هابط" : "عرضي")
-    trendBg  = trendUp ? cGreen : (trendDown ? cRed : color.gray)
+    trendBg  = trendUp ? tblBullCol : (trendDown ? tblBearCol : color.gray)
     msTxt    = msTrend > 0 ? "صاعد" : (msTrend < 0 ? "هابط" : "—")
-    msBg     = msTrend > 0 ? cGreen : (msTrend < 0 ? cRed : color.gray)
-    rsiBg    = rsi >= 70 ? cRed : (rsi <= 30 ? cGreen : cPanel)
-    goldBg   = inGolden ? cGold : cPanel
-    buyBg    = buyConf >= 3 ? cGreen : (buyConf == 2 ? cGold : color.gray)
-    // العنوان (بنفسجي العلامة)
-    table.cell(tbl, 0, 0, "👑 Algomatix", text_color=color.white, bgcolor=cPurple, text_size=tSize)
-    table.cell(tbl, 1, 0, "",             bgcolor=cPurple)
-    // الصفوف: تسمية (فضّي على داكن) + قيمة (ملوّنة حسب الحالة)
-    table.cell(tbl, 0, 1, " الاتجاه ",       text_color=cSilver, bgcolor=cPanel, text_size=tSize)
+    msBg     = msTrend > 0 ? tblBullCol : (msTrend < 0 ? tblBearCol : color.gray)
+    rsiBg    = rsi >= 70 ? tblBearCol : (rsi <= 30 ? tblBullCol : tblPanelCol)
+    goldBg   = inGolden ? tblGoldCol : tblPanelCol
+    buyBg    = buyConf >= 3 ? tblBullCol : (buyConf == 2 ? tblGoldCol : color.gray)
+    table.cell(tbl, 0, 0, "👑 Algomatix", text_color=color.white, bgcolor=tblHeaderCol, text_size=tSize)
+    table.cell(tbl, 1, 0, "",             bgcolor=tblHeaderCol)
+    table.cell(tbl, 0, 1, " الاتجاه ",       text_color=tblLabelCol, bgcolor=tblPanelCol, text_size=tSize)
     table.cell(tbl, 1, 1, trendTxt,          text_color=color.white, bgcolor=color.new(trendBg, 20), text_size=tSize)
-    table.cell(tbl, 0, 2, " الهيكل ",        text_color=cSilver, bgcolor=cPanel, text_size=tSize)
+    table.cell(tbl, 0, 2, " الهيكل ",        text_color=tblLabelCol, bgcolor=tblPanelCol, text_size=tSize)
     table.cell(tbl, 1, 2, msTxt,             text_color=color.white, bgcolor=color.new(msBg, 20), text_size=tSize)
-    table.cell(tbl, 0, 3, " RSI ",           text_color=cSilver, bgcolor=cPanel, text_size=tSize)
+    table.cell(tbl, 0, 3, " RSI ",           text_color=tblLabelCol, bgcolor=tblPanelCol, text_size=tSize)
     table.cell(tbl, 1, 3, str.tostring(math.round(rsi)), text_color=color.white, bgcolor=color.new(rsiBg, 20), text_size=tSize)
-    table.cell(tbl, 0, 4, " المنطقة الذهبية ", text_color=cSilver, bgcolor=cPanel, text_size=tSize)
+    table.cell(tbl, 0, 4, " المنطقة الذهبية ", text_color=tblLabelCol, bgcolor=tblPanelCol, text_size=tSize)
     table.cell(tbl, 1, 4, inGolden ? "نعم ⭐" : "لا", text_color=inGolden ? color.black : color.white, bgcolor=color.new(goldBg, 20), text_size=tSize)
-    table.cell(tbl, 0, 5, " عوامل الشراء ",   text_color=cSilver, bgcolor=cPanel, text_size=tSize)
+    table.cell(tbl, 0, 5, " عوامل الشراء ",   text_color=tblLabelCol, bgcolor=tblPanelCol, text_size=tSize)
     table.cell(tbl, 1, 5, str.tostring(buyConf) + "/5", text_color=color.white, bgcolor=color.new(buyBg, 20), text_size=tSize)
