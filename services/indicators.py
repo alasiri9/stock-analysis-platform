@@ -912,6 +912,59 @@ def atr(candles, period=14):
 # التأكيد بإغلاق السعر خلف المستوى (لا بالفتيل) — أدقّ وأقلّ إشارات كاذبة.
 # ⚠️ تعليمي وصفي فقط — لا توصية. (بحث متحقَّق 2026-08: FXOpen · DailyPriceAction.)
 
+FIB_RATIOS = [0.236, 0.382, 0.5, 0.618, 0.786]
+
+
+def fibonacci_levels(candles, lookback=90):
+    """مستويات فيبوناتشي للموجة الحالية (Fibonacci Retracement) — بحث متحقَّق 2026-08.
+
+    نحدّد الموجة من أعلى قمة وأدنى قاع خلال آخر `lookback` جلسة، واتجاهها من أيّهما أحدث:
+    - موجة صاعدة (قاع ثم قمة): المستوى = القمة − (القمة−القاع)×نسبة → **دعوم** محتملة عند التصحيح.
+    - موجة هابطة (قمة ثم قاع): المستوى = القاع + (القمة−القاع)×نسبة → **مقاومات** محتملة.
+    المستوى الذهبي 61.8% هو الأهمّ (نقطة قرار). المنطقة الذهبية = بين 50% و61.8%.
+    يُرجع dict {direction, high, low, levels, nearest, at_level, in_golden, price} أو None.
+    ⚠️ تعليمي وصفي فقط — لا توصية.
+    """
+    rows = [r for r in _clean(candles)
+            if r["high"] is not None and r["low"] is not None and r["close"] is not None]
+    if len(rows) < 20:
+        return None
+    seg = rows[-lookback:]
+    highs = [r["high"] for r in seg]
+    lows = [r["low"] for r in seg]
+    ih = max(range(len(seg)), key=lambda i: highs[i])
+    il = min(range(len(seg)), key=lambda i: lows[i])
+    H, L = highs[ih], lows[il]
+    span = H - L
+    if span <= 0:
+        return None
+    up = ih > il                       # القمة أحدث ⇒ موجة صاعدة (ارتداد لأسفل نحو الدعوم)
+    price = rows[-1]["close"]
+
+    levels = []
+    for r in FIB_RATIOS:
+        lvl = (H - span * r) if up else (L + span * r)
+        levels.append({"ratio": r, "pct": round(r * 100, 1), "price": lvl})
+
+    nearest = min(levels, key=lambda x: abs(x["price"] - price))
+    atr_v = atr(candles) or (span * 0.02)
+    at_level = abs(nearest["price"] - price) <= max(0.5 * atr_v, price * 0.005)
+
+    g50 = (H - span * 0.5) if up else (L + span * 0.5)
+    g618 = (H - span * 0.618) if up else (L + span * 0.618)
+    in_golden = min(g50, g618) <= price <= max(g50, g618)
+
+    return {
+        "direction": "up" if up else "down",
+        "high": H, "low": L,
+        "levels": levels,
+        "nearest": nearest,
+        "at_level": at_level,
+        "in_golden": in_golden,
+        "price": price,
+    }
+
+
 def _swing_points(rows, wing=2):
     """نقاط الارتكاز (قمم/قيعان فراكتالية) مرتّبة زمنياً بالتناوب.
 
