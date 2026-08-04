@@ -518,6 +518,7 @@ def _build_record(ticker):
         atr_plan = scoring.atr_trade_plan(quote.get("price") if quote else None, candles)  # دخول/وقف/هدف + الصفقة الرابحة
         near_res = indicators.resistance_warning(candles)  # قرب المقاومة (قاعدة الانتظار — لخطة التداول)
         fib = indicators.fibonacci_levels(candles)  # مستويات فيبوناتشي (تغذّي المؤشر النهائي)
+        vprofile = indicators.volume_profile(candles)  # البروفايل الحجمي و POC (تغذّي المؤشر النهائي)
         mom_63d = _period_return(closes, MOMENTUM_SESSIONS)  # زخم ~3 أشهر (للقوة النسبية مقابل السوق)
         recent_gain = _period_return(closes, RECENT_SESSIONS)  # صعود آخر أسبوعين (لفلتر "لسا ما صعد")
         _save_price_history(ticker, candles)  # نفس البيانات المجلوبة أصلاً — بلا استدعاء API إضافي
@@ -535,6 +536,7 @@ def _build_record(ticker):
         atr_plan = None
         near_res = None
         fib = None
+        vprofile = None
         mom_63d = None
         recent_gain = None
 
@@ -579,6 +581,7 @@ def _build_record(ticker):
         "atr_plan": atr_plan,
         "near_resistance": near_res,
         "fibonacci": fib,
+        "volume_profile": vprofile,
         "break_status": brk,
         "sustained": sustained,
         "mom_63d": mom_63d,

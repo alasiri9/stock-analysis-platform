@@ -912,6 +912,73 @@ def atr(candles, period=14):
 # التأكيد بإغلاق السعر خلف المستوى (لا بالفتيل) — أدقّ وأقلّ إشارات كاذبة.
 # ⚠️ تعليمي وصفي فقط — لا توصية. (بحث متحقَّق 2026-08: FXOpen · DailyPriceAction.)
 
+def volume_profile(candles, lookback=90, bins=24, value_area=0.70):
+    """البروفايل الحجمي و POC (Point of Control) — بحث متحقَّق 2026-08 (TradingView · GoCharting).
+
+    من الشموع اليومية (بلا داتا لحظية): نقسّم مدى السعر خلال `lookback` إلى شرائح،
+    ونوزّع حجم كل شمعة على الشرائح التي يغطّيها مداها (high–low). ثم:
+    - **POC** = الشريحة ذات أكبر حجم متراكم (أقوى دعم/مقاومة — تركّز اهتمام حقيقي).
+    - **منطقة القيمة** (Value Area 70%): نوسّع من POC حتى 70% من الحجم → VAH (أعلى) وVAL (أدنى).
+    يُرجع dict {poc, vah, val, price, position, dist_pct, in_value_area} أو None.
+    position ∈ {above (POC دعم), below (POC مقاومة), at (عند POC)}. ⚠️ تعليمي لا توصية.
+    """
+    rows = [r for r in _clean(candles)
+            if r["high"] is not None and r["low"] is not None and r["volume"]]
+    if len(rows) < 20:
+        return None
+    seg = rows[-lookback:]
+    lo = min(r["low"] for r in seg)
+    hi = max(r["high"] for r in seg)
+    if hi <= lo:
+        return None
+    bin_size = (hi - lo) / bins
+    vol = [0.0] * bins
+    for r in seg:
+        b0 = max(0, min(bins - 1, int((r["low"] - lo) / bin_size)))
+        b1 = max(0, min(bins - 1, int((r["high"] - lo) / bin_size)))
+        share = r["volume"] / (b1 - b0 + 1)
+        for b in range(b0, b1 + 1):
+            vol[b] += share
+    total = sum(vol)
+    if total <= 0:
+        return None
+
+    poc_bin = max(range(bins), key=lambda b: vol[b])
+    poc_price = lo + (poc_bin + 0.5) * bin_size
+
+    # منطقة القيمة: نوسّع من POC للجار الأعلى حجماً حتى نبلغ 70% من الحجم
+    acc = vol[poc_bin]
+    low_b = high_b = poc_bin
+    target = total * value_area
+    while acc < target and (low_b > 0 or high_b < bins - 1):
+        below = vol[low_b - 1] if low_b > 0 else -1.0
+        above = vol[high_b + 1] if high_b < bins - 1 else -1.0
+        if above >= below:
+            high_b += 1
+            acc += vol[high_b]
+        else:
+            low_b -= 1
+            acc += vol[low_b]
+    vah = lo + (high_b + 1) * bin_size
+    val = lo + low_b * bin_size
+
+    price = rows[-1]["close"]
+    atr_v = atr(candles) or bin_size
+    if abs(price - poc_price) <= max(0.5 * atr_v, bin_size):
+        position = "at"
+    elif price > poc_price:
+        position = "above"
+    else:
+        position = "below"
+
+    return {
+        "poc": poc_price, "vah": vah, "val": val,
+        "price": price, "position": position,
+        "dist_pct": ((price - poc_price) / poc_price * 100.0) if poc_price else None,
+        "in_value_area": val <= price <= vah,
+    }
+
+
 FIB_RATIOS = [0.236, 0.382, 0.5, 0.618, 0.786]
 
 

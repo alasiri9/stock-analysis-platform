@@ -274,6 +274,27 @@
   </div>
   {% endif %}
 
+  {# ===== البروفايل الحجمي و POC (تعليمي) ===== #}
+  {% if report.volume_profile %}
+  {% set vp = report.volume_profile %}
+  <div class="section">
+    <h2>📊 البروفايل الحجمي (POC)
+      <span class="help-q" data-tip="البروفايل الحجمي: نوزّع حجم التداول على مستويات السعر خلال ~3 أشهر. نقطة التحكم (POC) = المستوى الذي تداول عنده أكبر حجم — أقوى دعم/مقاومة (تركّز اهتمام حقيقي). منطقة القيمة (VAL–VAH) = حيث تركّز 70% من التداول. تعليمي وصفي فقط — لا توصية.">👁</span>
+    </h2>
+    <div class="grid">
+      <div class="metric"><div class="label">نقطة التحكم (POC)</div><div class="num" dir="ltr">{{ "%.2f $"|format(vp.poc) }}</div></div>
+      <div class="metric"><div class="label">أعلى منطقة القيمة (VAH)</div><div class="num" dir="ltr">{{ "%.2f $"|format(vp.vah) }}</div></div>
+      <div class="metric"><div class="label">أدنى منطقة القيمة (VAL)</div><div class="num" dir="ltr">{{ "%.2f $"|format(vp.val) }}</div></div>
+    </div>
+    <div class="soon">
+      {% if vp.position == 'above' %}السعر <b style="color:var(--green)">فوق POC</b> — قد يعمل POC دعماً.
+      {% elif vp.position == 'below' %}السعر <b style="color:var(--red)">تحت POC</b> — قد يعمل POC مقاومة.
+      {% else %}السعر <b style="color:var(--gold)">عند POC</b> — منطقة قرار (أكثف تداول).{% endif %}
+      {% if vp.in_value_area %} وهو داخل منطقة القيمة (تداول متوازن).{% endif %}
+    </div>
+  </div>
+  {% endif %}
+
   {# ===== المقاييس المالية (نعرض المتوفّرة فقط + عدّاد X من 6) ===== #}
   {% set mlist = [
     {'label': 'ROE (العائد على حقوق الملكية)', 'val': report.metrics.roe, 'suf': '%', 'dig': 1},
