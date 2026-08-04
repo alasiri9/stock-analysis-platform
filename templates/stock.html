@@ -244,6 +244,36 @@
   </div>
   {% endif %}
 
+  {# ===== مستويات فيبوناتشي للموجة الحالية (تعليمي) ===== #}
+  {% if report.fibonacci %}
+  {% set fib = report.fibonacci %}
+  <div class="section">
+    <h2>📐 مستويات فيبوناتشي
+      <span class="help-q" data-tip="فيبوناتشي: مستويات (23.6% · 38.2% · 50% · 61.8% · 78.6%) تُرسم على الموجة الحالية (بين أعلى قمة وأدنى قاع). في الموجة الصاعدة تعمل كدعوم محتملة عند التصحيح، وفي الهابطة كمقاومات. المستوى 61.8% (الذهبي) هو الأهم. تعليمي وصفي فقط — لا توصية.">👁</span>
+    </h2>
+    <div class="soon">
+      موجة {{ 'صاعدة — مستويات دعم محتملة' if fib.direction == 'up' else 'هابطة — مستويات مقاومة محتملة' }} (من {{ "%.2f"|format(fib.low) }} إلى {{ "%.2f"|format(fib.high) }}).
+      {% if fib.in_golden %} <b style="color:var(--gold)">⭐ السعر الآن في المنطقة الذهبية (50–61.8%).</b>{% endif %}
+    </div>
+    <div style="overflow-x:auto">
+      <table class="insider">
+        <thead><tr><th>المستوى</th><th>السعر</th></tr></thead>
+        <tbody>
+          {% for lv in fib.levels %}
+            <tr{% if lv.ratio == fib.nearest.ratio %} style="background:var(--panel-2)"{% endif %}>
+              <td>
+                {{ lv.pct }}%{% if lv.ratio == 0.618 %} <span style="color:var(--gold)">⭐ ذهبي</span>{% endif %}
+                {% if lv.ratio == fib.nearest.ratio and fib.at_level %} <span style="color:var(--green)">◀ السعر هنا</span>{% endif %}
+              </td>
+              <td dir="ltr">{{ "%.2f $"|format(lv.price) }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% endif %}
+
   {# ===== المقاييس المالية (نعرض المتوفّرة فقط + عدّاد X من 6) ===== #}
   {% set mlist = [
     {'label': 'ROE (العائد على حقوق الملكية)', 'val': report.metrics.roe, 'suf': '%', 'dig': 1},
