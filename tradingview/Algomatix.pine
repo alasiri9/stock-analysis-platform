@@ -8,15 +8,13 @@
 // ============================================================================
 indicator("Algomatix", overlay=true, max_labels_count=500)
 
-szOpts = ["صغير جداً", "صغير", "عادي", "كبير", "كبير جداً"]
-
 // ============================== المدخلات ====================================
 gMS = "① هيكل السوق"
 swingLen = input.int(5,  "حساسية القمم/القيعان", minval=2, group=gMS)
 showMS   = input.bool(true, "إظهار BOS / CHoCH", group=gMS)
 bosUpCol = input.color(color.green, "لون الكسر الصاعد", group=gMS)
 bosDnCol = input.color(color.red,   "لون الكسر الهابط", group=gMS)
-msSizeSel = input.string("صغير جداً", "حجم لافتات الهيكل", options=szOpts, group=gMS)
+msSizeSel = input.string("صغير جداً", "حجم لافتات الهيكل", options=["صغير جداً", "صغير", "عادي", "كبير", "كبير جداً"], group=gMS)
 
 gTr = "② الاتجاه (المتوسطات)"
 emaFastLen = input.int(20, "طول المتوسط السريع", minval=1, group=gTr)
@@ -39,7 +37,7 @@ pocWidth = input.int(1, "سماكة POC", minval=1, maxval=5, group=gFib)
 gRev = "④ شموع الانعكاس"
 bullRevCol = input.color(color.lime, "لون انعكاس صاعد", group=gRev)
 bearRevCol = input.color(color.red,  "لون انعكاس هابط", group=gRev)
-revSizeSel = input.string("صغير جداً", "حجم شارات الشموع", options=szOpts, group=gRev)
+revSizeSel = input.string("صغير جداً", "حجم شارات الشموع", options=["صغير جداً", "صغير", "عادي", "كبير", "كبير جداً"], group=gRev)
 
 gSig = "⑤ إشارات Algomatix"
 showSignals = input.bool(true, "إظهار الإشارات", group=gSig)
@@ -47,11 +45,11 @@ rsiLen      = input.int(14, "RSI", group=gSig)
 minConf     = input.int(3,  "أدنى عدد عوامل للإشارة", minval=2, maxval=5, group=gSig)
 buyCol      = input.color(color.green, "لون سهم الشراء", group=gSig)
 sellCol     = input.color(color.red,   "لون سهم البيع", group=gSig)
-sigSizeSel  = input.string("صغير", "حجم أسهم الإشارات", options=szOpts, group=gSig)
+sigSizeSel  = input.string("صغير", "حجم أسهم الإشارات", options=["صغير جداً", "صغير", "عادي", "كبير", "كبير جداً"], group=gSig)
 
 gTbl = "⑥ لوحة المعلومات"
 tblPos  = input.string("أعلى يمين", "موضع الجدول", options=["أعلى يسار", "أعلى وسط", "أعلى يمين", "منتصف يسار", "منتصف وسط", "منتصف يمين", "أسفل يسار", "أسفل وسط", "أسفل يمين"], group=gTbl)
-tblSize = input.string("صغير", "حجم الجدول", options=szOpts, group=gTbl)
+tblSize = input.string("صغير", "حجم الجدول", options=["صغير جداً", "صغير", "عادي", "كبير", "كبير جداً"], group=gTbl)
 tblHeaderCol = input.color(#7c6fe6, "لون العنوان",   group=gTbl)
 tblPanelCol  = input.color(#10192b, "لون الخلفية",   group=gTbl)
 tblLabelCol  = input.color(#a7c0e8, "لون التسميات",  group=gTbl)
