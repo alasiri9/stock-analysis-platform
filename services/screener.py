@@ -352,6 +352,122 @@ def trading_plan(record):
     }
 
 
+# ── 👑 مؤشر Algomatix — درجة فرصة موحّدة (0–100) تجمع أفضل المدارس بأوزان معتمدة ──────
+# الأوزان اعتمدها أحمد (2026-08-03): متوازن يميل للجودة وهيكل السوق. المجموع = 100.
+ALGOMATIX_WEIGHTS = {
+    "structure": 18,      # 🧭 هيكل السوق (BOS/CHOCH/إعادة اختبار)
+    "fundamentals": 18,   # 🏦 الجودة والنمو (Piotroski + Catalyst)
+    "trend": 16,          # 📈 الاتجاه (EMA + تقاطع ذهبي + سوبرترند + ADX)
+    "momentum": 12,       # ⚡ الزخم (MACD + RSI)
+    "liquidity": 12,      # 💧 السيولة (تدفق الأموال + OBV + POC)
+    "levels": 10,         # 📐 المستويات (فيبوناتشي + قرب المقاومة)
+    "rel_strength": 8,    # 💪 القوة النسبية مقابل السوق
+    "price_action": 6,    # 🕯️ السلوك السعري (شموع الانعكاس)
+}
+_ALGX_LABELS = {
+    "structure": "🧭 هيكل السوق", "fundamentals": "🏦 الجودة والنمو", "trend": "📈 الاتجاه",
+    "momentum": "⚡ الزخم", "liquidity": "💧 السيولة", "levels": "📐 المستويات",
+    "rel_strength": "💪 القوة النسبية", "price_action": "🕯️ السلوك السعري",
+}
+
+
+def _status_val(status):
+    """يحوّل حالة شارة إلى قيمة 0..1 (صاعد=1 · محايد=0.5 · هابط=0)."""
+    return 1.0 if status == "bull" else (0.5 if status == "neutral" else 0.0)
+
+
+def _algx_subscores(record):
+    """درجة كل مدرسة (0..1). القيم الغائبة تُعامل محايدةً (0.5) فلا تُخفّض ظلماً."""
+    inds = {b.get("label"): b for b in (record.get("indicators") or [])}
+
+    # 🧭 هيكل السوق
+    ms = record.get("structure")
+    if not ms:
+        s_structure = 0.5
+    elif ms.get("status") == "bull":
+        rs, ev = ms.get("retest_state"), ms.get("event")
+        s_structure = (1.0 if rs == "confirmed" else 0.78 if rs == "testing"
+                       else 0.85 if ev == "BOS" else 0.70 if ev == "CHOCH" else 0.58)
+    elif ms.get("status") == "bear":
+        s_structure = 0.15
+    else:
+        s_structure = 0.42 if ms.get("trend") == "side" else 0.5
+
+    # 🏦 الجودة والنمو
+    fund = []
+    if record.get("piotroski") is not None:
+        fund.append(min(1.0, record["piotroski"] / 9.0))
+    if record.get("catalyst") is not None:
+        fund.append(min(1.0, record["catalyst"] / 100.0))
+    s_fund = sum(fund) / len(fund) if fund else 0.5
+
+    # 📈 الاتجاه
+    tr = [_status_val(inds[k]["status"]) for k in ("EMA", "تقاطع", "سوبرترند", "ADX") if k in inds]
+    s_trend = sum(tr) / len(tr) if tr else 0.5
+
+    # ⚡ الزخم
+    mo = [_status_val(inds[k]["status"]) for k in ("MACD", "RSI") if k in inds]
+    s_mom = sum(mo) / len(mo) if mo else 0.5
+
+    # 💧 السيولة
+    liq = []
+    if record.get("money_flow"):
+        liq.append(_status_val(record["money_flow"].get("status")))
+    if "تراكم" in inds:
+        liq.append(_status_val(inds["تراكم"]["status"]))
+    vp = record.get("volume_profile")
+    if vp:
+        liq.append({"above": 0.70, "at": 0.55}.get(vp.get("position"), 0.30))
+    s_liq = sum(liq) / len(liq) if liq else 0.5
+
+    # 📐 المستويات
+    s_lev = 0.5
+    fib = record.get("fibonacci")
+    if fib:
+        s_lev = 0.82 if fib.get("in_golden") else (0.62 if fib.get("at_level") else 0.5)
+    if record.get("near_resistance") is not None:
+        s_lev = max(0.0, s_lev - 0.25)   # ملاصق لمقاومة = حذر
+
+    # 💪 القوة النسبية
+    rsv = record.get("rel_strength")
+    s_rs = 0.5 if rsv is None else (1.0 if rsv > 5 else 0.7 if rsv > 0 else 0.2)
+
+    # 🕯️ السلوك السعري
+    rv = record.get("reversal")
+    s_pa = 0.5 if not rv else (0.9 if rv.get("status") == "bull" else 0.1 if rv.get("status") == "bear" else 0.5)
+
+    return {
+        "structure": s_structure, "fundamentals": s_fund, "trend": s_trend,
+        "momentum": s_mom, "liquidity": s_liq, "levels": s_lev,
+        "rel_strength": s_rs, "price_action": s_pa,
+    }
+
+
+def algomatix_score(record):
+    """👑 مؤشر Algomatix: درجة فرصة موحّدة (0–100) موزونة عبر 8 مدارس + تفصيل شفّاف.
+
+    ⚠️ تعليمي وصفي فقط — لا توصية بشراء أو بيع. يُرجع {score, verdict, verdict_label, breakdown}.
+    """
+    subs = _algx_subscores(record)
+    breakdown, score = [], 0.0
+    for key, w in ALGOMATIX_WEIGHTS.items():
+        pts = subs[key] * w
+        score += pts
+        breakdown.append({"key": key, "label": _ALGX_LABELS[key], "weight": w,
+                          "sub": round(subs[key], 2), "points": round(pts, 1)})
+    score = round(score)
+    if score >= 70:
+        verdict, vlabel = "strong", "فرصة قوية للدراسة"
+    elif score >= 55:
+        verdict, vlabel = "good", "فرصة جيدة"
+    elif score >= 40:
+        verdict, vlabel = "neutral", "محايد"
+    else:
+        verdict, vlabel = "weak", "ضعيف"
+    breakdown.sort(key=lambda x: x["points"], reverse=True)
+    return {"score": score, "verdict": verdict, "verdict_label": vlabel, "breakdown": breakdown}
+
+
 def early_launch_candidates(records=None, min_strategies=3):
     """مرشّحو "قبل الانطلاق": أسهم في مرحلة مبكرة ولم تصعد بعد، مرتّبة بقوة التأكيد.
 
