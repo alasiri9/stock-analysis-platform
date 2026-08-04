@@ -32,7 +32,7 @@
         <details style="border:1px solid var(--border);border-radius:12px;margin:10px 0;padding:6px 12px;background:var(--panel-2)">
           <summary style="cursor:pointer;list-style:none;display:flex;flex-wrap:wrap;align-items:center;gap:12px;padding:8px 2px">
             <span style="font-weight:900;font-size:32px;line-height:1;color:{{ score_color(v) }};min-width:58px">{{ v.score }}</span>
-            <a href="{{ url_for('stock_report', ticker=r.ticker) }}" style="font-weight:900;font-size:20px;letter-spacing:.5px">{{ r.ticker }}</a>
+            <span style="font-weight:900;font-size:20px;letter-spacing:.5px">{{ r.ticker }}</span>
             <span class="muted" style="flex:1 1 90px;min-width:0">{{ r.name or '' }}</span>
             {{ verdict_pill(v) }}
           </summary>
@@ -50,8 +50,11 @@
             {% endfor %}
             <p class="muted" style="margin-top:10px;font-size:13px">
               الدرجة تجميع آلي شفّاف من مدارس متعددة (تضافر الأدلة) — تعليمي وصفي فقط، لا توصية.
-              <a href="{{ url_for('stock_report', ticker=r.ticker) }}">التقرير الكامل للسهم ←</a>
             </p>
+            <div style="margin-top:8px">
+              التقرير الكامل للسهم
+              <a href="{{ url_for('stock_report', ticker=r.ticker) }}" style="display:inline-block;background:#7c6fe6;color:#fff;font-weight:900;padding:4px 16px;border-radius:8px;text-decoration:none;margin-inline-start:8px">اضغط هنا ←</a>
+            </div>
           </div>
         </details>
       {% endfor %}
