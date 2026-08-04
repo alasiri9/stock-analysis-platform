@@ -65,20 +65,6 @@ msSize = switch msSizeSel
     "كبير" => size.large
     "كبير جداً" => size.huge
     => size.tiny
-revSize = switch revSizeSel
-    "صغير جداً" => size.tiny
-    "صغير" => size.small
-    "عادي" => size.normal
-    "كبير" => size.large
-    "كبير جداً" => size.huge
-    => size.tiny
-sigSize = switch sigSizeSel
-    "صغير جداً" => size.tiny
-    "صغير" => size.small
-    "عادي" => size.normal
-    "كبير" => size.large
-    "كبير جداً" => size.huge
-    => size.small
 tSize = switch tblSize
     "صغير جداً" => size.tiny
     "صغير" => size.small
@@ -151,8 +137,16 @@ hammer = body > 0 and dnSh >= 2 * body and upSh <= 0.15 * rng and body <= 0.35 *
 star   = body > 0 and upSh >= 2 * body and dnSh <= 0.15 * rng and body <= 0.35 * rng and advanced
 bullRev = bullEngulf or hammer
 bearRev = bearEngulf or star
-plotshape(bullRev, "شمعة انعكاس صاعدة", style=shape.diamond, location=location.belowbar, color=bullRevCol, size=revSize)
-plotshape(bearRev, "شمعة انعكاس هابطة", style=shape.diamond, location=location.abovebar, color=bearRevCol, size=revSize)
+plotshape(bullRev and revSizeSel == "صغير جداً", "انعكاس صاعد ت", style=shape.diamond, location=location.belowbar, color=bullRevCol, size=size.tiny)
+plotshape(bullRev and revSizeSel == "صغير",      "انعكاس صاعد ص", style=shape.diamond, location=location.belowbar, color=bullRevCol, size=size.small)
+plotshape(bullRev and revSizeSel == "عادي",      "انعكاس صاعد ع", style=shape.diamond, location=location.belowbar, color=bullRevCol, size=size.normal)
+plotshape(bullRev and revSizeSel == "كبير",      "انعكاس صاعد ك", style=shape.diamond, location=location.belowbar, color=bullRevCol, size=size.large)
+plotshape(bullRev and revSizeSel == "كبير جداً", "انعكاس صاعد كك", style=shape.diamond, location=location.belowbar, color=bullRevCol, size=size.huge)
+plotshape(bearRev and revSizeSel == "صغير جداً", "انعكاس هابط ت", style=shape.diamond, location=location.abovebar, color=bearRevCol, size=size.tiny)
+plotshape(bearRev and revSizeSel == "صغير",      "انعكاس هابط ص", style=shape.diamond, location=location.abovebar, color=bearRevCol, size=size.small)
+plotshape(bearRev and revSizeSel == "عادي",      "انعكاس هابط ع", style=shape.diamond, location=location.abovebar, color=bearRevCol, size=size.normal)
+plotshape(bearRev and revSizeSel == "كبير",      "انعكاس هابط ك", style=shape.diamond, location=location.abovebar, color=bearRevCol, size=size.large)
+plotshape(bearRev and revSizeSel == "كبير جداً", "انعكاس هابط كك", style=shape.diamond, location=location.abovebar, color=bearRevCol, size=size.huge)
 
 // ============================== الزخم ======================================
 rsi = ta.rsi(close, rsiLen)
@@ -162,8 +156,16 @@ buyConf  = (bullRev ? 1 : 0) + (msTrend >= 0 ? 1 : 0) + (inGolden ? 1 : 0) + (rs
 sellConf = (bearRev ? 1 : 0) + (msTrend <= 0 ? 1 : 0) + (rsi > 40 ? 1 : 0) + (close < emaSlow ? 1 : 0)
 buySignal  = showSignals and bullRev and buyConf  >= minConf
 sellSignal = showSignals and bearRev and sellConf >= minConf
-plotshape(buySignal,  "Algomatix شراء", style=shape.triangleup,   location=location.belowbar, color=buyCol,  size=sigSize)
-plotshape(sellSignal, "Algomatix بيع",  style=shape.triangledown, location=location.abovebar, color=sellCol, size=sigSize)
+plotshape(buySignal and sigSizeSel == "صغير جداً", "شراء ت", style=shape.triangleup, location=location.belowbar, color=buyCol, size=size.tiny)
+plotshape(buySignal and sigSizeSel == "صغير",      "شراء ص", style=shape.triangleup, location=location.belowbar, color=buyCol, size=size.small)
+plotshape(buySignal and sigSizeSel == "عادي",      "شراء ع", style=shape.triangleup, location=location.belowbar, color=buyCol, size=size.normal)
+plotshape(buySignal and sigSizeSel == "كبير",      "شراء ك", style=shape.triangleup, location=location.belowbar, color=buyCol, size=size.large)
+plotshape(buySignal and sigSizeSel == "كبير جداً", "شراء كك", style=shape.triangleup, location=location.belowbar, color=buyCol, size=size.huge)
+plotshape(sellSignal and sigSizeSel == "صغير جداً", "بيع ت", style=shape.triangledown, location=location.abovebar, color=sellCol, size=size.tiny)
+plotshape(sellSignal and sigSizeSel == "صغير",      "بيع ص", style=shape.triangledown, location=location.abovebar, color=sellCol, size=size.small)
+plotshape(sellSignal and sigSizeSel == "عادي",      "بيع ع", style=shape.triangledown, location=location.abovebar, color=sellCol, size=size.normal)
+plotshape(sellSignal and sigSizeSel == "كبير",      "بيع ك", style=shape.triangledown, location=location.abovebar, color=sellCol, size=size.large)
+plotshape(sellSignal and sigSizeSel == "كبير جداً", "بيع كك", style=shape.triangledown, location=location.abovebar, color=sellCol, size=size.huge)
 alertcondition(buySignal,  "Algomatix — إشارة شراء", "تلاقٍ صعودي على {{ticker}} (تعليمي لا توصية)")
 alertcondition(sellSignal, "Algomatix — إشارة بيع",  "تلاقٍ هبوطي على {{ticker}} (تعليمي لا توصية)")
 
