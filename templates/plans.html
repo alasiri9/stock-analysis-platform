@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+{% set active = 'plans' %}
+{% block title %}خطط التداول الآلية — Algomatix{% endblock %}
+
+{% macro verdict_pill(p) %}
+  {% if p.verdict == 'ready' %}<span class="pill buy">✅ {{ p.verdict_label }}</span>
+  {% elif p.verdict == 'waiting' %}<span class="pill warn">⏳ {{ p.verdict_label }}</span>
+  {% else %}<span class="pill sell">⚠️ {{ p.verdict_label }}</span>{% endif %}
+{% endmacro %}
+
+{% macro money(v) %}{% if v is not none %}<span dir="ltr">{{ "%.2f $"|format(v) }}</span>{% else %}—{% endif %}{% endmacro %}
+
+{% block content %}
+  <section class="panel">
+    <div class="panel-head">
+      <h2>📋 خطط التداول الآلية
+        <span class="help-q" data-tip="نموذج خطة التداول (من دورة سلطان الفيفي) مطبّقاً آلياً على كل سهم: كل استراتيجية فنية تأخذ «درجة انطباق من 10»، ثم تُطبَّق قاعدة الدخول (3 استراتيجيات درجتها ≥7 + صفقة رابحة + بُعد عن المقاومة). تعليمي وصفي فقط — لا توصية بشراء أو بيع.">👁</span>
+      </h2>
+    </div>
+
+    <p class="muted" style="margin:2px 0 14px">
+      لكل سهم: جدول استراتيجيات مسجّل بالدرجات + جدول قواعد + خلاصة تعليمية. مرتّبة من الأجهز للأضعف.
+      اضغط أي سهم لعرض تفاصيل خطته. <b>تعليمي — لا توصية.</b>
+    </p>
+
+    <div class="stat-row tight">
+      <div class="stat-box"><div class="label" style="color:var(--green)">✅ مكتمل للدراسة</div><div class="value">{{ counts.ready }}</div></div>
+      <div class="stat-box"><div class="label" style="color:var(--gold)">⏳ انتظار</div><div class="value">{{ counts.waiting }}</div></div>
+      <div class="stat-box"><div class="label" style="color:var(--red)">⚠️ ضعيف</div><div class="value">{{ counts.weak }}</div></div>
+    </div>
+
+    {% if plans %}
+      {% for item in plans %}
+        {% set r = item.rec %}{% set p = item.plan %}
+        <details style="border:1px solid var(--border);border-radius:12px;margin:10px 0;padding:6px 12px;background:var(--panel-2)">
+          <summary style="cursor:pointer;list-style:none;display:flex;flex-wrap:wrap;align-items:center;gap:10px;padding:8px 2px">
+            <span style="font-weight:900;font-size:20px;letter-spacing:.5px">{{ r.ticker }}</span>
+            <span class="muted" style="flex:1 1 120px;min-width:0">{{ r.name or '' }}</span>
+            {{ verdict_pill(p) }}
+            <span class="pill">منطبقة {{ p.met_count }}</span>
+            <span class="pill">المجموع {{ p.total }}</span>
+          </summary>
+
+          <div style="padding:6px 0 12px">
+            {# ── جدول الاستراتيجيات (درجة الانطباق) ── #}
+            <h3 class="learn-group">🎯 الاستراتيجيات — درجة الانطباق</h3>
+            <div style="overflow-x:auto">
+              <table class="insider">
+                <thead><tr><th>الاستراتيجية</th><th>الدرجة</th><th>السبب</th></tr></thead>
+                <tbody>
+                  {% for s in p.strategies %}
+                    <tr>
+                      <td>{{ s.name }}</td>
+                      <td><span class="tbadge {{ s.status }}">{{ s.score }}/10</span></td>
+                      <td class="muted">{{ s.reason }}</td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+
+            {# ── جدول القواعد ── #}
+            <h3 class="learn-group" style="margin-top:16px">🧭 القواعد</h3>
+            <div style="overflow-x:auto">
+              <table class="insider">
+                <tbody>
+                  <tr><td>الدخول</td><td>{{ money(p.rules.entry) }}</td></tr>
+                  <tr><td>الهدف (أقرب مقاومة)</td><td>{{ money(p.rules.target) }}</td></tr>
+                  <tr><td>وقف الخسارة (أقرب دعم)</td><td>{{ money(p.rules.stop) }}</td></tr>
+                  <tr>
+                    <td>الصفقة الرابحة (عائد/مخاطرة)</td>
+                    <td>
+                      {% if p.rules.risk_reward is not none %}
+                        {% if p.rules.rr_quality == 'weak' %}<span style="color:var(--red)">⚠️ {{ "%.1f"|format(p.rules.risk_reward) }} (ضعيفة)</span>
+                        {% else %}<span style="color:var(--green)">✅ {{ "%.1f"|format(p.rules.risk_reward) }} (العائد يفوق المخاطرة)</span>{% endif %}
+                      {% else %}—{% endif %}
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>الاتجاه</td>
+                    <td>{% if p.rules.trend == 'bull' %}🟢 صاعد{% elif p.rules.trend == 'bear' %}🔴 هابط{% else %}⚪ محايد{% endif %}</td>
+                  </tr>
+                  <tr>
+                    <td>قرب المقاومة (قاعدة الانتظار)</td>
+                    <td>
+                      {% if p.rules.near_resistance %}<span style="color:var(--gold)">⚠️ نعم — {{ money(p.rules.near_resistance.level) }}</span>
+                      {% else %}لا — الأفق مفتوح{% endif %}
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>أقوى من السوق</td>
+                    <td>{% if p.rules.rel_strength is not none %}<span dir="ltr" style="color:{{ 'var(--green)' if p.rules.rel_strength >= 0 else 'var(--red)' }}">{{ "%+.0f"|format(p.rules.rel_strength) }}%</span>{% else %}—{% endif %}</td>
+                  </tr>
+                  <tr><td>الجودة المالية (Piotroski)</td><td>{{ p.rules.piotroski if p.rules.piotroski is not none else '—' }}/9</td></tr>
+                  <tr><td>النمو (Catalyst)</td><td>{{ "%.0f"|format(p.rules.catalyst) if p.rules.catalyst is not none else '—' }}/100</td></tr>
+                </tbody>
+              </table>
+            </div>
+
+            {% if p.wait_reasons %}
+              <div class="empty" style="margin-top:12px;text-align:right">
+                <b>سبب الانتظار:</b> {{ p.wait_reasons | join(' · ') }}
+              </div>
+            {% endif %}
+
+            <p class="muted" style="margin-top:12px">
+              الدرجة تقدير آلي منضبط من حالة المؤشر (لا حكم بشري) — سبب كل درجة موضّح أعلاه. تعليمي وصفي فقط، لا توصية.
+              <a href="{{ url_for('stock_report', ticker=r.ticker) }}">التقرير الكامل للسهم ←</a>
+            </p>
+          </div>
+        </details>
+      {% endfor %}
+    {% else %}
+      <div class="empty">لا تتوفّر خطط بعد — تظهر بعد أول تحديث ليلي (يحسب المؤشرات لكل الأسهم).</div>
+    {% endif %}
+  </section>
+{% endblock %}
