@@ -1245,16 +1245,18 @@ def create_app():
         records, latest = screener.load_records()
         items = [{"rec": r, "ms": r["structure"]} for r in records if r.get("structure")]
 
-        # الترتيب: إنذارات الانعكاس (CHOCH) أولاً، ثم إعادة الاختبار، ثم استمرار (BOS)، ثم داخل الهيكل
+        # الترتيب: انعكاس (CHOCH) ⇒ إعادة اختبار مؤكّدة ⇒ إعادة اختبار جارية ⇒ استمرار (BOS) ⇒ داخل الهيكل
         def rank(x):
             ms = x["ms"]
             if ms.get("event") == "CHOCH":
                 return 0
-            if ms.get("retest"):
+            if ms.get("retest_state") == "confirmed":
                 return 1
-            if ms.get("event") == "BOS":
+            if ms.get("retest_state") == "testing":
                 return 2
-            return 3
+            if ms.get("event") == "BOS":
+                return 3
+            return 4
         items.sort(key=rank)
 
         counts = {

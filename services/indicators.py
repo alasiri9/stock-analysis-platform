@@ -944,6 +944,44 @@ def _swing_points(rows, wing=2):
     return pts
 
 
+def _retest_state(rows, level, direction, atr_v, window=25, touch_bars=8):
+    """كشف «إعادة الاختبار» المتقدّم (Break & Retest): اختراق ⇒ امتداد ⇒ عودة لاختبار
+    المستوى المكسور ⇒ صمود/ارتداد. (بحث متحقَّق 2026-08: FXOpen · Capital.com · ACY.)
+
+    القاعدة الاحترافية: لا يكفي أن السعر «قرب المستوى» — لا بد أن يكون قد **اخترق
+    وامتدّ** فعلاً، ثم **عاد** لملامسة المستوى (صار دعماً/مقاومة)، وما زال **صامداً**،
+    ويُفضّل أن يكون **ارتد** عنه (تأكيد).
+    يُرجع 'confirmed' (ارتداد مؤكّد — أفضل دخول) · 'testing' (يختبر الآن) · None.
+    """
+    if not level or not atr_v or direction not in ("up", "down"):
+        return None
+    seg = rows[-window:] if len(rows) > window else rows
+    if len(seg) < 6:
+        return None
+    highs = [r["high"] for r in seg]
+    lows = [r["low"] for r in seg]
+    closes = [r["close"] for r in seg]
+    price = closes[-1]
+    tol = 0.6 * atr_v
+    near_band = 2.5 * atr_v   # يجب أن يكون السعر ما زال قريباً من المستوى (إعادة اختبار حالية لا منتهية)
+    if direction == "up":
+        if price < level or (price - level) > near_band:    # كسر تحته، أو ابتعد كثيراً ⇒ لا اختبار حالٍ
+            return None
+        pull_low = min(lows[-touch_bars:])
+        if pull_low > level + tol:                          # لم يعُد للمس منطقة المستوى مؤخراً
+            return None
+        bounced = (price - pull_low) >= 0.5 * atr_v and closes[-1] >= closes[-2]
+        return "confirmed" if bounced else "testing"
+    else:
+        if price > level or (level - price) > near_band:
+            return None
+        pull_high = max(highs[-touch_bars:])
+        if pull_high < level - tol:
+            return None
+        bounced = (pull_high - price) >= 0.5 * atr_v and closes[-1] <= closes[-2]
+        return "confirmed" if bounced else "testing"
+
+
 def market_structure(candles, wing=2):
     """قراءة هيكل السوق من القمم/القيعان المتعاقبة (SMC).
 
@@ -997,14 +1035,17 @@ def market_structure(candles, wing=2):
         elif last_low is not None and price < last_low:
             event, event_dir, level = "BOS", "down", last_low
 
-    # إعادة الاختبار: عاد السعر قرب المستوى المكسور (ضمن ATR) وما زال في جهة الكسر
-    retest = False
+    # إعادة الاختبار الهيكلي (Break & Retest): في الاتجاه الصاعد = ارتداد من آخر قاع صاعد
+    # (HL) كدعم؛ في الهابط = ارتداد من آخر قمة هابطة (LH) كمقاومة. الأصحّ هيكلياً من اختبار
+    # القمة المخترَقة، لأنه يلتقط «اشترِ الانخفاض ضمن الاتجاه» بعد الامتداد والعودة.
     atr_v = atr(candles)
-    if event and level and atr_v:
-        if event_dir == "up":
-            retest = price >= level and (price - level) <= atr_v
-        elif event_dir == "down":
-            retest = price <= level and (level - price) <= atr_v
+    if trend == "up" and last_low is not None:
+        retest_state = _retest_state(rows, last_low, "up", atr_v)
+    elif trend == "down" and last_high is not None:
+        retest_state = _retest_state(rows, last_high, "down", atr_v)
+    else:
+        retest_state = None
+    retest = retest_state is not None
 
     # الحالة اللونية + التسمية التعليمية
     status = "bull" if event_dir == "up" else ("bear" if event_dir == "down" else "neutral")
@@ -1024,6 +1065,7 @@ def market_structure(candles, wing=2):
         "event_label": event_label,
         "level": level,
         "retest": retest,
+        "retest_state": retest_state,   # 'confirmed' (ارتداد مؤكّد) · 'testing' (يختبر الآن) · None
         "status": status,
         "last_high": last_high,
         "last_low": last_low,
