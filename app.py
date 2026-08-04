@@ -1269,6 +1269,21 @@ def create_app():
         return render_template("structure.html", items=items, counts=counts,
                                latest=latest, active="structure")
 
+    @app.route("/algomatix")
+    def algomatix():
+        # 👑 مؤشر Algomatix: درجة فرصة موحّدة (0–100) لكل سهم، مرتّبة من الأقوى — من الكاش بلا API.
+        records, latest = screener.load_records()
+        items = [{"rec": r, "algx": screener.algomatix_score(r)} for r in records]
+        items.sort(key=lambda x: x["algx"]["score"], reverse=True)
+        counts = {
+            "strong": sum(1 for x in items if x["algx"]["verdict"] == "strong"),
+            "good": sum(1 for x in items if x["algx"]["verdict"] == "good"),
+            "neutral": sum(1 for x in items if x["algx"]["verdict"] == "neutral"),
+            "weak": sum(1 for x in items if x["algx"]["verdict"] == "weak"),
+        }
+        return render_template("algomatix.html", items=items, counts=counts,
+                               latest=latest, active="algomatix")
+
     @app.route("/earnings")
     def earnings():
         # رزنامة الأرباح: الأسهم ذات موعد أرباح قادم، مرتّبة بالأقرب (من الكاش — بلا استدعاء API)

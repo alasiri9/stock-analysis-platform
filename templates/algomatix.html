@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% set active = 'algomatix' %}
+{% block title %}مؤشر Algomatix — Algomatix{% endblock %}
+
+{% macro verdict_pill(v) %}
+  {% if v.verdict == 'strong' %}<span class="pill buy">🟢 {{ v.verdict_label }}</span>
+  {% elif v.verdict == 'good' %}<span class="pill warn">🟡 {{ v.verdict_label }}</span>
+  {% elif v.verdict == 'neutral' %}<span class="pill">⚪ {{ v.verdict_label }}</span>
+  {% else %}<span class="pill sell">🔴 {{ v.verdict_label }}</span>{% endif %}
+{% endmacro %}
+
+{% macro score_color(v) %}{{ 'var(--green)' if v.verdict == 'strong' else ('var(--gold)' if v.verdict == 'good' else ('var(--red)' if v.verdict == 'weak' else 'var(--muted)')) }}{% endmacro %}
+
+{% block content %}
+  <section class="panel">
+    <div class="panel-head">
+      <h2>👑 مؤشر Algomatix
+        <span class="help-q" data-tip="مؤشر Algomatix: درجة فرصة موحّدة (0–100) خاصة بالمنصة، تجمع 8 مدارس بأوزان معتمدة: هيكل السوق (18) · الجودة والنمو (18) · الاتجاه (16) · الزخم (12) · السيولة (12) · المستويات (10) · القوة النسبية (8) · السلوك السعري (6). كلما زادت الدرجة، زاد تضافر الأدلة. تعليمي وصفي فقط — لا توصية بشراء أو بيع.">👁</span>
+      </h2>
+    </div>
+
+    <p class="muted" style="margin:2px 0 12px">
+      درجة واحدة ذكية لكل سهم تجمع أفضل المدارس — مرتّبة من الأقوى للأضعف. اضغط أي سهم لعرض تفصيل درجته. <b>تعليمي — لا توصية.</b>
+    </p>
+
+    <div class="stat-row tight">
+      <div class="stat-box"><div class="label" style="color:var(--green)">🟢 قوية (70+)</div><div class="value">{{ counts.strong }}</div></div>
+      <div class="stat-box"><div class="label" style="color:var(--gold)">🟡 جيدة (55–69)</div><div class="value">{{ counts.good }}</div></div>
+      <div class="stat-box"><div class="label">⚪ محايد (40–54)</div><div class="value">{{ counts.neutral }}</div></div>
+      <div class="stat-box"><div class="label" style="color:var(--red)">🔴 ضعيف</div><div class="value">{{ counts.weak }}</div></div>
+    </div>
+
+    {% if items %}
+      {% for item in items %}
+        {% set r = item.rec %}{% set v = item.algx %}
+        <details style="border:1px solid var(--border);border-radius:12px;margin:10px 0;padding:6px 12px;background:var(--panel-2)">
+          <summary style="cursor:pointer;list-style:none;display:flex;flex-wrap:wrap;align-items:center;gap:12px;padding:8px 2px">
+            <span style="font-weight:900;font-size:32px;line-height:1;color:{{ score_color(v) }};min-width:58px">{{ v.score }}</span>
+            <a href="{{ url_for('stock_report', ticker=r.ticker) }}" style="font-weight:900;font-size:20px;letter-spacing:.5px">{{ r.ticker }}</a>
+            <span class="muted" style="flex:1 1 90px;min-width:0">{{ r.name or '' }}</span>
+            {{ verdict_pill(v) }}
+          </summary>
+
+          <div style="padding:8px 0 12px">
+            <div class="muted" style="font-size:13.5px;margin-bottom:8px">تفصيل الدرجة (مساهمة كل مدرسة من وزنها):</div>
+            {% for b in v.breakdown %}
+              <div style="display:flex;align-items:center;gap:10px;margin:5px 0">
+                <span style="flex:0 0 130px;font-size:14px">{{ b.label }}</span>
+                <span style="flex:1 1 auto;height:12px;background:var(--border);border-radius:6px;overflow:hidden;min-width:60px">
+                  <span style="display:block;height:100%;width:{{ (b.sub * 100)|round }}%;background:{{ 'var(--green)' if b.sub >= 0.66 else ('var(--gold)' if b.sub >= 0.4 else 'var(--red)') }}"></span>
+                </span>
+                <span style="flex:0 0 62px;text-align:left;font-size:14px" dir="ltr"><b>{{ b.points }}</b>/{{ b.weight }}</span>
+              </div>
+            {% endfor %}
+            <p class="muted" style="margin-top:10px;font-size:13px">
+              الدرجة تجميع آلي شفّاف من مدارس متعددة (تضافر الأدلة) — تعليمي وصفي فقط، لا توصية.
+              <a href="{{ url_for('stock_report', ticker=r.ticker) }}">التقرير الكامل للسهم ←</a>
+            </p>
+          </div>
+        </details>
+      {% endfor %}
+    {% else %}
+      <div class="empty">لا تتوفّر درجات بعد — تظهر بعد أول تحديث ليلي (يحسب كل المدارس لكل الأسهم).</div>
+    {% endif %}
+  </section>
+{% endblock %}

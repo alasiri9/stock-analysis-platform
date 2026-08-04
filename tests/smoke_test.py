@@ -48,7 +48,7 @@ PAGES = [
     "/", "/gems", "/leaders", "/prelaunch", "/signals", "/learn",
     "/health", "/dashboard", "/business", "/settings", "/pulse", "/movers",
     "/earnings", "/daily-report", "/radar", "/news", "/flow", "/performance",
-    "/plans", "/structure",
+    "/plans", "/structure", "/algomatix",
     "/calculator", "/compare", "/watchlist", "/alerts", "/portfolio",
     "/stock", "/stock/AAPL", "/messages", "/report", "/disclaimer", "/login",
 ]
