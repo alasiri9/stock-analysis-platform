@@ -109,8 +109,8 @@ buyConf  = (bullRev ? 1 : 0) + (msTrend >= 0 ? 1 : 0) + (inGolden ? 1 : 0) + (rs
 sellConf = (bearRev ? 1 : 0) + (msTrend <= 0 ? 1 : 0) + (rsi > 40 ? 1 : 0) + (close < emaSlow ? 1 : 0)
 buySignal  = showSignals and bullRev and buyConf  >= minConf
 sellSignal = showSignals and bearRev and sellConf >= minConf
-plotshape(buySignal,  "Algomatix شراء", style=shape.triangleup,   location=location.belowbar, color=color.new(color.green, 0), text="Algomatix", textcolor=color.white, size=size.small)
-plotshape(sellSignal, "Algomatix بيع",  style=shape.triangledown, location=location.abovebar, color=color.new(color.red,   0), text="Algomatix", textcolor=color.white, size=size.small)
+plotshape(buySignal,  "Algomatix شراء", style=shape.triangleup,   location=location.belowbar, color=color.new(color.green, 0), size=size.small)
+plotshape(sellSignal, "Algomatix بيع",  style=shape.triangledown, location=location.abovebar, color=color.new(color.red,   0), size=size.small)
 alertcondition(buySignal,  "Algomatix — إشارة شراء", "تلاقٍ صعودي على {{ticker}} (تعليمي لا توصية)")
 alertcondition(sellSignal, "Algomatix — إشارة بيع",  "تلاقٍ هبوطي على {{ticker}} (تعليمي لا توصية)")
 
