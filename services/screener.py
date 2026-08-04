@@ -927,8 +927,12 @@ def refresh_cache(time_budget=20):
                 continue
 
             # القوة النسبية = تفوّق زخم السهم على زخم السوق عن نفس الفترة (None ≠ 0)
+            # نضبط المفتاح دائماً (None لو تعذّر الحساب) حتى يبقى مخطّط السجل ثابتاً ولا
+            # يكسر أي مستهلك يقرأه مباشرةً (مثل صفحة السهم).
             if record.get("mom_63d") is not None and spy_mom is not None:
                 record["rel_strength"] = record["mom_63d"] - spy_mom
+            else:
+                record["rel_strength"] = None
 
             # موعد الأرباح القادم (لو ضمن نافذة التنبيه) — تحذير من التذبذب المرتفع
             ed = earnings_map.get(ticker)
