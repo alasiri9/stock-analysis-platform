@@ -830,10 +830,33 @@ def reversal_pattern(candles):
     cur_red = c < o
     prev_green = prev["close"] > prev["open"]
     prev_red = prev["close"] < prev["open"]
+    prev_mid = (prev["open"] + prev["close"]) / 2.0
+    prev_body = abs(prev["close"] - prev["open"])
+
+    # الشمعة قبل السابقة (للنماذج الثلاثية: نجمة الصباح/المساء)
+    prev2 = rows[-3]
+    prev2_green = prev2["close"] > prev2["open"]
+    prev2_red = prev2["close"] < prev2["open"]
+    prev2_body = abs(prev2["close"] - prev2["open"])
+    prev2_mid = (prev2["open"] + prev2["close"]) / 2.0
 
     # اتجاه قصير سابق (إغلاق ما قبل الشمعة الحالية مقابل إغلاق ~٣ جلسات قبله)
     trend_down = prev["close"] < rows[-5]["close"]
     trend_up = prev["close"] > rows[-5]["close"]
+
+    # 0أ) نجمة الصباح: ثلاث شموع (هبوط كبير ⇒ نجمة صغيرة ⇒ صعود قوي يُغلق فوق منتصف الأولى)
+    if (trend_down and prev2_red and prev2_body > 0
+            and prev_body <= 0.5 * prev2_body
+            and cur_green and body >= 0.5 * rng and c > prev2_mid):
+        return {"pattern": "نجمة الصباح", "status": "bull",
+                "note": "ثلاث شموع: هبوط ⇒ تردّد ⇒ صعود قوي — انعكاس صعودي محتمل"}
+
+    # 0ب) نجمة المساء: ثلاث شموع (صعود كبير ⇒ نجمة صغيرة ⇒ هبوط قوي يُغلق تحت منتصف الأولى)
+    if (trend_up and prev2_green and prev2_body > 0
+            and prev_body <= 0.5 * prev2_body
+            and cur_red and body >= 0.5 * rng and c < prev2_mid):
+        return {"pattern": "نجمة المساء", "status": "bear",
+                "note": "ثلاث شموع: صعود ⇒ تردّد ⇒ هبوط قوي — انعكاس هبوطي محتمل"}
 
     # 1) الابتلاع الصاعد: شمعة خضراء تبتلع جسم شمعة حمراء قبلها (انعكاس صعودي كلاسيكي)
     if cur_green and prev_red and o <= prev["close"] and c >= prev["open"] and body >= 0.5 * rng:
@@ -844,6 +867,18 @@ def reversal_pattern(candles):
     if cur_red and prev_green and o >= prev["close"] and c <= prev["open"] and body >= 0.5 * rng:
         return {"pattern": "ابتلاع هابط", "status": "bear",
                 "note": "شمعة هبوط ابتلعت صعود أمس — إشارة انعكاس هبوطي محتملة"}
+
+    # 2أ) خط المخترق: بعد هبوط، شمعة خضراء تفتح تحت قاع أمس وتُغلق فوق منتصف جسمه (دون ابتلاعه)
+    if (trend_down and prev_red and cur_green and o < prev["low"]
+            and prev_mid < c < prev["open"] and body >= 0.5 * rng):
+        return {"pattern": "خط المخترق", "status": "bull",
+                "note": "فتحت تحت أمس وأغلقت فوق منتصفه — انعكاس صعودي محتمل"}
+
+    # 2ب) الغيمة القاتمة: بعد صعود، شمعة حمراء تفتح فوق قمة أمس وتُغلق تحت منتصف جسمه
+    if (trend_up and prev_green and cur_red and o > prev["high"]
+            and prev["open"] < c < prev_mid and body >= 0.5 * rng):
+        return {"pattern": "الغيمة القاتمة", "status": "bear",
+                "note": "فتحت فوق أمس وأغلقت تحت منتصفه — انعكاس هبوطي محتمل"}
 
     # 3) المطرقة: جسم صغير أعلى الشمعة وظلّ سفلي طويل بعد هبوط قصير (رفض للنزول)
     if body > 0 and lower >= 2 * body and upper <= 0.15 * rng and body <= 0.35 * rng and trend_down:
