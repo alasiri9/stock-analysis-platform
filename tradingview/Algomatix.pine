@@ -186,24 +186,25 @@ if showVP and barstate.islast
                 else
                     vaBot := vaBot - 1
                     accum := accum + dnNext
-            x1 = bar_index + 2
+            x1  = bar_index + 2
+            gap = binSz * 0.16
             for r = 0 to vpRows - 1
                 binBot = vpLo + r * binSz
                 binTop = binBot + binSz
+                yTop = binTop - gap
+                yBot = binBot + gap
                 upV = array.get(upArr, r)
                 dnV = array.get(dnArr, r)
                 totV = upV + dnV
                 wTot = int(math.round(vpWidth * totV / maxVol))
                 if wTot > 0
-                    inVA = r <= vaTop and r >= vaBot
+                    isPoc = r == pocIdx
                     wUp = int(math.round(wTot * (upV / totV)))
                     wDn = wTot - wUp
                     if wUp > 0
-                        upC = r == pocIdx ? vpPocCol : (showVA and not inVA ? color.new(vpUpCol, 78) : vpUpCol)
-                        array.push(vpBoxes, box.new(x1, binTop, x1 + wUp, binBot, border_width=0, bgcolor=upC))
+                        array.push(vpBoxes, box.new(x1, yTop, x1 + wUp, yBot, border_width=0, bgcolor=(isPoc ? vpPocCol : vpUpCol)))
                     if wDn > 0
-                        dnC = r == pocIdx ? vpPocCol : (showVA and not inVA ? color.new(vpDnCol, 78) : vpDnCol)
-                        array.push(vpBoxes, box.new(x1 + wUp, binTop, x1 + wUp + wDn, binBot, border_width=0, bgcolor=dnC))
+                        array.push(vpBoxes, box.new(x1 + wUp, yTop, x1 + wUp + wDn, yBot, border_width=0, bgcolor=(isPoc ? vpPocCol : vpDnCol)))
             pocPrice = vpLo + (pocIdx + 0.5) * binSz
             if showPocLine
                 array.push(vpLines, line.new(bar_index - look, pocPrice, x1 + vpWidth, pocPrice, color=vpPocCol, width=vpPocWidth))
