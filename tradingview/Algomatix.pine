@@ -54,8 +54,8 @@ tblBullCol   = input.color(#22c55e, "لون الإيجابي",  group=gTbl)
 tblBearCol   = input.color(#ef4444, "لون السلبي",    group=gTbl)
 tblGoldCol   = input.color(#eab308, "لون الذهبي",    group=gTbl)
 
-gVP = "⑦ بروفايل الحجم (Volume Profile)"
-showVP      = input.bool(true, "إظهار بروفايل الحجم", group=gVP)
+gVP = "⑦ البروفايل — أعمدة الحجم"
+showVP      = input.bool(true, "إظهار بروفايل الأعمدة", group=gVP)
 vpLook      = input.int(120, "عدد الشموع (النافذة)", minval=20, maxval=500, group=gVP)
 vpRows      = input.int(40,  "عدد الشرائح (دقة القراءة)", minval=6, maxval=80, group=gVP)
 vpWidth     = input.int(60,  "طول الأعمدة (بالشموع)", minval=10, maxval=200, group=gVP)
@@ -63,9 +63,14 @@ vpUpCol     = input.color(color.new(#2962ff, 15), "لون حجم الصعود", 
 vpDnCol     = input.color(color.new(#b8860b, 15), "لون حجم الهبوط", group=gVP)
 showVA      = input.bool(true, "إظهار منطقة القيمة (70%)", group=gVP)
 vpValCol    = input.color(color.new(#eab308, 20), "لون حدود منطقة القيمة", group=gVP)
-vpPocCol    = input.color(#e879f9, "لون POC (نقطة التحكّم)", group=gVP)
-vpPocWidth  = input.int(2, "سماكة خط POC", minval=1, maxval=5, group=gVP)
-showPocLine = input.bool(true, "إظهار خط POC ممتداً", group=gVP)
+vpPocCol    = input.color(#e879f9, "لون POC الأعمدة", group=gVP)
+vpPocWidth  = input.int(2, "سماكة POC الأعمدة", minval=1, maxval=5, group=gVP)
+showPocLine = input.bool(true, "إظهار خط POC الأعمدة", group=gVP)
+
+gDot = "⑧ POC — خط منقّط (أبو نقط)"
+showDotPoc  = input.bool(true, "إظهار الخط المنقّط", group=gDot)
+dotPocCol   = input.color(color.fuchsia, "لون الخط المنقّط", group=gDot)
+dotPocWidth = input.int(1, "سماكة الخط المنقّط", minval=1, maxval=5, group=gDot)
 
 // ===================== تحويل خيارات الحجم إلى قيم ==========================
 msSize = switch msSizeSel
@@ -213,6 +218,10 @@ if showVP and barstate.islast
                 vlo = vpLo + vaBot * binSz
                 array.push(vpLines, line.new(bar_index - look, vah, xR, vah, color=vpValCol, width=1, style=line.style_dashed))
                 array.push(vpLines, line.new(bar_index - look, vlo, xR, vlo, color=vpValCol, width=1, style=line.style_dashed))
+
+// ===================== خط POC المنقّط (أبو نقط) — بسيط =====================
+dotPoc = ta.valuewhen(volume >= ta.highest(volume, vpLook), hl2, 0)
+plot(showDotPoc ? dotPoc : na, "POC منقّط", color=dotPocCol, style=plot.style_circles, linewidth=dotPocWidth)
 
 // ======================= شموع الانعكاس =====================================
 bodyHi = math.max(open, close)
