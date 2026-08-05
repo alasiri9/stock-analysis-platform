@@ -69,6 +69,7 @@ showPocLine = input.bool(true, "إظهار خط POC الأعمدة", group=gVP)
 
 gDot = "⑧ POC — خط منقّط (أبو نقط)"
 showDotPoc  = input.bool(true, "إظهار الخط المنقّط", group=gDot)
+dotLook     = input.int(50, "نافذة الخط المنقّط (شموع)", minval=10, maxval=300, group=gDot)
 dotPocCol   = input.color(color.fuchsia, "لون الخط المنقّط", group=gDot)
 dotPocWidth = input.int(1, "سماكة الخط المنقّط", minval=1, maxval=5, group=gDot)
 
@@ -220,7 +221,7 @@ if showVP and barstate.islast
                 array.push(vpLines, line.new(bar_index - look, vlo, xR, vlo, color=vpValCol, width=1, style=line.style_dashed))
 
 // ===================== خط POC المنقّط (أبو نقط) — بسيط =====================
-dotPoc = ta.valuewhen(volume >= ta.highest(volume, vpLook), hl2, 0)
+dotPoc = ta.valuewhen(volume >= ta.highest(volume, dotLook), hl2, 0)
 plot(showDotPoc ? dotPoc : na, "POC منقّط", color=dotPocCol, style=plot.style_circles, linewidth=dotPocWidth)
 
 // ======================= شموع الانعكاس =====================================
