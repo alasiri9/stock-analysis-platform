@@ -2,11 +2,11 @@
 // ============================================================================
 //  Algomatix — مؤشر التلاقي (Confluence) الخاص بمنصة Algomatix
 //    • هيكل السوق (BOS/CHoCH) · الاتجاه (EMA) · فيبوناتشي (المنطقة الذهبية)
-//    • البروفايل الحجمي (POC) · شموع الانعكاس · الزخم (RSI) · تلاقي الإشارات
+//    • شموع الانعكاس · الزخم (RSI) · تلاقي الإشارات
 //    • تحكّم كامل: ألوان · سماكة · أحجام · موضع الجدول.
 //  ⚠️ تعليمي وصفي فقط — ليس توصية بشراء أو بيع.
 // ============================================================================
-indicator("Algomatix", overlay=true, max_labels_count=500, max_boxes_count=500, max_lines_count=100)
+indicator("Algomatix", overlay=true, max_labels_count=500)
 
 // ============================== المدخلات ====================================
 gMS = "① هيكل السوق"
@@ -53,19 +53,6 @@ tblLabelCol  = input.color(#a7c0e8, "لون التسميات",  group=gTbl)
 tblBullCol   = input.color(#22c55e, "لون الإيجابي",  group=gTbl)
 tblBearCol   = input.color(#ef4444, "لون السلبي",    group=gTbl)
 tblGoldCol   = input.color(#eab308, "لون الذهبي",    group=gTbl)
-
-gVP = "⑦ البروفايل — أعمدة الحجم"
-showVP      = input.bool(true, "إظهار بروفايل الأعمدة", group=gVP)
-vpLook      = input.int(120, "عدد الشموع (النافذة)", minval=20, maxval=500, group=gVP)
-vpRows      = input.int(40,  "عدد الشرائح (دقة القراءة)", minval=6, maxval=80, group=gVP)
-vpWidth     = input.int(60,  "طول الأعمدة (بالشموع)", minval=10, maxval=200, group=gVP)
-vpUpCol     = input.color(color.new(#2962ff, 15), "لون حجم الصعود", group=gVP)
-vpDnCol     = input.color(color.new(#b8860b, 15), "لون حجم الهبوط", group=gVP)
-showVA      = input.bool(true, "إظهار منطقة القيمة (70%)", group=gVP)
-vpValCol    = input.color(color.new(#eab308, 20), "لون حدود منطقة القيمة", group=gVP)
-vpPocCol    = input.color(#e879f9, "لون POC الأعمدة", group=gVP)
-vpPocWidth  = input.int(2, "سماكة POC الأعمدة", minval=1, maxval=5, group=gVP)
-showPocLine = input.bool(true, "إظهار خط POC الأعمدة", group=gVP)
 
 // ===================== تحويل خيارات الحجم إلى قيم ==========================
 msSize = switch msSizeSel
@@ -127,92 +114,6 @@ p50  = plot(showFib ? gold50  : na, "فيبو 50%",   color=fib50Col)
 p618 = plot(showFib ? gold618 : na, "فيبو 61.8%", color=fib618Col)
 fill(p50, p618, color=goldFillCol, title="المنطقة الذهبية")
 inGolden = close <= gold50 and close >= gold618
-
-// ============ البروفايل الحجمي الكامل (Volume Profile) + POC =================
-//  يوزّع حجم كل شمعة على شرائح السعر التي يغطيها مداها (قراءة دقيقة) ثم يرسم
-//  أعمدة أفقية (صعود/هبوط) + POC (أكبر حجم) + منطقة القيمة (70%).
-vpHi = ta.highest(high, vpLook)
-vpLo = ta.lowest(low,  vpLook)
-var box[]  vpBoxes = array.new_box()
-var line[] vpLines = array.new_line()
-if showVP and barstate.islast
-    for bx in vpBoxes
-        box.delete(bx)
-    array.clear(vpBoxes)
-    for ln in vpLines
-        line.delete(ln)
-    array.clear(vpLines)
-    binSz = (vpHi - vpLo) / vpRows
-    look  = int(math.min(vpLook, bar_index))
-    if binSz > 0 and look > 0
-        upArr = array.new_float(vpRows, 0.0)
-        dnArr = array.new_float(vpRows, 0.0)
-        for i = 0 to look - 1
-            bH = high[i]
-            bL = low[i]
-            vv = na(volume[i]) ? 0.0 : volume[i]
-            rngB = bH - bL
-            isUp = close[i] >= open[i]
-            for r = 0 to vpRows - 1
-                binBot = vpLo + r * binSz
-                binTop = binBot + binSz
-                ov = math.min(bH, binTop) - math.max(bL, binBot)
-                if ov > 0
-                    frac = rngB > 0 ? ov / rngB : 1.0
-                    vp = vv * frac
-                    if isUp
-                        array.set(upArr, r, array.get(upArr, r) + vp)
-                    else
-                        array.set(dnArr, r, array.get(dnArr, r) + vp)
-        totArr = array.new_float(vpRows, 0.0)
-        for r = 0 to vpRows - 1
-            array.set(totArr, r, array.get(upArr, r) + array.get(dnArr, r))
-        maxVol   = array.max(totArr)
-        totalVol = array.sum(totArr)
-        if maxVol > 0
-            pocIdx = array.indexof(totArr, maxVol)
-            vaTop = pocIdx
-            vaBot = pocIdx
-            accum = array.get(totArr, pocIdx)
-            target = totalVol * 0.70
-            while accum < target
-                upNext = vaTop < vpRows - 1 ? array.get(totArr, vaTop + 1) : -1.0
-                dnNext = vaBot > 0          ? array.get(totArr, vaBot - 1) : -1.0
-                if upNext < 0 and dnNext < 0
-                    break
-                if upNext >= dnNext
-                    vaTop := vaTop + 1
-                    accum := accum + upNext
-                else
-                    vaBot := vaBot - 1
-                    accum := accum + dnNext
-            xR  = bar_index + 2 + vpWidth
-            gap = binSz * 0.16
-            for r = 0 to vpRows - 1
-                binBot = vpLo + r * binSz
-                binTop = binBot + binSz
-                yTop = binTop - gap
-                yBot = binBot + gap
-                upV = array.get(upArr, r)
-                dnV = array.get(dnArr, r)
-                totV = upV + dnV
-                wTot = int(math.round(vpWidth * totV / maxVol))
-                if wTot > 0
-                    isPoc = r == pocIdx
-                    wUp = int(math.round(wTot * (upV / totV)))
-                    wDn = wTot - wUp
-                    if wUp > 0
-                        array.push(vpBoxes, box.new(xR - wUp, yTop, xR, yBot, border_width=0, bgcolor=(isPoc ? vpPocCol : vpUpCol)))
-                    if wDn > 0
-                        array.push(vpBoxes, box.new(xR - wTot, yTop, xR - wUp, yBot, border_width=0, bgcolor=(isPoc ? vpPocCol : vpDnCol)))
-            pocPrice = vpLo + (pocIdx + 0.5) * binSz
-            if showPocLine
-                array.push(vpLines, line.new(bar_index - look, pocPrice, xR, pocPrice, color=vpPocCol, width=vpPocWidth))
-            if showVA
-                vah = vpLo + (vaTop + 1) * binSz
-                vlo = vpLo + vaBot * binSz
-                array.push(vpLines, line.new(bar_index - look, vah, xR, vah, color=vpValCol, width=1, style=line.style_dashed))
-                array.push(vpLines, line.new(bar_index - look, vlo, xR, vlo, color=vpValCol, width=1, style=line.style_dashed))
 
 // ======================= شموع الانعكاس =====================================
 bodyHi = math.max(open, close)
