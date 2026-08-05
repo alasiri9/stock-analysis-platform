@@ -57,10 +57,10 @@ tblGoldCol   = input.color(#eab308, "لون الذهبي",    group=gTbl)
 gVP = "⑦ بروفايل الحجم (Volume Profile)"
 showVP      = input.bool(true, "إظهار بروفايل الحجم", group=gVP)
 vpLook      = input.int(120, "عدد الشموع (النافذة)", minval=20, maxval=500, group=gVP)
-vpRows      = input.int(24,  "عدد الشرائح (دقة القراءة)", minval=6, maxval=60, group=gVP)
+vpRows      = input.int(40,  "عدد الشرائح (دقة القراءة)", minval=6, maxval=80, group=gVP)
 vpWidth     = input.int(60,  "طول الأعمدة (بالشموع)", minval=10, maxval=200, group=gVP)
-vpUpCol     = input.color(color.new(#22c55e, 25), "لون حجم الصعود", group=gVP)
-vpDnCol     = input.color(color.new(#ef4444, 25), "لون حجم الهبوط", group=gVP)
+vpUpCol     = input.color(color.new(#2962ff, 15), "لون حجم الصعود", group=gVP)
+vpDnCol     = input.color(color.new(#b8860b, 15), "لون حجم الهبوط", group=gVP)
 showVA      = input.bool(true, "إظهار منطقة القيمة (70%)", group=gVP)
 vpValCol    = input.color(color.new(#eab308, 20), "لون حدود منطقة القيمة", group=gVP)
 vpPocCol    = input.color(#e879f9, "لون POC (نقطة التحكّم)", group=gVP)
@@ -186,7 +186,7 @@ if showVP and barstate.islast
                 else
                     vaBot := vaBot - 1
                     accum := accum + dnNext
-            x1  = bar_index + 2
+            xR  = bar_index + 2 + vpWidth
             gap = binSz * 0.16
             for r = 0 to vpRows - 1
                 binBot = vpLo + r * binSz
@@ -202,17 +202,17 @@ if showVP and barstate.islast
                     wUp = int(math.round(wTot * (upV / totV)))
                     wDn = wTot - wUp
                     if wUp > 0
-                        array.push(vpBoxes, box.new(x1, yTop, x1 + wUp, yBot, border_width=0, bgcolor=(isPoc ? vpPocCol : vpUpCol)))
+                        array.push(vpBoxes, box.new(xR - wUp, yTop, xR, yBot, border_width=0, bgcolor=(isPoc ? vpPocCol : vpUpCol)))
                     if wDn > 0
-                        array.push(vpBoxes, box.new(x1 + wUp, yTop, x1 + wUp + wDn, yBot, border_width=0, bgcolor=(isPoc ? vpPocCol : vpDnCol)))
+                        array.push(vpBoxes, box.new(xR - wTot, yTop, xR - wUp, yBot, border_width=0, bgcolor=(isPoc ? vpPocCol : vpDnCol)))
             pocPrice = vpLo + (pocIdx + 0.5) * binSz
             if showPocLine
-                array.push(vpLines, line.new(bar_index - look, pocPrice, x1 + vpWidth, pocPrice, color=vpPocCol, width=vpPocWidth))
+                array.push(vpLines, line.new(bar_index - look, pocPrice, xR, pocPrice, color=vpPocCol, width=vpPocWidth))
             if showVA
                 vah = vpLo + (vaTop + 1) * binSz
                 vlo = vpLo + vaBot * binSz
-                array.push(vpLines, line.new(bar_index - look, vah, x1 + vpWidth, vah, color=vpValCol, width=1, style=line.style_dashed))
-                array.push(vpLines, line.new(bar_index - look, vlo, x1 + vpWidth, vlo, color=vpValCol, width=1, style=line.style_dashed))
+                array.push(vpLines, line.new(bar_index - look, vah, xR, vah, color=vpValCol, width=1, style=line.style_dashed))
+                array.push(vpLines, line.new(bar_index - look, vlo, xR, vlo, color=vpValCol, width=1, style=line.style_dashed))
 
 // ======================= شموع الانعكاس =====================================
 bodyHi = math.max(open, close)
