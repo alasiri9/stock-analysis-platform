@@ -177,8 +177,8 @@ ewRsiUpFromLow  = rsi[1] < ewRsiLow  and rsi > rsi[1]
 ewFastTurnUp    = emaFast > emaFast[1] and emaFast[1] <= emaFast[2]
 ewRsiDnFromHigh = rsi[1] > ewRsiHigh and rsi < rsi[1]
 ewFastTurnDn    = emaFast < emaFast[1] and emaFast[1] >= emaFast[2]
-ewBullRaw = showEarly and close < emaSlow and (ewRsiUpFromLow or ewFastTurnUp)
-ewBearRaw = showEarly and close > emaSlow and (ewRsiDnFromHigh or ewFastTurnDn)
+ewBullRaw = showEarly and close < emaSlow and close > open and (ewRsiUpFromLow or (ewFastTurnUp and rsi < 50))
+ewBearRaw = showEarly and close > emaSlow and close < open and (ewRsiDnFromHigh or (ewFastTurnDn and rsi > 50))
 var int ewBullLast = -999
 var int ewBearLast = -999
 ewBull = ewBullRaw and (bar_index - ewBullLast > ewGap)
