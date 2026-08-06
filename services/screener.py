@@ -443,7 +443,8 @@ def _algx_subscores(record):
 
     # 💪 القوة النسبية
     rsv = record.get("rel_strength")
-    s_rs = 0.5 if rsv is None else (1.0 if rsv > 5 else 0.7 if rsv > 0 else 0.2)
+    # تدرّج ناعم بدل قفزة حادة عند الصفر: مطابق/أضعف قليلاً لا يُعاقَب كأضعف بوضوح
+    s_rs = 0.5 if rsv is None else (1.0 if rsv > 5 else 0.7 if rsv > 0 else 0.4 if rsv > -5 else 0.2)
 
     # 🕯️ السلوك السعري
     rv = record.get("reversal")
