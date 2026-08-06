@@ -334,7 +334,7 @@ def trading_plan(record):
         if met_count < 3:
             parts.append("استراتيجيات ناقصة")
         if rr_weak:
-            parts.append("صفقة ضعيفة")
+            parts.append(f"صفقة ضعيفة ({rr:.1f})" if rr is not None else "صفقة ضعيفة")
         if near_res:
             parts.append("قرب مقاومة")
         wait_short = " · ".join(parts) if parts else None
