@@ -327,6 +327,18 @@ def trading_plan(record):
     if near_res:
         wait_reasons.append("السعر ملاصق لمقاومة سابقة — انتظر تأكيد الاختراق")
 
+    # سبب مختصر يظهر في السطر المختصر (شفافية بلمحة)
+    wait_short = None
+    if verdict == "waiting":
+        parts = []
+        if met_count < 3:
+            parts.append("استراتيجيات ناقصة")
+        if rr_weak:
+            parts.append("صفقة ضعيفة")
+        if near_res:
+            parts.append("قرب مقاومة")
+        wait_short = " · ".join(parts) if parts else None
+
     ema = next((s for s in strategies if s["name"].startswith("الاتجاه")), None)
     rules = {
         "entry": plan.get("entry"),
@@ -348,6 +360,7 @@ def trading_plan(record):
         "verdict": verdict,
         "verdict_label": verdict_label,
         "wait_reasons": wait_reasons,
+        "wait_short": wait_short,
         "rules": rules,
     }
 
