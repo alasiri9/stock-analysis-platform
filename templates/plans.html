@@ -45,7 +45,7 @@
               <span class="muted" style="font-size:12.5px">{{ r.name or '' }}</span>
               {% if r.sector %}<span style="color:var(--gold);font-size:12.5px">· {{ r.sector | sector_ar }}</span>{% endif %}
             </div>
-            <span style="display:flex;align-items:center;justify-content:center;text-align:center;white-space:nowrap;border-inline-start:2px solid rgba(124,111,230,.4);padding:8px 6px">{{ verdict_pill(p) }}</span>
+            <span style="display:flex;align-items:center;justify-content:center;text-align:center;border-inline-start:2px solid rgba(124,111,230,.4);padding:8px 8px;min-width:0">{{ verdict_pill(p) }}</span>
             <span style="display:flex;align-items:center;justify-content:center;text-align:center;border-inline-start:2px solid rgba(124,111,230,.4);font-weight:800;font-size:15px">{{ p.met_count }} من {{ p.strategies|length }}</span>
             <span style="display:flex;align-items:center;justify-content:center;text-align:center;border-inline-start:2px solid rgba(124,111,230,.4);font-weight:800;font-size:15px">{{ p.total }}</span>
           </summary>
