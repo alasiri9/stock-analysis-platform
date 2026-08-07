@@ -1109,6 +1109,17 @@ def signals_performance():
         overall["beat_market"] = sum(1 for a in alphas if a > 0)
         overall["alpha_count"] = len(alphas)
     type_stats = {t: _stats(rs) for t, rs in by_type.items()}
+
+    # ترتيب «اختبار الأداء»: الناضجة أولاً بالأعلى عائداً (الأفضل ← الأسوأ، والمجهول العائد أسفلها)،
+    # ثم الطازجة (لم تنضج بعد — لم تُختبر) في الأسفل بترتيبها الزمني (الأحدث أولاً).
+    matured = [r for r in rows if r["mature"]]
+    fresh = [r for r in rows if not r["mature"]]
+    matured.sort(key=lambda r: (r["return_pct"] is not None,
+                                r["return_pct"] if r["return_pct"] is not None else 0.0),
+                 reverse=True)
+    fresh.sort(key=lambda r: r["date"], reverse=True)
+    rows = matured + fresh
+
     return rows, overall, type_stats
 
 
