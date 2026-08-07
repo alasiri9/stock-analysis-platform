@@ -34,12 +34,16 @@
     </div>
 
     {% if items %}
+      <div style="border:1px solid var(--border);border-radius:14px;overflow:hidden;margin-top:8px">
+        <div style="padding:11px 14px;background:rgba(124,111,230,.16);font-weight:800;color:var(--silver);font-size:13px;letter-spacing:.3px">السهم · القطاع · الاتجاه · الحالة</div>
       {% for item in items %}
         {% set r = item.rec %}{% set ms = item.ms %}
-        <div class="panel" style="margin:10px 0;padding:12px 14px;background:var(--panel-2)">
+        <div style="border-top:1px solid var(--border);padding:12px 14px;background:{{ 'rgba(255,255,255,.02)' if loop.index0 % 2 else 'transparent' }}">
           <div style="display:flex;flex-wrap:wrap;align-items:center;gap:10px">
-            <a href="{{ url_for('stock_report', ticker=r.ticker) }}" style="font-weight:900;font-size:20px;letter-spacing:.5px">{{ r.ticker }}</a>
-            <span class="muted" style="flex:1 1 90px;min-width:0">{{ r.name or '' }}</span>
+            <div style="min-width:0">
+              <a href="{{ url_for('stock_report', ticker=r.ticker) }}" style="display:inline-block;font-weight:900;font-size:19px;letter-spacing:.5px;line-height:1.15">{{ r.ticker }}</a>
+              <div class="muted" style="font-size:12.5px;line-height:1.35">{{ r.name or '' }}{% if r.sector %} · <span style="color:var(--gold)">{{ r.sector | sector_ar }}</span>{% endif %}</div>
+            </div>
             {# الاتجاه #}
             {% if ms.trend == 'up' %}<span class="pill buy">🟢 {{ ms.trend_label }}</span>
             {% elif ms.trend == 'down' %}<span class="pill sell">🔴 {{ ms.trend_label }}</span>
@@ -65,6 +69,7 @@
           {% endif %}
         </div>
       {% endfor %}
+      </div>
     {% else %}
       <div class="empty">لا تتوفّر قراءة هيكل بعد — تظهر بعد أول تحديث ليلي (يحسب القمم/القيعان لكل الأسهم).</div>
     {% endif %}
