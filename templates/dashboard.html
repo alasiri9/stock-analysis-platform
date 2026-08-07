@@ -39,26 +39,26 @@
   <section class="panel">
     <div class="panel-head"><h2>⚡ أحدث الإشارات</h2></div>
     {% if signals %}
-      {# إطار مضيء (برواز الطبقات) + شبكة داخلية + توسيط الكل #}
-      <div style="margin:26px auto 12px;width:calc(100% - 26px);max-width:1180px;border-radius:16px;background:linear-gradient(135deg,#22c55e,#a7c0e8,#7c6fe6);padding:2.5px;box-shadow:0 0 0 3px #22c55e, 0 0 0 6px #a7c0e8, 0 0 0 9px #7c6fe6, 0 0 26px 8px rgba(124,111,230,.45)">
+      {# إطار مضيء (برواز الطبقات) + شبكة داخلية بارزة + مقاس المحتوى + محاذاة يمين #}
+      <div style="margin:22px 0 12px auto;width:fit-content;max-width:calc(100% - 26px);border-radius:16px;background:linear-gradient(135deg,#22c55e,#a7c0e8,#7c6fe6);padding:2.5px;box-shadow:0 0 0 3px #22c55e, 0 0 0 6px #a7c0e8, 0 0 0 9px #7c6fe6, 0 0 26px 8px rgba(124,111,230,.45)">
         <div style="border-radius:13.5px;overflow:hidden;background:var(--panel-2)">
           <div style="overflow-x:auto">
-            <table style="width:100%;border-collapse:collapse;text-align:center">
+            <table style="border-collapse:collapse;text-align:center">
               <thead>
-                <tr style="background:rgba(124,111,230,.18);color:var(--silver);font-weight:800;font-size:13px;letter-spacing:.3px">
-                  <th style="padding:11px 8px;text-align:center">السهم</th>
-                  <th style="padding:11px 8px;text-align:center;border-inline-start:1px solid rgba(124,111,230,.35)">نوع الإشارة</th>
-                  <th style="padding:11px 8px;text-align:center;border-inline-start:1px solid rgba(124,111,230,.35)">السعر</th>
-                  <th style="padding:11px 8px;text-align:center;border-inline-start:1px solid rgba(124,111,230,.35)">التاريخ</th>
+                <tr style="background:rgba(124,111,230,.22);color:var(--silver);font-weight:800;font-size:13px;letter-spacing:.3px">
+                  <th style="padding:11px 20px;text-align:center">السهم</th>
+                  <th style="padding:11px 20px;text-align:center;border-inline-start:1.5px solid rgba(124,111,230,.5)">نوع الإشارة</th>
+                  <th style="padding:11px 20px;text-align:center;border-inline-start:1.5px solid rgba(124,111,230,.5)">السعر</th>
+                  <th style="padding:11px 20px;text-align:center;border-inline-start:1.5px solid rgba(124,111,230,.5)">التاريخ</th>
                 </tr>
               </thead>
               <tbody>
                 {% for s in signals %}
-                  <tr style="border-top:1px solid rgba(124,111,230,.24);background:{{ 'rgba(255,255,255,.02)' if loop.index0 % 2 else 'transparent' }}">
-                    <td style="padding:11px 8px;text-align:center"><a href="{{ url_for('stock_report', ticker=s.ticker) }}"><b>{{ s.ticker }}</b></a></td>
-                    <td style="padding:11px 8px;text-align:center;border-inline-start:1px solid rgba(124,111,230,.24)">{{ s.signal_type | signal_name }}</td>
-                    <td dir="ltr" style="padding:11px 8px;text-align:center;border-inline-start:1px solid rgba(124,111,230,.24)">{{ "%.2f $"|format(s.price_at_signal) if s.price_at_signal is not none else '—' }}</td>
-                    <td dir="ltr" style="padding:11px 8px;text-align:center;border-inline-start:1px solid rgba(124,111,230,.24)">{{ s.triggered_at.strftime('%Y-%m-%d') if s.triggered_at else '—' }}</td>
+                  <tr style="border-top:1.5px solid rgba(124,111,230,.4);background:{{ 'rgba(255,255,255,.025)' if loop.index0 % 2 else 'transparent' }}">
+                    <td style="padding:11px 20px;text-align:center"><a href="{{ url_for('stock_report', ticker=s.ticker) }}"><b>{{ s.ticker }}</b></a></td>
+                    <td style="padding:11px 20px;text-align:center;border-inline-start:1.5px solid rgba(124,111,230,.35)">{{ s.signal_type | signal_name }}</td>
+                    <td dir="ltr" style="padding:11px 20px;text-align:center;border-inline-start:1.5px solid rgba(124,111,230,.35)">{{ "%.2f $"|format(s.price_at_signal) if s.price_at_signal is not none else '—' }}</td>
+                    <td dir="ltr" style="padding:11px 20px;text-align:center;border-inline-start:1.5px solid rgba(124,111,230,.35)">{{ s.triggered_at.strftime('%Y-%m-%d') if s.triggered_at else '—' }}</td>
                   </tr>
                 {% endfor %}
               </tbody>
