@@ -25,26 +25,25 @@
     </div>
 
     {% if plans %}
-      <div style="border-radius:14px;overflow:hidden;margin:26px auto 12px;width:calc(100% - 22px);box-shadow:0 0 0 3px #22c55e, 0 0 0 6px #a7c0e8, 0 0 0 9px #7c6fe6, 0 0 26px 8px rgba(124,111,230,.45)">
-        {# ── رأس الجدول ── #}
-        <div style="display:grid;grid-template-columns:minmax(0,1fr) 74px 74px;gap:10px;align-items:center;padding:11px 14px;background:rgba(124,111,230,.16);font-weight:800;color:var(--silver);font-size:13px;letter-spacing:.3px">
-          <span>السهم · القطاع · الحالة</span>
-          <span style="text-align:center">منطبقة</span>
-          <span style="text-align:center">المجموع</span>
-        </div>
+      {# إطار مضيء (برواز الطبقات) + شبكة داخلية متدرّجة (padding = حدّ متدرّج) #}
+      <div style="margin:26px auto 12px;width:calc(100% - 26px);max-width:1180px;border-radius:16px;background:linear-gradient(135deg,#22c55e,#a7c0e8,#7c6fe6);padding:2.5px;box-shadow:0 0 0 3px #22c55e, 0 0 0 6px #a7c0e8, 0 0 0 9px #7c6fe6, 0 0 26px 8px rgba(124,111,230,.45)">
+        <div style="border-radius:13.5px;overflow:hidden;background:var(--panel-2)">
+          {# ── رأس الجدول ── #}
+          <div style="display:flex;justify-content:space-between;gap:10px;padding:11px 14px;background:rgba(124,111,230,.18);font-weight:800;color:var(--silver);font-size:13px;letter-spacing:.3px">
+            <span>السهم · القطاع · الحالة</span>
+            <span>منطبقة · المجموع</span>
+          </div>
       {% for item in plans %}
         {% set r = item.rec %}{% set p = item.plan %}
-        <details style="border-top:1px solid var(--border);background:{{ 'rgba(255,255,255,.02)' if loop.index0 % 2 else 'transparent' }}">
-          <summary style="cursor:pointer;list-style:none;display:grid;grid-template-columns:minmax(0,1fr) 74px 74px;gap:10px;align-items:center;padding:10px 14px">
-            <div style="display:flex;flex-wrap:wrap;align-items:center;gap:10px;min-width:0">
-              <div style="min-width:0">
-                <div style="font-weight:900;font-size:19px;letter-spacing:.5px;line-height:1.15">{{ r.ticker }}</div>
-                <div class="muted" style="font-size:12.5px;line-height:1.35">{{ r.name or '' }}{% if r.sector %} · <span style="color:var(--gold)">{{ r.sector | sector_ar }}</span>{% endif %}</div>
-              </div>
-              {{ verdict_pill(p) }}
+        <details style="border-top:1px solid rgba(124,111,230,.22);background:{{ 'rgba(255,255,255,.02)' if loop.index0 % 2 else 'transparent' }}">
+          <summary style="cursor:pointer;list-style:none;display:flex;flex-wrap:wrap;align-items:center;gap:10px;padding:10px 14px">
+            <div style="min-width:0">
+              <div style="font-weight:900;font-size:19px;letter-spacing:.5px;line-height:1.15">{{ r.ticker }}</div>
+              <div class="muted" style="font-size:12.5px;line-height:1.35">{{ r.name or '' }}{% if r.sector %} · <span style="color:var(--gold)">{{ r.sector | sector_ar }}</span>{% endif %}</div>
             </div>
-            <span style="text-align:center;font-weight:800;font-size:15px" dir="ltr">{{ p.met_count }}</span>
-            <span style="text-align:center;font-weight:800;font-size:15px" dir="ltr">{{ p.total }}</span>
+            {{ verdict_pill(p) }}
+            <span class="pill" style="margin-inline-start:auto">منطبقة {{ p.met_count }}</span>
+            <span class="pill">المجموع {{ p.total }}</span>
           </summary>
 
           <div style="padding:6px 14px 14px">
@@ -119,6 +118,7 @@
           </div>
         </details>
       {% endfor %}
+        </div>
       </div>
     {% else %}
       <div class="empty">لا تتوفّر خطط بعد — تظهر بعد أول تحديث ليلي (يحسب المؤشرات لكل الأسهم).</div>
