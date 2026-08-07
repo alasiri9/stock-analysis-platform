@@ -15,21 +15,33 @@
             <th>السهم</th>
             <th>نوع الإشارة</th>
             <th title="نسبة نجاح هذا النوع من الإشارات تاريخياً">دقة النوع تاريخياً</th>
+            <th title="متوسط عائد الإشارة الواحدة من هذا النوع — المقياس الأصدق للربحية">متوسط العائد</th>
+            <th title="القوة = عيّنة كافية (≥10) + متوسط عائد موجب. الأقوى في الأعلى">القوة</th>
             <th>السعر وقت الإشارة</th>
             <th>التاريخ</th>
           </tr>
         </thead>
         <tbody>
           {% for s in signals %}
+            {% set st = type_stats.get(s.signal_type) if type_stats else none %}
             <tr>
               <td><a href="{{ url_for('stock_report', ticker=s.ticker) }}">{{ s.ticker }}</a></td>
               <td>{{ s.signal_type | signal_name }}</td>
               <td dir="ltr">
-                {% set st = type_stats.get(s.signal_type) if type_stats else none %}
                 {% if st and st.win_rate is not none %}
                   <span class="pill {{ 'buy' if st.win_rate >= 50 else 'sell' }}">{{ "%.0f"|format(st.win_rate) }}%</span>
                   <span class="muted" style="font-size:12px">({{ st.count }} إشارة)</span>
                 {% else %}<span class="muted">—</span>{% endif %}
+              </td>
+              <td dir="ltr">
+                {% if st and st.avg is not none %}<b style="color:{{ 'var(--green)' if st.avg >= 0 else 'var(--red)' }}">{{ "%+.1f"|format(st.avg) }}%</b>
+                {% else %}<span class="muted">—</span>{% endif %}
+              </td>
+              <td>
+                {% if not st or st.count is none or st.avg is none %}<span class="muted">—</span>
+                {% elif st.count < min_sample %}<span class="pill warn">⚠️ عيّنة صغيرة</span>
+                {% elif st.avg > 0 %}<span class="pill buy">🥇 قوي</span>
+                {% else %}<span class="pill sell">🔻 سلبي</span>{% endif %}
               </td>
               <td dir="ltr">{{ "%.2f $"|format(s.price_at_signal) if s.price_at_signal is not none else '—' }}</td>
               <td dir="ltr">{{ s.triggered_at.strftime('%Y-%m-%d %H:%M') }}</td>
