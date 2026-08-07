@@ -39,9 +39,9 @@
               </td>
               <td>
                 {% if not st or st.count is none or st.avg is none %}<span class="muted">—</span>
-                {% elif st.count < min_sample %}<span class="pill warn">⚠️ قليل التكرار</span>
+                {% elif st.count < min_sample %}<span class="pill warn" style="background:none;padding:0;color:#cdae5f">⚠️ قليل التكرار</span>
                 {% elif st.avg > 0 %}<span class="pill buy">🥇 قوي</span>
-                {% else %}<span class="pill sell">🔻 سلبي</span>{% endif %}
+                {% else %}<span class="pill sell" style="color:#d38a83">🔻 سلبي</span>{% endif %}
               </td>
               <td dir="ltr">{{ "%.2f $"|format(s.price_at_signal) if s.price_at_signal is not none else '—' }}</td>
               <td dir="ltr">{{ s.triggered_at.strftime('%Y-%m-%d - %H:%M') }}</td>
