@@ -26,12 +26,12 @@
 
     {% if plans %}
       {# إطار مضيء (برواز الطبقات) + شبكة داخلية متدرّجة (padding = حدّ متدرّج) #}
-      <div style="margin:26px auto 12px;width:calc(100% - 26px);max-width:1180px;border-radius:16px;background:linear-gradient(135deg,#22c55e,#a7c0e8,#7c6fe6);padding:2.5px;box-shadow:0 0 0 3px #22c55e, 0 0 0 6px #a7c0e8, 0 0 0 9px #7c6fe6, 0 0 26px 8px rgba(124,111,230,.45)">
+      <div style="margin:26px 0 12px auto;width:calc(100% - 26px);max-width:1180px;border-radius:16px;background:linear-gradient(135deg,#22c55e,#a7c0e8,#7c6fe6);padding:2.5px;box-shadow:0 0 0 3px #22c55e, 0 0 0 6px #a7c0e8, 0 0 0 9px #7c6fe6, 0 0 26px 8px rgba(124,111,230,.45)">
         <div style="border-radius:13.5px;overflow:hidden;background:var(--panel-2)">
           <div style="overflow-x:auto">
           {# ── رأس الجدول (شبكة بارزة: خطوط أفقية + عمودية) ── #}
           <div style="display:grid;grid-template-columns:minmax(200px,1fr) 210px 120px 90px;background:rgba(124,111,230,.22);font-weight:800;color:var(--gold);font-size:13px;letter-spacing:.3px;text-align:center">
-            <span style="padding:11px 14px">السهم · القطاع</span>
+            <span style="padding:11px 14px">السهم</span>
             <span style="padding:11px 6px;border-inline-start:2px solid rgba(124,111,230,.5)">الحالة</span>
             <span style="padding:11px 6px;border-inline-start:2px solid rgba(124,111,230,.5)">الشروط المنطبقة</span>
             <span style="padding:11px 6px;border-inline-start:2px solid rgba(124,111,230,.5)">المجموع</span>
@@ -44,9 +44,9 @@
               <div style="font-weight:900;font-size:19px;letter-spacing:.5px;line-height:1.15">{{ r.ticker }}</div>
               <div class="muted" style="font-size:12.5px;line-height:1.35">{{ r.name or '' }}{% if r.sector %} · <span style="color:var(--gold)">{{ r.sector | sector_ar }}</span>{% endif %}</div>
             </div>
-            <span style="display:flex;align-items:center;justify-content:center;border-inline-start:2px solid rgba(124,111,230,.4);padding:8px 6px">{{ verdict_pill(p) }}</span>
-            <span style="display:flex;align-items:center;justify-content:center;border-inline-start:2px solid rgba(124,111,230,.4);font-weight:800;font-size:15px">{{ p.met_count }} من {{ p.strategies|length }}</span>
-            <span style="display:flex;align-items:center;justify-content:center;border-inline-start:2px solid rgba(124,111,230,.4);font-weight:800;font-size:15px" dir="ltr">{{ p.total }}</span>
+            <span style="display:flex;align-items:center;justify-content:center;text-align:center;border-inline-start:2px solid rgba(124,111,230,.4);padding:8px 6px">{{ verdict_pill(p) }}</span>
+            <span style="display:flex;align-items:center;justify-content:center;text-align:center;border-inline-start:2px solid rgba(124,111,230,.4);font-weight:800;font-size:15px">{{ p.met_count }} من {{ p.strategies|length }}</span>
+            <span style="display:flex;align-items:center;justify-content:center;text-align:center;border-inline-start:2px solid rgba(124,111,230,.4);font-weight:800;font-size:15px">{{ p.total }}</span>
           </summary>
 
           <div style="padding:6px 14px 14px">
