@@ -1210,7 +1210,7 @@ def market_structure(candles, wing=2):
     elif event == "CHOCH":
         event_label = "إنذار انعكاس صاعد (CHOCH)" if event_dir == "up" else "إنذار انعكاس هبوطي (CHOCH)"
     else:
-        event_label = "داخل الهيكل — لا كسر بعد"
+        event_label = "داخل الهيكل — لا اختراق ولا كسر بعد"
 
     return {
         "trend": trend,
