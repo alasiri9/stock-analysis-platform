@@ -30,7 +30,7 @@
         <div style="border-radius:13.5px;overflow:hidden;background:var(--panel-2)">
           <div style="overflow-x:auto">
           {# ── رأس الجدول (شبكة بارزة: خطوط أفقية + عمودية) ── #}
-          <div style="display:grid;grid-template-columns:440px 210px 112px 78px;background:rgba(124,111,230,.22);font-weight:800;color:var(--gold);font-size:13px;letter-spacing:.3px;text-align:center">
+          <div style="display:grid;grid-template-columns:440px 500px 112px 78px;background:rgba(124,111,230,.22);font-weight:800;color:var(--gold);font-size:13px;letter-spacing:.3px;text-align:center">
             <span style="padding:11px 14px">السهم</span>
             <span style="padding:11px 6px;border-inline-start:2px solid rgba(124,111,230,.5)">الحالة</span>
             <span style="padding:11px 6px;border-inline-start:2px solid rgba(124,111,230,.5)">الشروط المنطبقة</span>
@@ -39,13 +39,13 @@
       {% for item in plans %}
         {% set r = item.rec %}{% set p = item.plan %}
         <details style="border-top:1.5px solid rgba(124,111,230,.45);background:{{ 'rgba(255,255,255,.025)' if loop.index0 % 2 else 'transparent' }}">
-          <summary style="cursor:pointer;list-style:none;display:grid;grid-template-columns:440px 210px 112px 78px;align-items:stretch">
+          <summary style="cursor:pointer;list-style:none;display:grid;grid-template-columns:440px 500px 112px 78px;align-items:stretch">
             <div style="padding:10px 14px;display:flex;align-items:center;justify-content:center;gap:8px;white-space:nowrap;min-width:0">
               <b style="font-weight:900;font-size:18px;letter-spacing:.5px">{{ r.ticker }}</b>
               <span class="muted" style="font-size:12.5px">{{ r.name or '' }}</span>
               {% if r.sector %}<span style="color:var(--gold);font-size:12.5px">· {{ r.sector | sector_ar }}</span>{% endif %}
             </div>
-            <span style="display:flex;align-items:center;justify-content:center;text-align:center;border-inline-start:2px solid rgba(124,111,230,.4);padding:8px 8px;min-width:0">{{ verdict_pill(p) }}</span>
+            <span style="display:flex;align-items:center;justify-content:center;text-align:center;white-space:nowrap;border-inline-start:2px solid rgba(124,111,230,.4);padding:8px 8px">{{ verdict_pill(p) }}</span>
             <span style="display:flex;align-items:center;justify-content:center;text-align:center;border-inline-start:2px solid rgba(124,111,230,.4);font-weight:800;font-size:15px">{{ p.met_count }} من {{ p.strategies|length }}</span>
             <span style="display:flex;align-items:center;justify-content:center;text-align:center;border-inline-start:2px solid rgba(124,111,230,.4);font-weight:800;font-size:15px">{{ p.total }}</span>
           </summary>
