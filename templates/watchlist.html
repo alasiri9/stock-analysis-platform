@@ -19,7 +19,7 @@
       <tbody>
         {% for r in rows %}
           <tr>
-            <td><a href="{{ url_for('stock_report', ticker=r.ticker) }}"><b>{{ r.ticker }}</b></a></td>
+            <td><a href="{{ url_for('stock_report', ticker=r.ticker) }}"><b>{{ r.ticker }}</b></a>{% if r.sector %}<div style="font-size:11.5px;color:var(--gold);margin-top:2px">{{ r.sector | sector_ar }}</div>{% endif %}</td>
             <td dir="ltr">{{ "%.2f $"|format(r.added_price) if r.added_price is not none else '—' }}</td>
             <td dir="ltr">{{ "%.2f $"|format(r.current) if r.current is not none else '—' }}</td>
             <td dir="ltr">
