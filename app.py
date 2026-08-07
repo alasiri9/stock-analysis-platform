@@ -1637,7 +1637,11 @@ def create_app():
             "current": cache_prices.get(a.ticker),
         } for a in items]
         telegram_on = telegram_client.is_configured()
-        return render_template("alerts.html", rows=rows, telegram_on=telegram_on)
+        # قائمة كل الأسهم للبحث المنسدل في حقل «رمز السهم»
+        all_stocks = sorted(
+            (r["ticker"] for r in records if r.get("ticker")))
+        return render_template("alerts.html", rows=rows, telegram_on=telegram_on,
+                               all_stocks=all_stocks)
 
     @app.route("/alerts/add", methods=["POST"])
     def alerts_add():
