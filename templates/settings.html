@@ -94,17 +94,15 @@
 
     {# تغيير كلمة مرور المدير — للمدير فقط #}
     {% if is_admin %}
-      <h3 class="learn-group">🔑 كلمة مرور المدير</h3>
-      <p class="set-sub" style="margin-bottom:12px">غيّر كلمة مرورك من هنا (تُخزّن مشفّرة). كلمة Railway الأصلية تبقى مفتاح طوارئ. لو نسيتها، استخدم «نسيت كلمة المرور» بصفحة الدخول (رمز يصلك تلغرام).</p>
+      <h3 class="learn-group">🔑 كلمة مرور المدير <span class="help-q" data-tip="غيّر كلمة مرورك من هنا (تُخزّن مشفّرة). كلمة Railway الأصلية تبقى مفتاح طوارئ. لو نسيتها، استخدم «نسيت كلمة المرور» بصفحة الدخول (رمز يصلك تلغرام).">👁</span></h3>
       <form action="{{ url_for('password_change') }}" method="post" class="filters">
   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <div class="filter"><label>كلمة مرور جديدة</label><input type="password" name="new_password" minlength="6" placeholder="6 أحرف على الأقل" required></div>
         <button class="btn" type="submit">💾 تغيير كلمة المرور</button>
       </form>
 
-      <h3 class="learn-group">📨 إرسال رسالة للمستخدمين</h3>{% endif %}
+      <h3 class="learn-group">📨 إرسال رسالة للمشتركين <span class="help-q" data-tip="اكتب رسالة تصل للجميع أو لمشترك بعينه (تظهر كمربع منبثق مرة واحدة وتُحفظ في صندوق الرسائل ليرجعوا لها).">👁</span></h3>{% endif %}
     {% if is_admin %}
-      <p class="set-sub" style="margin-bottom:12px">اكتب رسالة تصل <b>للجميع</b> أو <b>لمشترك بعينه</b> (تظهر كمربع منبثق مرة واحدة + تُحفظ في <a href="{{ url_for('messages') }}">📨 صندوق الرسائل</a> ليرجعوا لها).</p>
       <form action="{{ url_for('announcement_save') }}" method="post">
   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <label class="set-sub" style="display:block;margin-bottom:6px">إلى:</label>
