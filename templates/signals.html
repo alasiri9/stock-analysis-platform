@@ -44,7 +44,7 @@
                 {% else %}<span class="pill sell">🔻 سلبي</span>{% endif %}
               </td>
               <td dir="ltr">{{ "%.2f $"|format(s.price_at_signal) if s.price_at_signal is not none else '—' }}</td>
-              <td dir="ltr">{{ s.triggered_at.strftime('%Y-%m-%d %H:%M') }}</td>
+              <td dir="ltr">{{ s.triggered_at.strftime('%Y-%m-%d - %H:%M') }}</td>
             </tr>
           {% endfor %}
         </tbody>
