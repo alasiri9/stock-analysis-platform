@@ -1739,7 +1739,13 @@ def create_app():
         # المشترك يرى محفظته وأرقامها الحالية، لكن بلا منحنى تاريخي خاص به.
         from services import portfolio as portfolio_svc
         chart = portfolio_svc.performance_chart() if is_admin() else None
-        return render_template("portfolio.html", rows=rows, summary=summary, chart=chart)
+        # قائمة كل الأسهم (رمز + اسم) للبحث المنسدل في حقل «رمز السهم»
+        all_stocks = sorted(
+            ({"ticker": r["ticker"], "name": r.get("name")} for r in records if r.get("ticker")),
+            key=lambda x: x["ticker"],
+        )
+        return render_template("portfolio.html", rows=rows, summary=summary,
+                               chart=chart, all_stocks=all_stocks)
 
     @app.route("/portfolio/add", methods=["POST"])
     def portfolio_add():

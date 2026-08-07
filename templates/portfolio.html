@@ -73,7 +73,11 @@
   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <div class="filter">
         <label>رمز السهم</label>
-        <input type="text" name="ticker" placeholder="AAPL" required style="text-transform: uppercase;">
+        <input type="text" name="ticker" placeholder="اكتب أو اختر سهماً" required autocomplete="off"
+               list="stocklist" style="text-transform: uppercase;">
+        <datalist id="stocklist">
+          {% for st in all_stocks %}<option value="{{ st.ticker }}">{{ st.name or '' }}</option>{% endfor %}
+        </datalist>
       </div>
       <div class="filter">
         <label>عدد الأسهم</label>
