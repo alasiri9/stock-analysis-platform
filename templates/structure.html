@@ -2,9 +2,10 @@
 {% set active = 'structure' %}
 {% block title %}قراءة هيكل السوق — Algomatix{% endblock %}
 
+{% set swing_ar = {'HH':'قمة أعلى','HL':'قاع أعلى','LH':'قمة أدنى','LL':'قاع أدنى'} %}
 {% macro swing_badge(s) %}
-  {% if s.label in ['HH', 'HL'] %}<span class="tbadge bull">{{ s.label }}</span>
-  {% elif s.label in ['LH', 'LL'] %}<span class="tbadge bear">{{ s.label }}</span>
+  {% if s.label in ['HH', 'HL'] %}<span class="tbadge bull" style="display:inline-flex;flex-direction:column;align-items:center;gap:1px;line-height:1.2;padding:4px 9px">{{ s.label }}<span style="font-size:10px;font-weight:700;color:#fff;opacity:.95">{{ swing_ar[s.label] }}</span></span>
+  {% elif s.label in ['LH', 'LL'] %}<span class="tbadge bear" style="display:inline-flex;flex-direction:column;align-items:center;gap:1px;line-height:1.2;padding:4px 9px">{{ s.label }}<span style="font-size:10px;font-weight:700;color:#fff;opacity:.95">{{ swing_ar[s.label] }}</span></span>
   {% else %}<span class="tbadge neutral">{{ s.label }}</span>{% endif %}
 {% endmacro %}
 
@@ -12,17 +13,8 @@
   <section class="panel">
     <div class="panel-head">
       <h2>🧭 قراءة هيكل السوق
-        <span class="help-q" data-tip="نتتبّع تتابع قمم وقيعان كل سهم (HH/HL/LH/LL) لتحديد اتجاهه، ونكشف: BOS (كسر مع الاتجاه = استمرار) · CHOCH (أول كسر عكس الاتجاه = بداية انعكاس) · إعادة اختبار (عودة السعر لاختبار المستوى المكسور). القائمة مرتّبة: إنذارات الانعكاس أولاً. تعليمي وصفي — لا توصية.">👁</span>
+        <span class="help-q" data-tip="مفتاح الرموز: HH قمة أعلى · HL قاع أعلى · LH قمة أدنى · LL قاع أدنى | BOS كسر مع الاتجاه = استمرار · CHOCH أول كسر عكس الاتجاه = بداية انعكاس · إعادة اختبار عودة السعر لاختبار المستوى المكسور. نتتبّع تتابع القمم والقيعان لكل سهم لتحديد اتجاهه. القائمة مرتّبة: إنذارات الانعكاس أولاً. تعليمي وصفي — لا توصية.">👁</span>
       </h2>
-    </div>
-
-    {# مفتاح مختصر #}
-    <div class="muted" style="font-size:14px;margin-bottom:12px;line-height:2">
-      <span class="tbadge bull">HH</span> قمة أعلى ·
-      <span class="tbadge bull">HL</span> قاع أعلى ·
-      <span class="tbadge bear">LH</span> قمة أدنى ·
-      <span class="tbadge bear">LL</span> قاع أدنى &nbsp;|&nbsp;
-      <b style="color:var(--green)">BOS</b> استمرار · <b style="color:var(--red)">CHOCH</b> انعكاس
     </div>
 
     <div class="stat-row tight">
