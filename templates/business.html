@@ -31,8 +31,7 @@
       </div>
     </div>
 
-    <h3 class="learn-group">💵 سعر الاشتراك الشهري</h3>
-    <p class="set-sub" style="margin-bottom:12px">أدخل سعر الاشتراك لكل مشترك شهرياً — نحسب لك الدخل المتوقّع تلقائياً.</p>
+    <h3 class="learn-group">💵 سعر الاشتراك الشهري <span class="help-q" data-tip="أدخل سعر الاشتراك لكل مشترك شهرياً — نحسب لك الدخل المتوقّع تلقائياً.">👁</span></h3>
     <form class="filters" action="{{ url_for('business_price') }}" method="post">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <div class="filter">
