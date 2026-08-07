@@ -27,17 +27,28 @@
     </div>
 
     {% if items %}
+      {# إطار مضيء (برواز الطبقات) + شبكة داخلية بارزة + توسيط #}
+      <div style="margin:26px auto 12px;width:calc(100% - 26px);max-width:1180px;border-radius:16px;background:linear-gradient(135deg,#22c55e,#a7c0e8,#7c6fe6);padding:2.5px;box-shadow:0 0 0 3px #22c55e, 0 0 0 6px #a7c0e8, 0 0 0 9px #7c6fe6, 0 0 26px 8px rgba(124,111,230,.45)">
+        <div style="border-radius:13.5px;overflow:hidden;background:var(--panel-2)">
+          {# ── رأس الجدول ── #}
+          <div style="display:grid;grid-template-columns:84px minmax(0,1fr) 170px;background:rgba(124,111,230,.22);font-weight:800;color:var(--silver);font-size:13px;letter-spacing:.3px;text-align:center">
+            <span style="padding:11px 6px">الدرجة</span>
+            <span style="padding:11px 6px;border-inline-start:1.5px solid rgba(124,111,230,.5)">السهم</span>
+            <span style="padding:11px 6px;border-inline-start:1.5px solid rgba(124,111,230,.5)">الحالة</span>
+          </div>
       {% for item in items %}
         {% set r = item.rec %}{% set v = item.algx %}
-        <details style="border:1px solid var(--border);border-radius:12px;margin:10px 0;padding:6px 12px;background:var(--panel-2)">
-          <summary style="cursor:pointer;list-style:none;display:flex;flex-wrap:wrap;align-items:center;gap:12px;padding:8px 2px">
-            <span style="font-weight:900;font-size:32px;line-height:1;color:{{ score_color(v) }};min-width:58px">{{ v.score }}</span>
-            <span style="font-weight:900;font-size:20px;letter-spacing:.5px">{{ r.ticker }}</span>
-            <span class="muted" style="flex:1 1 90px;min-width:0">{{ r.name or '' }}</span>
-            {{ verdict_pill(v) }}
+        <details style="border-top:1.5px solid rgba(124,111,230,.4);background:{{ 'rgba(255,255,255,.025)' if loop.index0 % 2 else 'transparent' }}">
+          <summary style="cursor:pointer;list-style:none;display:grid;grid-template-columns:84px minmax(0,1fr) 170px;align-items:center;text-align:center">
+            <span style="padding:10px 6px;font-weight:900;font-size:30px;line-height:1;color:{{ score_color(v) }}">{{ v.score }}</span>
+            <span style="padding:10px 6px;border-inline-start:1.5px solid rgba(124,111,230,.35);min-width:0">
+              <b style="font-size:19px;letter-spacing:.5px">{{ r.ticker }}</b>
+              <span class="muted" style="display:block;font-size:12.5px;line-height:1.35">{{ r.name or '' }}</span>
+            </span>
+            <span style="padding:10px 6px;border-inline-start:1.5px solid rgba(124,111,230,.35);display:flex;justify-content:center">{{ verdict_pill(v) }}</span>
           </summary>
 
-          <div style="padding:8px 0 12px">
+          <div style="padding:8px 14px 12px;border-top:1px dashed rgba(124,111,230,.2)">
             <div class="muted" style="font-size:13.5px;margin-bottom:8px">تفصيل الدرجة (مساهمة كل مدرسة من وزنها):</div>
             {% for b in v.breakdown %}
               <div style="display:flex;align-items:center;gap:10px;margin:5px 0">
@@ -58,6 +69,8 @@
           </div>
         </details>
       {% endfor %}
+        </div>
+      </div>
     {% else %}
       <div class="empty">لا تتوفّر درجات بعد — تظهر بعد أول تحديث ليلي (يحسب كل المدارس لكل الأسهم).</div>
     {% endif %}
