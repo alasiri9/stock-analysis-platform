@@ -4,8 +4,8 @@
 
 {% macro verdict_pill(p) %}
   {% if p.verdict == 'ready' %}<span class="pill buy">✅ {{ p.verdict_label }}</span>
-  {% elif p.verdict == 'waiting' %}<span class="pill warn">⏳ انتظار{% if p.wait_short %} — {{ p.wait_short }}{% endif %}</span>
-  {% else %}<span class="pill sell">⚠️ {{ p.verdict_label }}</span>{% endif %}
+  {% elif p.verdict == 'waiting' %}<span class="pill warn" style="font-size:13px;font-weight:600;background:rgba(245,196,81,.09);color:#cdae5f">⏳ انتظار{% if p.wait_short %} — {{ p.wait_short }}{% endif %}</span>
+  {% else %}<span class="pill sell" style="font-size:13px;font-weight:600;color:#d38a83">⚠️ {{ p.verdict_label }}</span>{% endif %}
 {% endmacro %}
 
 {% macro money(v) %}{% if v is not none %}<span dir="ltr">{{ "%.2f $"|format(v) }}</span>{% else %}—{% endif %}{% endmacro %}
