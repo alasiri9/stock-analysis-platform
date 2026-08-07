@@ -1555,6 +1555,7 @@ def create_app():
             if s:
                 # نقاط قوة/تنبيهات خفيفة من البيانات المتاحة (بلا استدعاء API إضافي)
                 s["summary"] = analysis.smart_summary(s)
+                s["sector"] = (_screen_by.get(t) or {}).get("sector")
                 summaries.append(s)
         return render_template("compare.html", summaries=summaries, fields=fields)
 
@@ -1566,6 +1567,7 @@ def create_app():
         # السعر الحالي من كاش الماسح أولاً (فوري وبلا استهلاك حصة) — نفس نهج المحفظة
         records, _ = screener.load_records()
         cache_prices = {r["ticker"]: r.get("price") for r in records}
+        sector_by = {r["ticker"]: r.get("sector") for r in records}
         rows = []
         for item in items:
             current = _current_price(item.ticker, cache_prices)
@@ -1577,6 +1579,7 @@ def create_app():
             rows.append({
                 "id": item.id,
                 "ticker": item.ticker,
+                "sector": sector_by.get(item.ticker),
                 "added_price": item.added_price,
                 "added_at": item.added_at,
                 "current": current,
@@ -1695,6 +1698,7 @@ def create_app():
         records, _ = screener.load_records()
         cache_prices = {r["ticker"]: r.get("price") for r in records}
         atr_by = {r["ticker"]: r.get("atr") for r in records}
+        sector_by = {r["ticker"]: r.get("sector") for r in records}
 
         rows = []
         total_cost = total_value = 0.0
@@ -1712,6 +1716,7 @@ def create_app():
                 priced_all = False
             rows.append({
                 "id": item.id, "ticker": item.ticker, "shares": item.shares,
+                "sector": sector_by.get(item.ticker),
                 "buy_price": item.buy_price, "current": current,
                 "cost": cost, "value": value, "pnl": pnl, "pnl_pct": pnl_pct,
                 # حالة تعليمية: قرب السعر من الهدف/الوقف (بنفس مضاعفات خطة ATR: هدف +3، وقف −1.5)
