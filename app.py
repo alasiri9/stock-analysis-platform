@@ -811,8 +811,19 @@ def create_app():
     def signals_page():
         # كل الإشارات الأخيرة + نسبة نجاح كل نوع تاريخياً (من الكاش، بلا API)
         _, _, type_stats = screener.signals_performance()
-        return render_template("signals.html",
-                               signals=screener.recent_signals(limit=50), type_stats=type_stats)
+        signals = screener.recent_signals(limit=50)
+        # ترتيب حسب «القوة»: عيّنة كافية (بوّابة) ← متوسط العائد ← نسبة النجاح ← الأحدث
+        MIN_SAMPLE = 10
+        def _strength(s):
+            st = type_stats.get(s.signal_type)
+            ts = s.triggered_at.timestamp() if s.triggered_at else 0
+            if not st or st.get("avg") is None:
+                return (0, -9e9, -9e9, ts)
+            enough = 1 if st["count"] >= MIN_SAMPLE else 0
+            return (enough, st["avg"], st.get("win_rate") or 0, ts)
+        signals = sorted(signals, key=_strength, reverse=True)
+        return render_template("signals.html", signals=signals,
+                               type_stats=type_stats, min_sample=MIN_SAMPLE)
 
     @app.route("/learn")
     def learn():
