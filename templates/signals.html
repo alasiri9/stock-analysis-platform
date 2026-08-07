@@ -39,7 +39,7 @@
               </td>
               <td>
                 {% if not st or st.count is none or st.avg is none %}<span class="muted">—</span>
-                {% elif st.count < min_sample %}<span class="pill warn">⚠️ عيّنة صغيرة</span>
+                {% elif st.count < min_sample %}<span class="pill warn">⚠️ قليل التكرار</span>
                 {% elif st.avg > 0 %}<span class="pill buy">🥇 قوي</span>
                 {% else %}<span class="pill sell">🔻 سلبي</span>{% endif %}
               </td>
