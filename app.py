@@ -1243,7 +1243,16 @@ def create_app():
     def structure():
         # 🧭 قراءة هيكل السوق: لكل سهم اتجاهه (HH/HL/LH/LL) + BOS/CHOCH + إعادة اختبار — من الكاش.
         records, latest = screener.load_records()
-        items = [{"rec": r, "ms": r["structure"]} for r in records if r.get("structure")]
+        items = []
+        for r in records:
+            if not r.get("structure"):
+                continue
+            items.append({
+                "rec": r,
+                "ms": r["structure"],
+                "plan": screener.trading_plan(r),      # درجة خطط التداول (المتحققة + المجموع)
+                "algx": screener.algomatix_score(r),   # الدرجة الموزونة (0–100)
+            })
 
         # الترتيب: انعكاس (CHOCH) ⇒ إعادة اختبار مؤكّدة ⇒ إعادة اختبار جارية ⇒ استمرار (BOS) ⇒ داخل الهيكل
         def rank(x):

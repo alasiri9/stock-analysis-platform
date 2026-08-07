@@ -9,11 +9,23 @@
   {% else %}<span class="tbadge neutral">{{ s.label }}</span>{% endif %}
 {% endmacro %}
 
+{% macro algx_color(v) %}{{ 'var(--green)' if v.verdict == 'strong' else ('var(--gold)' if v.verdict == 'good' else ('var(--red)' if v.verdict == 'weak' else 'var(--muted)')) }}{% endmacro %}
+
 {% block content %}
+  <style>
+    .struct-tbl { border-collapse:collapse; width:100%; text-align:center; min-width:1180px }
+    .struct-tbl thead tr { background:rgba(124,111,230,.22) }
+    .struct-tbl th { padding:11px 8px; color:var(--gold); font-weight:800; font-size:13px; line-height:1.3 }
+    .struct-tbl th .rng { display:block; font-size:10.5px; font-weight:600; opacity:.45; margin-top:2px }
+    .struct-tbl td { padding:10px 8px; border-top:1.5px solid rgba(124,111,230,.4); vertical-align:middle }
+    .struct-tbl th + th, .struct-tbl td + td { border-inline-start:2px solid rgba(124,111,230,.4) }
+    .struct-tbl tbody tr:nth-child(even) { background:rgba(255,255,255,.025) }
+  </style>
+
   <section class="panel">
     <div class="panel-head">
       <h2>🧭 قراءة هيكل السوق
-        <span class="help-q" data-tip="مفتاح الرموز: HH قمة أعلى · HL قاع أعلى · LH قمة أدنى · LL قاع أدنى | BOS كسر مع الاتجاه = استمرار · CHOCH أول كسر عكس الاتجاه = بداية انعكاس · إعادة اختبار عودة السعر لاختبار المستوى المكسور. نتتبّع تتابع القمم والقيعان لكل سهم لتحديد اتجاهه. القائمة مرتّبة: إنذارات الانعكاس أولاً. تعليمي وصفي — لا توصية.">👁</span>
+        <span class="help-q" data-tip="مفتاح الرموز: HH قمة أعلى · HL قاع أعلى · LH قمة أدنى · LL قاع أدنى | BOS كسر مع الاتجاه = استمرار · CHOCH أول كسر عكس الاتجاه = بداية انعكاس · إعادة اختبار عودة السعر لاختبار المستوى المكسور. أضفنا درجة السهم من «خطط التداول» (المتحققة + مجموع النقاط) والدرجة الموزونة من «مؤشر Algomatix» لتقارن العدسات الثلاث. القائمة مرتّبة: إنذارات الانعكاس أولاً. تعليمي وصفي — لا توصية.">👁</span>
       </h2>
     </div>
 
@@ -26,41 +38,72 @@
     </div>
 
     {% if items %}
-      <div style="margin:26px auto 12px;width:calc(100% - 26px);max-width:1180px;border-radius:16px;background:linear-gradient(135deg,#22c55e,#a7c0e8,#7c6fe6);padding:2.5px;box-shadow:0 0 0 3px #22c55e, 0 0 0 6px #a7c0e8, 0 0 0 9px #7c6fe6, 0 0 26px 8px rgba(124,111,230,.45)">
+      <div style="margin:26px auto 12px;width:calc(100% - 26px);max-width:1600px;border-radius:16px;background:linear-gradient(135deg,#22c55e,#a7c0e8,#7c6fe6);padding:2.5px;box-shadow:0 0 0 3px #22c55e, 0 0 0 6px #a7c0e8, 0 0 0 9px #7c6fe6, 0 0 26px 8px rgba(124,111,230,.45)">
         <div style="border-radius:13.5px;overflow:hidden;background:var(--panel-2)">
-      {% for item in items %}
-        {% set r = item.rec %}{% set ms = item.ms %}
-        <div style="border-top:1px solid rgba(124,111,230,.22);padding:12px 14px;background:{{ 'rgba(255,255,255,.02)' if loop.index0 % 2 else 'transparent' }}">
-          <div style="display:flex;flex-wrap:wrap;align-items:center;gap:10px">
-            <div style="min-width:0">
-              <a href="{{ url_for('stock_report', ticker=r.ticker) }}" style="display:inline-block;font-weight:900;font-size:19px;letter-spacing:.5px;line-height:1.15">{{ r.ticker }}</a>
-              <div class="muted" style="font-size:12.5px;line-height:1.35">{{ r.name or '' }}{% if r.sector %} · <span style="color:var(--gold)">{{ r.sector | sector_ar }}</span>{% endif %}</div>
-            </div>
-            {# الاتجاه #}
-            {% if ms.trend == 'up' %}<span class="pill buy">🟢 {{ ms.trend_label }}</span>
-            {% elif ms.trend == 'down' %}<span class="pill sell">🔴 {{ ms.trend_label }}</span>
-            {% else %}<span class="pill">⚪ {{ ms.trend_label }}</span>{% endif %}
-            {# الحدث #}
-            {% if ms.status == 'bull' %}<span class="pill buy">{{ ms.event_label }}</span>
-            {% elif ms.status == 'bear' %}<span class="pill sell">{{ ms.event_label }}</span>
-            {% else %}<span class="pill">{{ ms.event_label }}</span>{% endif %}
-            {% if ms.retest_state == 'confirmed' %}<span class="pill {{ 'buy' if ms.status == 'bull' else ('sell' if ms.status == 'bear' else 'warn') }}">🎯 إعادة اختبار مؤكّدة</span>
-            {% elif ms.retest_state == 'testing' %}<span class="pill warn">🎯 إعادة اختبار جارية</span>{% endif %}
+          <div style="overflow-x:auto">
+            <table class="struct-tbl">
+              <thead>
+                <tr>
+                  <th>السهم</th>
+                  <th>الاتجاه</th>
+                  <th>الحدث</th>
+                  <th>إعادة الاختبار</th>
+                  <th>الهيكل</th>
+                  <th>المستوى المخترَق</th>
+                  <th>الاستراتيجيات المتحققة<span class="rng" dir="ltr">13 — 0</span></th>
+                  <th>مجموع نقاط الاستراتيجيات الـ13<span class="rng" dir="ltr">10 — 0</span></th>
+                  <th>درجة مؤشر Algomatix<span class="rng" dir="ltr">100 — 0</span></th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for item in items %}
+                  {% set r = item.rec %}{% set ms = item.ms %}{% set p = item.plan %}{% set v = item.algx %}
+                  <tr>
+                    {# السهم + القطاع #}
+                    <td>
+                      <a href="{{ url_for('stock_report', ticker=r.ticker) }}" style="font-weight:900;font-size:18px;letter-spacing:.5px">{{ r.ticker }}</a>
+                      <div class="muted" style="font-size:12px;line-height:1.35">{{ r.name or '' }}</div>
+                      {% if r.sector %}<div style="color:var(--gold);font-size:11.5px;line-height:1.3">{{ r.sector | sector_ar }}</div>{% endif %}
+                    </td>
+                    {# الاتجاه #}
+                    <td>
+                      {% if ms.trend == 'up' %}<span class="pill buy">🟢 {{ ms.trend_label }}</span>
+                      {% elif ms.trend == 'down' %}<span class="pill sell">🔴 {{ ms.trend_label }}</span>
+                      {% else %}<span class="pill">⚪ {{ ms.trend_label }}</span>{% endif %}
+                    </td>
+                    {# الحدث #}
+                    <td>
+                      {% if ms.status == 'bull' %}<span class="pill buy">{{ ms.event_label }}</span>
+                      {% elif ms.status == 'bear' %}<span class="pill sell">{{ ms.event_label }}</span>
+                      {% else %}<span class="pill">{{ ms.event_label }}</span>{% endif %}
+                    </td>
+                    {# إعادة الاختبار #}
+                    <td>
+                      {% if ms.retest_state == 'confirmed' %}<span style="color:var(--green);font-weight:700">🎯 مؤكّدة</span>
+                      {% elif ms.retest_state == 'testing' %}<span style="color:var(--gold);font-weight:700">🎯 جارية</span>
+                      {% else %}<span class="muted">—</span>{% endif %}
+                    </td>
+                    {# الهيكل — تتابع القمم والقيعان #}
+                    <td>
+                      <div style="display:flex;flex-wrap:wrap;gap:5px;justify-content:center">
+                        {% for s in ms.swings %}{{ swing_badge(s) }}{% endfor %}
+                      </div>
+                    </td>
+                    {# المستوى المخترَق #}
+                    <td>
+                      {% if ms.level is not none %}<span dir="ltr">{{ "%.2f $"|format(ms.level) }}</span>{% else %}<span class="muted">—</span>{% endif %}
+                    </td>
+                    {# الاستراتيجيات المتحققة #}
+                    <td style="font-weight:800;font-size:16px">{% if p %}{{ p.met_count }}{% else %}<span class="muted">—</span>{% endif %}</td>
+                    {# مجموع النقاط #}
+                    <td style="font-weight:800;font-size:16px">{% if p %}<span dir="ltr">{{ p.total }}</span>{% else %}<span class="muted">—</span>{% endif %}</td>
+                    {# درجة Algomatix #}
+                    <td><span style="font-weight:900;font-size:19px;color:{{ algx_color(v) }}">{{ v.score }}</span></td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
           </div>
-
-          <div style="margin-top:8px;display:flex;flex-wrap:wrap;gap:6px;align-items:center">
-            <span class="muted" style="font-size:14px">الهيكل:</span>
-            {% for s in ms.swings %}{{ swing_badge(s) }}{% endfor %}
-          </div>
-
-          {% if ms.level is not none %}
-            <div class="muted" style="margin-top:6px;font-size:14px">
-              المستوى {{ 'المخترَق' if ms.event_dir == 'up' else 'المكسور' }}:
-              <span dir="ltr">{{ "%.2f $"|format(ms.level) }}</span>
-            </div>
-          {% endif %}
-        </div>
-      {% endfor %}
         </div>
       </div>
     {% else %}
