@@ -57,8 +57,8 @@
                   <tr style="border-top:1.5px solid rgba(124,111,230,.4);background:{{ 'rgba(255,255,255,.025)' if loop.index0 % 2 else 'transparent' }}">
                     <td style="padding:11px 20px;text-align:center"><a href="{{ url_for('stock_report', ticker=s.ticker) }}"><b>{{ s.ticker }}</b></a></td>
                     <td style="padding:11px 20px;text-align:center;border-inline-start:1.5px solid rgba(124,111,230,.35)">{{ s.signal_type | signal_name }}</td>
-                    <td dir="ltr" style="padding:11px 20px;text-align:center;border-inline-start:1.5px solid rgba(124,111,230,.35)">{{ "%.2f $"|format(s.price_at_signal) if s.price_at_signal is not none else '—' }}</td>
-                    <td dir="ltr" style="padding:11px 20px;text-align:center;border-inline-start:1.5px solid rgba(124,111,230,.35)">{{ s.triggered_at.strftime('%Y-%m-%d') if s.triggered_at else '—' }}</td>
+                    <td style="padding:11px 20px;text-align:center;border-inline-start:1.5px solid rgba(124,111,230,.35)"><span dir="ltr">{{ "%.2f $"|format(s.price_at_signal) if s.price_at_signal is not none else '—' }}</span></td>
+                    <td style="padding:11px 20px;text-align:center;border-inline-start:1.5px solid rgba(124,111,230,.35)"><span dir="ltr">{{ s.triggered_at.strftime('%Y-%m-%d') if s.triggered_at else '—' }}</span></td>
                   </tr>
                 {% endfor %}
               </tbody>
