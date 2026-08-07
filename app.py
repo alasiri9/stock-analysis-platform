@@ -1254,19 +1254,12 @@ def create_app():
                 "algx": screener.algomatix_score(r),   # الدرجة الموزونة (0–100)
             })
 
-        # الترتيب: انعكاس (CHOCH) ⇒ إعادة اختبار مؤكّدة ⇒ إعادة اختبار جارية ⇒ استمرار (BOS) ⇒ داخل الهيكل
-        def rank(x):
-            ms = x["ms"]
-            if ms.get("event") == "CHOCH":
-                return 0
-            if ms.get("retest_state") == "confirmed":
-                return 1
-            if ms.get("retest_state") == "testing":
-                return 2
-            if ms.get("event") == "BOS":
-                return 3
-            return 4
-        items.sort(key=rank)
+        # الترتيب: الأجود أولاً — درجة Algomatix الموزونة، ثم الاستراتيجيات المتحققة، ثم مجموع النقاط.
+        items.sort(key=lambda x: (
+            x["algx"]["score"],
+            x["plan"]["met_count"] if x["plan"] else 0,
+            x["plan"]["total"] if x["plan"] else 0,
+        ), reverse=True)
 
         counts = {
             "up": sum(1 for x in items if x["ms"].get("trend") == "up"),
