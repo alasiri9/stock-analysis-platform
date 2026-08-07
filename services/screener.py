@@ -133,6 +133,11 @@ def tech_tilt(record):
 # عتبة الانطباق (درجة تُعدّ «منطبقة») — نفس عتبة الشيخ:
 PLAN_MET_SCORE = 7
 
+# المجموع الكامل لاستراتيجيات الخطة (المعرّفة في _plan_strategy_scores).
+# يُستخدم مقاماً ثابتاً في العرض حتى لا يتذبذب حسب توفّر بيانات كل سهم
+# (استراتيجية تنقص بياناتها تُعدّ «غير منطبقة» ضمن المجموع نفسه).
+PLAN_TOTAL_STRATEGIES = 13
+
 
 def _plan_strategy_scores(record):
     """يحسب درجة كل استراتيجية فنية (0–10) + سببها من سجل الماسح.
@@ -357,6 +362,7 @@ def trading_plan(record):
         "strategies": strategies,
         "total": total,
         "met_count": met_count,
+        "strategy_total": PLAN_TOTAL_STRATEGIES,
         "verdict": verdict,
         "verdict_label": verdict_label,
         "wait_reasons": wait_reasons,
