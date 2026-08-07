@@ -33,7 +33,7 @@
           <div style="display:grid;grid-template-columns:440px 210px 112px 78px;background:rgba(124,111,230,.22);font-weight:800;color:var(--gold);font-size:13px;letter-spacing:.3px;text-align:center">
             <span style="padding:11px 14px">السهم</span>
             <span style="padding:11px 6px;border-inline-start:2px solid rgba(124,111,230,.5)">الحالة</span>
-            <span style="padding:11px 6px;border-inline-start:2px solid rgba(124,111,230,.5)">الشروط المنطبقة</span>
+            <span style="padding:11px 6px;border-inline-start:2px solid rgba(124,111,230,.5)">الشروط المنطبقة<span style="display:block;font-size:11px;font-weight:600;opacity:.45;margin-top:2px" dir="ltr">0 — 13</span></span>
             <span style="padding:11px 6px;border-inline-start:2px solid rgba(124,111,230,.5)">المجموع</span>
           </div>
       {% for item in plans %}
@@ -46,7 +46,7 @@
               {% if r.sector %}<span style="color:var(--gold);font-size:12.5px">· {{ r.sector | sector_ar }}</span>{% endif %}
             </div>
             <span style="display:flex;align-items:center;justify-content:center;text-align:center;border-inline-start:2px solid rgba(124,111,230,.4);padding:8px 8px;min-width:0">{{ verdict_pill(p) }}</span>
-            <span style="display:flex;align-items:center;justify-content:center;text-align:center;border-inline-start:2px solid rgba(124,111,230,.4);font-weight:800;font-size:15px">{{ p.met_count }} من {{ p.strategy_total }}</span>
+            <span style="display:flex;align-items:center;justify-content:center;text-align:center;border-inline-start:2px solid rgba(124,111,230,.4);font-weight:800;font-size:16px">{{ p.met_count }}</span>
             <span style="display:flex;align-items:center;justify-content:center;text-align:center;border-inline-start:2px solid rgba(124,111,230,.4);font-weight:800;font-size:15px">{{ p.total }}</span>
           </summary>
 
