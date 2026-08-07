@@ -1323,10 +1323,23 @@ def create_app():
                      "sector": _sector_by_ticker.get(tk)}
                     for tk, owners in _buyers.items() if len(owners) >= 2]
         clusters.sort(key=lambda c: c["count"], reverse=True)
+        # 🎨 لون مميّز ثابت لكل سهم يتكرّر (يظهر أكثر من مرة) — لتمييز التجمّعات بصرياً
+        _all_tk = [t.get("ticker") for t in open_buys] + [t.get("ticker") for t in transactions]
+        _tk_counts = {}
+        for _tk in _all_tk:
+            if _tk:
+                _tk_counts[_tk] = _tk_counts.get(_tk, 0) + 1
+        _palette = ["#22c55e", "#a7c0e8", "#eab308", "#38bdf8", "#f472b6",
+                    "#fb923c", "#4ade80", "#c084fc", "#f87171", "#2dd4bf"]
+        ticker_colors = {}
+        for _tk in _all_tk:
+            if _tk and _tk not in ticker_colors and _tk_counts.get(_tk, 0) >= 2:
+                ticker_colors[_tk] = _palette[len(ticker_colors) % len(_palette)]
         return render_template(
             "radar.html",
             transactions=transactions, open_buys=open_buys, latest=latest,
-            clusters=clusters,
+            clusters=clusters, sector_by_ticker=_sector_by_ticker,
+            ticker_colors=ticker_colors,
         )
 
     @app.route("/radar/refresh", methods=["POST"])
