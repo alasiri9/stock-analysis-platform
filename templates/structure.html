@@ -34,7 +34,7 @@
     </div>
 
     {% if items %}
-      <div style="border:1px solid var(--border);border-radius:14px;overflow:hidden;margin-top:8px">
+      <div style="border-radius:14px;overflow:hidden;margin:26px auto 12px;width:calc(100% - 22px);box-shadow:0 0 0 3px #22c55e, 0 0 0 6px #a7c0e8, 0 0 0 9px #7c6fe6, 0 0 26px 8px rgba(124,111,230,.45)">
         <div style="padding:11px 14px;background:rgba(124,111,230,.16);font-weight:800;color:var(--silver);font-size:13px;letter-spacing:.3px">السهم · القطاع · الاتجاه · الحالة</div>
       {% for item in items %}
         {% set r = item.rec %}{% set ms = item.ms %}
