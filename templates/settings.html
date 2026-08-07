@@ -114,8 +114,7 @@
         <button class="btn" type="submit" style="margin-top:10px">📨 إرسال الرسالة</button>
       </form>
 
-      <h3 class="learn-group">👥 اشتراكات المستخدمين</h3>
-      <p class="set-sub" style="margin-bottom:12px">أنشئ رمز دخول لكل مشترك وحدّد مدته. يدخل المشترك بالرمز في صفحة الدخول (بدل كلمة المرور)، ويُمنع تلقائياً عند انتهاء المدة.</p>
+      <h3 class="learn-group">👥 الاشتراكات <span class="help-q" data-tip="أنشئ رمز دخول لكل مشترك وحدّد مدته. يدخل المشترك بالرمز في صفحة الدخول (بدل كلمة المرور)، ويُمنع تلقائياً عند انتهاء المدة.">👁</span></h3>
       <form class="filters" action="{{ url_for('subscribers_add') }}" method="post">
   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <div class="filter"><label>اسم المشترك</label><input type="text" name="name" placeholder="مثال: خالد" required></div>
