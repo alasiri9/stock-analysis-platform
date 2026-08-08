@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% set active = 'frames' %}
+{% block title %}تأكيد الفريمات الثلاثة — Algomatix{% endblock %}
+
+{% macro trend_cell(t) %}
+  {% if t == 'up' %}<span style="color:var(--green);font-weight:800">🟢 إيجابي</span>
+  {% elif t == 'down' %}<span style="color:var(--red);font-weight:800">🔴 سلبي</span>
+  {% elif t == 'side' %}<span class="muted" style="font-weight:700">⚪ محايد</span>
+  {% else %}<span class="muted" style="font-size:12px">بيانات قليلة</span>{% endif %}
+{% endmacro %}
+
+{% block content %}
+  <style>
+    .frm-tbl { border-collapse:collapse; width:100%; text-align:center; min-width:780px }
+    .frm-tbl thead tr { background:rgba(124,111,230,.22) }
+    .frm-tbl th { padding:11px 10px; color:var(--gold); font-weight:800; font-size:13px }
+    .frm-tbl td { padding:11px 10px; border-top:1.5px solid rgba(124,111,230,.4) }
+    .frm-tbl th + th, .frm-tbl td + td { border-inline-start:2px solid rgba(124,111,230,.4) }
+    .frm-tbl tbody tr:nth-child(even) { background:rgba(255,255,255,.025) }
+  </style>
+
+  <section class="panel">
+    <div class="panel-head">
+      <h2>⏱️ تأكيد الفريمات الثلاثة
+        <span class="help-q" data-tip="حالة كل سهم على ثلاثة فريمات زمنية: يومي · أسبوعي · شهري (محسوبة من نفس أسعاره، بلا تكلفة). القاعدة الذهبية: لا تدخل إلا والفريم الأكبر إيجابي. 🥇 ثلاثية = الثلاثة صاعدة (الأقوى) · 🥈 ثنائية = اثنان · ⚪ ضعيفة. الشهري أقلّ دقّة لقلّة شموعه. تعليمي وصفي — لا توصية.">👁</span>
+      </h2>
+    </div>
+
+    <div class="stat-row tight">
+      <div class="stat-box"><div class="label" style="color:var(--green)">🥇 قوة ثلاثية</div><div class="value">{{ counts.triple }}</div></div>
+      <div class="stat-box"><div class="label" style="color:var(--gold)">🥈 قوة ثنائية</div><div class="value">{{ counts.double }}</div></div>
+      <div class="stat-box"><div class="label">⚪ ضعيفة</div><div class="value">{{ counts.weak }}</div></div>
+    </div>
+
+    {% if items %}
+      <div style="margin:26px auto 12px;width:calc(100% - 26px);max-width:1100px;border-radius:16px;background:linear-gradient(135deg,#22c55e,#a7c0e8,#7c6fe6);padding:2.5px;box-shadow:0 0 0 3px #22c55e, 0 0 0 6px #a7c0e8, 0 0 0 9px #7c6fe6, 0 0 26px 8px rgba(124,111,230,.45)">
+        <div style="border-radius:13.5px;overflow:hidden;background:var(--panel-2)">
+          <div style="overflow-x:auto">
+            <table class="frm-tbl">
+              <thead>
+                <tr>
+                  <th>السهم</th>
+                  <th>يومي</th>
+                  <th>أسبوعي</th>
+                  <th>شهري</th>
+                  <th>قوة الفريمات</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for item in items %}
+                  {% set f = item.f %}
+                  <tr>
+                    <td>
+                      <a href="{{ url_for('stock_report', ticker=item.ticker) }}" style="font-weight:900;font-size:17px;letter-spacing:.5px">{{ item.ticker }}</a>
+                      <div class="muted" style="font-size:12px;line-height:1.35">{{ item.name or '' }}</div>
+                      {% if item.sector %}<div style="color:var(--gold);font-size:11.5px">{{ item.sector | sector_ar }}</div>{% endif %}
+                    </td>
+                    <td>{{ trend_cell(f.daily) }}</td>
+                    <td>{{ trend_cell(f.weekly) }}</td>
+                    <td>{{ trend_cell(f.monthly) }}</td>
+                    <td>
+                      {% if f.strength == 'triple' %}<span class="pill buy" style="font-size:14px">🥇 ثلاثية</span>
+                      {% elif f.strength == 'double' %}<span class="pill warn" style="font-size:14px;background:none;padding:0">🥈 ثنائية</span>
+                      {% else %}<span class="muted" style="font-weight:700">⚪ ضعيفة</span>{% endif %}
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    {% else %}
+      <div class="empty">لا تتوفّر قراءة فريمات بعد — تظهر بعد أول تحديث ليلي (تُحسب من أسعار كل سهم).</div>
+    {% endif %}
+  </section>
+{% endblock %}
