@@ -915,6 +915,17 @@ def create_app():
                  "desc": "في كل المنصة: «اختراق» = تجاوز مستوى صعوداً (⬆️ قوة) · «كسر» = تجاوز مستوى هبوطاً (⬇️ ضعف). كلمتان لفعلٍ واحد باتجاهين مختلفين.",
                  "example": None},
             ]},
+            {"icon": "⏱️", "title": "الفريمات الثلاثة", "terms": [
+                {"name": "تأكيد الفريمات (يومي · أسبوعي · شهري)",
+                 "desc": "حالة السهم على ثلاثة أُطر زمنية معاً، محسوبة من أسعاره نفسها (بلا تكلفة). الفكرة أن الاتجاه الأقوى هو ما اتّفقت عليه الفريمات: 🟢 إيجابي (صاعد) · 🔴 سلبي (هابط) · ⚪ محايد.",
+                 "example": "سهم يومي+أسبوعي+شهري صاعد = اتجاه متين على كل المستويات."},
+                {"name": "قوة الفريمات (ثلاثية / ثنائية / ضعيفة)",
+                 "desc": "🥇 ثلاثية = الفريمات الثلاثة صاعدة (الأقوى) · 🥈 ثنائية = فريمان · ⚪ ضعيفة = واحد أو لا شيء. القاعدة الذهبية: لا تدرس الدخول إلا والفريم الأكبر إيجابي.",
+                 "example": "سهم قوّته ثلاثية أجدر بالدراسة من سهم إيجابي يومياً فقط."},
+                {"name": "لماذا الشهري أقلّ دقّة؟",
+                 "desc": "الشهري يجمع أياماً كثيرة في شمعة واحدة، فعدد شموعه قليل (~12 سنوياً)، لذلك قد يُوسم «بيانات قليلة» عند عدم الكفاية بدل رقم مضلّل. وصفي تعليمي — لا توصية.",
+                 "example": None},
+            ]},
             {"icon": "💧", "title": "السيولة والقوة", "terms": [
                 {"name": "السيولة الداخلة (Money Flow)",
                  "desc": "تقدير لتدفّق الأموال إلى السهم. داخلة = ضغط شراء، خارجة = ضغط بيع.",
@@ -1324,6 +1335,7 @@ def create_app():
                 "ms": r["structure"],
                 "plan": screener.trading_plan(r),      # درجة خطط التداول (المتحققة + المجموع)
                 "algx": screener.algomatix_score(r),   # الدرجة الموزونة (0–100)
+                "frames": r.get("frames"),             # قوة الفريمات (يومي/أسبوعي/شهري)
             })
 
         # الترتيب: الأجود أولاً — درجة Algomatix الموزونة، ثم الاستراتيجيات المتحققة، ثم مجموع النقاط.
@@ -1342,6 +1354,26 @@ def create_app():
         }
         return render_template("structure.html", items=items, counts=counts,
                                latest=latest, active="structure")
+
+    @app.route("/frames")
+    def frames_page():
+        # ⏱️ تأكيد الفريمات الثلاثة: حالة كل سهم على يومي/أسبوعي/شهري + قوة الفريمات (من الكاش، بلا API).
+        records, latest = screener.load_records()
+        sector_by = {r["ticker"]: r.get("sector") for r in records if r.get("ticker")}
+        name_by = {r["ticker"]: r.get("name") for r in records if r.get("ticker")}
+        items = [{"ticker": r["ticker"], "name": name_by.get(r["ticker"]),
+                  "sector": sector_by.get(r["ticker"]), "f": r["frames"]}
+                 for r in records if r.get("frames")]
+        # الترتيب: الأقوى فريماتٍ أولاً (ثلاثية ← ثنائية ← ضعيفة)، ثم الأقل هبوطاً
+        items.sort(key=lambda x: (x["f"].get("up_count", 0), -x["f"].get("down_count", 0)),
+                   reverse=True)
+        counts = {
+            "triple": sum(1 for x in items if x["f"].get("strength") == "triple"),
+            "double": sum(1 for x in items if x["f"].get("strength") == "double"),
+            "weak": sum(1 for x in items if x["f"].get("strength") == "weak"),
+        }
+        return render_template("frames.html", items=items, counts=counts,
+                               latest=latest, active="frames")
 
     @app.route("/algomatix")
     def algomatix():

@@ -1226,3 +1226,74 @@ def market_structure(candles, wing=2):
         "last_low": last_low,
         "swings": [{"label": s["label"], "price": s["price"]} for s in swings[-6:]],
     }
+
+
+# ==== تعدّد الفريمات (يومي/أسبوعي/شهري) — من الشموع اليومية نفسها، بلا طلب API ====
+def _resample(candles, period):
+    """يجمّع الشموع اليومية (صيغة FMP: الأحدث أولاً، date/open/high/low/close) إلى
+    شموع أسبوعية ('W') أو شهرية ('M'). يُرجع قائمة بنفس الصيغة (الأحدث أولاً)."""
+    from datetime import datetime
+    rows = []
+    for c in candles or []:
+        d = c.get("date")
+        o, h, l, cl = c.get("open"), c.get("high"), c.get("low"), c.get("close")
+        if not d or None in (o, h, l, cl):
+            continue
+        rows.append((str(d)[:10], o, h, l, cl))
+    if not rows:
+        return []
+    rows.sort(key=lambda r: r[0])  # الأقدم أولاً
+    buckets, order = {}, []
+    for d, o, h, l, cl in rows:
+        try:
+            dt = datetime.strptime(d, "%Y-%m-%d")
+        except ValueError:
+            continue
+        key = (dt.isocalendar()[0], dt.isocalendar()[1]) if period == "W" else (dt.year, dt.month)
+        if key not in buckets:
+            buckets[key] = {"date": d, "open": o, "high": h, "low": l, "close": cl}
+            order.append(key)
+        else:
+            b = buckets[key]
+            b["high"] = max(b["high"], h)
+            b["low"] = min(b["low"], l)
+            b["close"] = cl   # آخر إغلاق في الفترة
+            b["date"] = d
+    agg = [buckets[k] for k in order]  # الأقدم أولاً
+    agg.reverse()                       # الأحدث أولاً (صيغة FMP)
+    return agg
+
+
+def _tf_trend(candles, min_bars=6):
+    """اتجاه فريم من متوسط متحرك للإغلاقات (يعمل مع شموع قليلة).
+    يُرجع 'up' / 'down' / 'side' / 'na' (بيانات غير كافية)."""
+    closes = [r["close"] for r in _clean(candles)]  # الأقدم → الأحدث
+    n = len(closes)
+    if n < min_bars:
+        return "na"
+    period = min(10, max(4, n // 3))
+    ema = _ema_series(closes, period)
+    if len(ema) < 3:
+        return "na"
+    last, e_now, e_prev = closes[-1], ema[-1], ema[-3]
+    if last > e_now and e_now > e_prev:
+        return "up"
+    if last < e_now and e_now < e_prev:
+        return "down"
+    return "side"
+
+
+def multi_timeframe(candles):
+    """حالة السهم على 3 فريمات (يومي/أسبوعي/شهري) + قوة الفريمات — من نفس الشموع اليومية.
+    يُرجع dict {daily, weekly, monthly, up_count, down_count, strength} أو None."""
+    if not candles:
+        return None
+    daily_t = _tf_trend(candles, min_bars=15)
+    weekly_t = _tf_trend(_resample(candles, "W"), min_bars=8)
+    monthly_t = _tf_trend(_resample(candles, "M"), min_bars=5)
+    trends = [daily_t, weekly_t, monthly_t]
+    ups = sum(1 for t in trends if t == "up")
+    downs = sum(1 for t in trends if t == "down")
+    strength = "triple" if ups >= 3 else ("double" if ups == 2 else "weak")
+    return {"daily": daily_t, "weekly": weekly_t, "monthly": monthly_t,
+            "up_count": ups, "down_count": downs, "strength": strength}
