@@ -372,20 +372,22 @@ def trading_plan(record):
 
 
 # ── 👑 مؤشر Algomatix — درجة فرصة موحّدة (0–100) تجمع أفضل المدارس بأوزان معتمدة ──────
-# الأوزان اعتمدها أحمد (2026-08-03): متوازن يميل للجودة وهيكل السوق. المجموع = 100.
+# الأوزان اعتمدها أحمد (2026-08-03، + مدرسة الفريمات 2026-08-08): متوازن. المجموع = 100.
 ALGOMATIX_WEIGHTS = {
-    "structure": 18,      # 🧭 هيكل السوق (BOS/CHOCH/إعادة اختبار)
+    "structure": 15,      # 🧭 هيكل السوق (BOS/CHOCH/إعادة اختبار)
     "fundamentals": 18,   # 🏦 الجودة والنمو (Piotroski + Catalyst)
-    "trend": 16,          # 📈 الاتجاه (EMA + تقاطع ذهبي + سوبرترند + ADX)
-    "momentum": 12,       # ⚡ الزخم (MACD + RSI)
+    "trend": 12,          # 📈 الاتجاه (EMA + تقاطع ذهبي + سوبرترند + ADX)
+    "momentum": 11,       # ⚡ الزخم (MACD + RSI)
     "liquidity": 12,      # 💧 السيولة (تدفق الأموال + OBV + POC)
     "levels": 10,         # 📐 المستويات (فيبوناتشي + قرب المقاومة)
-    "rel_strength": 8,    # 💪 القوة النسبية مقابل السوق
-    "price_action": 6,    # 🕯️ السلوك السعري (شموع الانعكاس)
+    "frames": 10,         # ⏱️ الفريمات الثلاثة (يومي/أسبوعي/شهري)
+    "rel_strength": 7,    # 💪 القوة النسبية مقابل السوق
+    "price_action": 5,    # 🕯️ السلوك السعري (شموع الانعكاس)
 }
 _ALGX_LABELS = {
     "structure": "🧭 هيكل السوق", "fundamentals": "🏦 الجودة والنمو", "trend": "📈 الاتجاه",
     "momentum": "⚡ الزخم", "liquidity": "💧 السيولة", "levels": "📐 المستويات",
+    "frames": "⏱️ الفريمات الثلاثة",
     "rel_strength": "💪 القوة النسبية", "price_action": "🕯️ السلوك السعري",
 }
 
@@ -456,15 +458,25 @@ def _algx_subscores(record):
     rv = record.get("reversal")
     s_pa = 0.5 if not rv else (0.9 if rv.get("status") == "bull" else 0.1 if rv.get("status") == "bear" else 0.5)
 
+    # ⏱️ الفريمات الثلاثة (توافق يومي/أسبوعي/شهري)
+    frm = record.get("frames")
+    if not frm:
+        s_frames = 0.5
+    else:
+        ups = frm.get("up_count", 0)
+        downs = frm.get("down_count", 0)
+        s_frames = {3: 1.0, 2: 0.72, 1: 0.5, 0: 0.35}.get(ups, 0.5)
+        s_frames = max(0.0, min(1.0, s_frames - 0.08 * downs))
+
     return {
         "structure": s_structure, "fundamentals": s_fund, "trend": s_trend,
         "momentum": s_mom, "liquidity": s_liq, "levels": s_lev,
-        "rel_strength": s_rs, "price_action": s_pa,
+        "frames": s_frames, "rel_strength": s_rs, "price_action": s_pa,
     }
 
 
 def algomatix_score(record):
-    """👑 مؤشر Algomatix: درجة فرصة موحّدة (0–100) موزونة عبر 8 مدارس + تفصيل شفّاف.
+    """👑 مؤشر Algomatix: درجة فرصة موحّدة (0–100) موزونة عبر 9 مدارس + تفصيل شفّاف.
 
     ⚠️ تعليمي وصفي فقط — لا توصية بشراء أو بيع. يُرجع {score, verdict, verdict_label, breakdown}.
     """
