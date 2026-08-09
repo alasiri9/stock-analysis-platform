@@ -262,12 +262,12 @@ table.framed-table th, table.framed-table td {
 .mood-table {
   flex: 0 0 46%; width: 46%; border-collapse: collapse; margin: 16px 6px 24px 0;  /* مصغّر، يميناً داخل الصف */
   border-radius: 14px; overflow: hidden;
-  /* برواز متعدّد الطبقات: أخضر داخلي · أزرق-فضّي أوسط · أزرق-بنفسجي خارجي + توهّج */
+  /* برواز الطبقات النص (نصف السماكة): أخضر · فضّي · بنفسجي + توهّج خفيف */
   box-shadow:
-    0 0 0 3px #22c55e,
-    0 0 0 6px #a7c0e8,
-    0 0 0 9px #7c6fe6,
-    0 0 26px 8px rgba(124, 111, 230, .45);
+    0 0 0 1.5px #22c55e,
+    0 0 0 3px #a7c0e8,
+    0 0 0 4.5px #7c6fe6,
+    0 0 13px 4px rgba(124, 111, 230, .28);
   text-align: center;
 }
 /* خطوط الشبكة الداخلية: نفس تدرّج البرواز الخارجي (أخضر→فضّي→بنفسجي) لكن رفيعة */
