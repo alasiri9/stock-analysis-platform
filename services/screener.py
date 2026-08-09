@@ -649,14 +649,16 @@ def _build_record(ticker):
     catalyst = scoring.catalyst_score(financials)
 
     # مؤشرات فنية للكرت (جلب تاريخي إضافي؛ لا يكسر السجلّ لو فشل)
-    # 250 يوماً: يكفي ADX الموثوق وقمة قريبة من قمة 52 أسبوعاً (نفس طلب FMP الواحد)
+    # FMP يُرجع كل التاريخ المتاح (~5 سنوات) في طلب واحد؛ نأخذ آخر 250 يوماً لبقية المؤشرات
+    # (كما كان) ونمرّر التاريخ الكامل للفريمات الثلاثة (يحتاجه الشهري للقمم والقيعان) — بلا طلب إضافي.
     try:
-        candles = fmp_client.get_historical_prices(ticker, limit=250)
+        full_candles = fmp_client.get_historical_prices(ticker, limit=5000)
+        candles = full_candles[:250] if full_candles else None
         tech = indicators.build_indicators(candles)
         flow = indicators.money_flow(candles)  # تدفق السيولة — من نفس الشموع، بلا استدعاء إضافي
         reversal = indicators.reversal_pattern(candles)  # شمعة انعكاس على آخر جلسة (تنبيه معرفي)
         structure = indicators.market_structure(candles)  # قراءة هيكل السوق (BOS/CHOCH/إعادة اختبار)
-        frames = indicators.multi_timeframe(candles)  # تأكيد الفريمات (يومي/أسبوعي/شهري) — من نفس الشموع
+        frames = indicators.multi_timeframe(full_candles, daily_structure=structure)  # الفريمات الثلاثة بالقمم والقيعان — اليومي مطابق لهيكل السوق
         squeeze_bo = indicators.squeeze_breakout(candles)  # استراتيجية الانفجار الوشيك
         closes = [c["close"] for c in reversed(candles or []) if c.get("close") is not None]
         gc = indicators.golden_cross(closes)  # التقاطع الذهبي SMA50/SMA200
