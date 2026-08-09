@@ -9,6 +9,12 @@
 {%- endmacro %}
 
 {% block content %}
+  <style>
+    /* برواز الطبقات النص (حلقات ناعمة، بلا تغيير لون الحقل) لحقول المقارنة وزرّيها */
+    .compare-inputs input, .compare-actions .btn {
+      box-shadow:0 0 0 1px rgba(34,197,94,.5), 0 0 0 2px rgba(167,192,232,.38), 0 0 0 3px rgba(124,111,230,.34), 0 0 6px 1px rgba(124,111,230,.13);
+    }
+  </style>
   <h1 class="page-title">⚖️ مقارنة الأسهم <span class="help-q" data-tip="قارن حتى 4 أسهم من المنصة جنباً لجنب — ضع سهماً في كل خانة. تعرض الجودة المالية والنمو والسعر ومقاييس الربحية (ROE/ROA/الهوامش/P‏/E) لكل سهم. تعليمي فقط، ليس توصية.">👁</span></h1>
 
   <form class="compare-form" action="{{ url_for('compare') }}" method="get">
