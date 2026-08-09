@@ -12,6 +12,16 @@
 {% macro score_color(v) %}{{ 'var(--green)' if v.verdict == 'strong' else ('var(--gold)' if v.verdict == 'good' else ('var(--red)' if v.verdict == 'weak' else 'var(--muted)')) }}{% endmacro %}
 
 {% block content %}
+  <style>
+    /* برواز الطبقات النص للمربعات الأربعة (خلفية معتمة فلا نفاذ) */
+    .stat-row.tight { gap:26px; margin-top:18px }
+    .stat-row.tight .stat-box {
+      border:1.25px solid transparent;
+      background:linear-gradient(var(--panel-2),var(--panel-2)) padding-box,
+                 linear-gradient(135deg,#22c55e,#a7c0e8,#7c6fe6) border-box;
+      box-shadow:0 0 0 1.5px #22c55e, 0 0 0 3px #a7c0e8, 0 0 0 4.5px #7c6fe6, 0 0 13px 4px rgba(124,111,230,.28);
+    }
+  </style>
   <section class="panel">
     <div class="panel-head">
       <h2>👑 مؤشر Algomatix
@@ -27,9 +37,9 @@
     </div>
 
     {% if items %}
-      {# إطار مضيء (برواز الطبقات) + شبكة بارزة + مقاس المحتوى + محاذاة يمين #}
-      <div style="margin:22px 0 12px auto;width:fit-content;max-width:calc(100% - 26px);border-radius:16px;background:linear-gradient(135deg,#22c55e,#a7c0e8,#7c6fe6);padding:2.5px;box-shadow:0 0 0 3px #22c55e, 0 0 0 6px #a7c0e8, 0 0 0 9px #7c6fe6, 0 0 26px 8px rgba(124,111,230,.45)">
-        <div style="border-radius:13.5px;overflow:hidden;background:var(--panel-2)">
+      {# إطار مضيء (برواز الطبقات النص) + شبكة بارزة + مقاس المحتوى + محاذاة يمين #}
+      <div style="margin:22px 0 12px auto;width:fit-content;max-width:calc(100% - 26px);border-radius:16px;background:linear-gradient(135deg,#22c55e,#a7c0e8,#7c6fe6);padding:1.25px;box-shadow:0 0 0 1.5px #22c55e, 0 0 0 3px #a7c0e8, 0 0 0 4.5px #7c6fe6, 0 0 13px 4px rgba(124,111,230,.28)">
+        <div style="border-radius:14.75px;overflow:hidden;background:var(--panel-2)">
           <div style="overflow-x:auto">
           {# ── رأس الجدول ── #}
           <div style="display:grid;grid-template-columns:236px 78px 156px;background:rgba(124,111,230,.22);font-weight:800;color:var(--silver);font-size:13px;letter-spacing:.3px;text-align:center">
