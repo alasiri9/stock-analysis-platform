@@ -3,6 +3,21 @@
 {% block title %}حاسبة المخاطرة — Algomatix{% endblock %}
 
 {% block content %}
+  <style>
+    /* حقول الإدخال: حلقات ناعمة بلا تغيير لونها */
+    .filters .filter input {
+      box-shadow:0 0 0 1px rgba(34,197,94,.5), 0 0 0 2px rgba(167,192,232,.38), 0 0 0 3px rgba(124,111,230,.34), 0 0 6px 1px rgba(124,111,230,.13);
+    }
+    /* بطاقات النتائج: برواز الطبقات النص الكامل (خلفية معتمة فلا نفاذ) */
+    #calc-results .stat-box {
+      border:1.25px solid transparent;
+      background:linear-gradient(var(--panel-2),var(--panel-2)) padding-box,
+                 linear-gradient(135deg,#22c55e,#a7c0e8,#7c6fe6) border-box;
+      box-shadow:0 0 0 1.5px #22c55e, 0 0 0 3px #a7c0e8, 0 0 0 4.5px #7c6fe6, 0 0 13px 4px rgba(124,111,230,.28);
+    }
+    /* بطاقة «عدد الأسهم» تحتفظ بلونها الذهبي مع الحلقات */
+    #calc-results .stat-box.gem-box { border:none; background:rgba(245,196,81,.28); }
+  </style>
   <h1 class="page-title">🧮 حاسبة المخاطرة وحجم الصفقة
     <span class="help-q" data-tip="تحدّد نسبة صغيرة من رأس مالك (2% مثلاً) كأقصى خسارة تقبلها في الصفقة، فتحسب لك الحاسبة عدد الأسهم المناسب — بتوزيع مبلغ المخاطرة على المسافة بين سعر الدخول ووقف الخسارة — حتى تبقى خسارتك محدودة مهما حصل. أداة تعليمية، لا توصية.">👁</span>
   </h1>
