@@ -3,7 +3,14 @@
 {% block title %}لوحتي — Algomatix{% endblock %}
 
 {% block content %}
-  <style>.health-grid .h-label { color: var(--gold); }</style>
+  <style>
+    .health-grid .h-label { color: var(--gold); }
+    /* بروازي (الخفيف) حول بطاقات لوحتي الأربع */
+    .health-grid .health-card {
+      box-shadow:0 0 0 1px rgba(34,197,94,.38), 0 0 0 2px rgba(167,192,232,.28), 0 0 0 3px rgba(124,111,230,.24),
+                 0 0 5px 1px rgba(124,111,230,.09);
+    }
+  </style>
   <section class="panel">
     <div class="panel-head">
       <h2>🏠 لوحتي
