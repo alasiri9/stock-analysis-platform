@@ -48,6 +48,15 @@
 {% endmacro %}
 
 {% block content %}
+  <style>
+    /* برواز الطبقات النص لبطاقة الشراء العنقودي (خلفيتها معتمة فلا نفاذ) */
+    .cluster-card {
+      border:1.25px solid transparent;
+      background:linear-gradient(var(--panel-2),var(--panel-2)) padding-box,
+                 linear-gradient(135deg,#22c55e,#a7c0e8,#7c6fe6) border-box;
+      box-shadow:0 0 0 1.5px #22c55e, 0 0 0 3px #a7c0e8, 0 0 0 4.5px #7c6fe6, 0 0 13px 4px rgba(124,111,230,.28);
+    }
+  </style>
   <section class="panel">
     <div class="panel-head">
       <h2>🎯 رادار المحفزات :
@@ -57,7 +66,7 @@
 
     <form action="{{ url_for('radar_refresh') }}" method="post" style="margin-bottom:12px">
   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-      <button class="btn" type="submit">🔄 تحديث بيانات الرادار</button>
+      <button class="btn" type="submit" style="box-shadow:0 0 0 1.5px #22c55e, 0 0 0 3px #a7c0e8, 0 0 0 4.5px #7c6fe6, 0 0 13px 4px rgba(124,111,230,.28)">🔄 تحديث بيانات الرادار</button>
     </form>
     <div class="confidence" style="margin-bottom:14px">
       {% if latest %}
