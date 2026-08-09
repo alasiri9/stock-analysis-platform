@@ -1355,6 +1355,30 @@ def create_app():
         return render_template("structure.html", items=items, counts=counts,
                                latest=latest, active="structure")
 
+    @app.route("/data-depth")
+    def data_depth():
+        # 🔬 أداة فحص (للمدير): كم شمعة يومية يرجعها FMP فعلاً لسهم واحد؟
+        # لنعرف إن كان الشهري يكفي للقمم/القيعان. يستهلك طلب FMP واحد فقط.
+        if not is_admin():
+            return redirect(url_for("index"))
+        candles = fmp_client.get_historical_prices("AAPL", limit=5000)
+        n = len(candles or [])
+        newest = candles[0].get("date") if candles else "—"
+        oldest = candles[-1].get("date") if candles else "—"
+        weekly = len(indicators._resample(candles, "W")) if candles else 0
+        monthly = len(indicators._resample(candles, "M")) if candles else 0
+        years = round(n / 252.0, 1) if n else 0
+        enough = "✅ نعم — يكفي القمم والقيعان (≥19)" if monthly >= 19 else "❌ لا — لا يكفي (نحتاج ≥19)"
+        return (f"<div dir='rtl' style='font-family:sans-serif;background:#0f1830;color:#e8eefc;"
+                f"padding:28px;max-width:620px;margin:30px auto;border-radius:14px;line-height:2'>"
+                f"<h2 style='color:#22c55e'>🔬 فحص عمق بيانات FMP (AAPL)</h2>"
+                f"<b>عدد الشموع اليومية المُرجَعة:</b> {n} (~{years} سنة)<br>"
+                f"<b>أحدث تاريخ:</b> {newest} · <b>أقدم تاريخ:</b> {oldest}<br>"
+                f"<b>شموع أسبوعية:</b> {weekly} · <b>شموع شهرية:</b> {monthly}<br>"
+                f"<b>هل الشهري يكفي القمم والقيعان؟</b> {enough}<br>"
+                f"<hr style='border-color:#2a3a5a'><small style='color:#9fb0d0'>"
+                f"استهلك طلب FMP واحداً. أرسل هذه الأرقام لمطيع لنقرّر.</small></div>")
+
     @app.route("/frames")
     def frames_page():
         # ⏱️ تأكيد الفريمات الثلاثة: حالة كل سهم على يومي/أسبوعي/شهري + قوة الفريمات (من الكاش، بلا API).
