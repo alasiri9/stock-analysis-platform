@@ -18,7 +18,7 @@
   <section class="panel">
     <div class="panel-head">
       <h2>⏱️ <span class="brand-ink">تأكيد الفريمات الثلاثة</span>
-        <span class="help-q" data-tip="حالة كل سهم على ثلاثة فريمات زمنية: يومي · أسبوعي · شهري. اتجاه كل فريم يُقرأ بالقمم والقيعان (الأساس في تحديد الاتجاه) من أسعار السهم نفسها (بلا تكلفة). القاعدة الذهبية: لا تدخل إلا والفريم الأكبر إيجابي. القوة متناظرة: 🟢 ثلاثية صاعدة (الثلاثة صاعدة، الأقوى شراءً) · 🟢 ثنائية صاعدة · ⚪ عرضية (لا توافق) · 🔴 ثنائية هابطة · 🔴 ثلاثية هابطة (الثلاثة هابطة، الأقوى هبوطاً). تعليمي وصفي — لا توصية.">👁</span>
+        <span class="help-q" data-tip="حالة كل سهم على ثلاثة فريمات زمنية مرتّبة من الأكبر للأصغر: شهري · أسبوعي · يومي (تحليل من أعلى لأسفل — نبدأ بالاتجاه العام ثم ننزل لتوقيت الدخول). اتجاه كل فريم يُقرأ بالقمم والقيعان (الأساس في تحديد الاتجاه) من أسعار السهم نفسها (بلا تكلفة). القاعدة الذهبية: لا تدخل إلا والفريم الأكبر إيجابي. القوة متناظرة: 🟢 ثلاثية صاعدة (الثلاثة صاعدة، الأقوى شراءً) · 🟢 ثنائية صاعدة · ⚪ عرضية (لا توافق) · 🔴 ثنائية هابطة · 🔴 ثلاثية هابطة (الثلاثة هابطة، الأقوى هبوطاً). تعليمي وصفي — لا توصية.">👁</span>
       </h2>
     </div>
 
@@ -33,9 +33,9 @@
                   <th colspan="3" style="border-bottom:2px solid rgba(124,111,230,.75)">قوة الفريمات</th>
                 </tr>
                 <tr>
-                  <th style="font-size:11px;font-weight:600;padding:6px 22px;color:rgba(255,255,255,.55);border-inline-start:2px solid rgba(124,111,230,.4)">يومي</th>
+                  <th style="font-size:11px;font-weight:600;padding:6px 22px;color:rgba(255,255,255,.55);border-inline-start:2px solid rgba(124,111,230,.4)">شهري</th>
                   <th class="frm2" style="font-size:11px;font-weight:600;padding:6px 22px;color:rgba(255,255,255,.55)">أسبوعي</th>
-                  <th class="frm2" style="font-size:11px;font-weight:600;padding:6px 22px;color:rgba(255,255,255,.55)">شهري</th>
+                  <th class="frm2" style="font-size:11px;font-weight:600;padding:6px 22px;color:rgba(255,255,255,.55)">يومي</th>
                 </tr>
               </thead>
               <tbody>
@@ -47,9 +47,9 @@
                       <div class="muted" style="font-size:12px;line-height:1.35">{{ item.name or '' }}</div>
                       {% if item.sector %}<div style="color:var(--gold);font-size:11.5px">{{ item.sector | sector_ar }}</div>{% endif %}
                     </td>
-                    <td>{{ frame_dir(f.daily) }}</td>
+                    <td>{{ frame_dir(f.monthly) }}</td>
                     <td class="frm2">{{ frame_dir(f.weekly) }}</td>
-                    <td class="frm2">{{ frame_dir(f.monthly) }}</td>
+                    <td class="frm2">{{ frame_dir(f.daily) }}</td>
                   </tr>
                 {% endfor %}
               </tbody>

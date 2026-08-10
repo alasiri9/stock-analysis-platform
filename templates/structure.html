@@ -65,9 +65,9 @@
                   <th rowspan="2">الشراء العنقودي</th>
                 </tr>
                 <tr>
-                  <th style="font-size:11px;font-weight:600;padding:6px 8px;color:rgba(255,255,255,.55);border-inline-start:2px solid rgba(124,111,230,.4)">يومي</th>
+                  <th style="font-size:11px;font-weight:600;padding:6px 8px;color:rgba(255,255,255,.55);border-inline-start:2px solid rgba(124,111,230,.4)">شهري</th>
                   <th class="frm2" style="font-size:11px;font-weight:600;padding:6px 8px;color:rgba(255,255,255,.55)">أسبوعي</th>
-                  <th class="frm2" style="font-size:11px;font-weight:600;padding:6px 8px;color:rgba(255,255,255,.55)">شهري</th>
+                  <th class="frm2" style="font-size:11px;font-weight:600;padding:6px 8px;color:rgba(255,255,255,.55)">يومي</th>
                 </tr>
               </thead>
               <tbody>
@@ -90,9 +90,9 @@
                     {% if not fr %}
                     <td class="muted">—</td><td class="muted frm2">—</td><td class="muted frm2">—</td>
                     {% else %}
-                    <td style="font-size:12px;font-weight:700">{{ frame_dir(fr.daily) }}</td>
+                    <td style="font-size:12px;font-weight:700">{{ frame_dir(fr.monthly) }}</td>
                     <td class="frm2" style="font-size:12px;font-weight:700">{{ frame_dir(fr.weekly) }}</td>
-                    <td class="frm2" style="font-size:12px;font-weight:700">{{ frame_dir(fr.monthly) }}</td>
+                    <td class="frm2" style="font-size:12px;font-weight:700">{{ frame_dir(fr.daily) }}</td>
                     {% endif %}
                     {# الحدث #}
                     <td>
