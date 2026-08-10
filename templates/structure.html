@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% from "_frame_strength.html" import frame_strength %}
+{% from "_frame_strength.html" import frame_strength, frame_dir %}
 {% set active = 'structure' %}
 {% block title %}قراءة هيكل السوق — Algomatix{% endblock %}
 
@@ -55,7 +55,11 @@
               <thead>
                 <tr>
                   <th>السهم</th>
-                  <th>قوة الفريمات</th>
+                  <th>قوة الفريمات
+                    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;font-size:10.5px;font-weight:600;opacity:.6;margin-top:3px">
+                      <span>يومي</span><span>أسبوعي</span><span>شهري</span>
+                    </div>
+                  </th>
                   <th>الاتجاه</th>
                   <th>الحدث</th>
                   <th>إعادة الاختبار</th>
@@ -77,10 +81,10 @@
                       <div class="muted" style="font-size:12px;line-height:1.35">{{ r.name or '' }}</div>
                       {% if r.sector %}<div style="color:var(--gold);font-size:11.5px;line-height:1.3">{{ r.sector | sector_ar }}</div>{% endif %}
                     </td>
-                    {# قوة الفريمات (يومي/أسبوعي/شهري) — متناظرة #}
+                    {# قوة الفريمات — الفريمات الثلاثة خام (يومي/أسبوعي/شهري) #}
                     <td>
                       {% if not fr %}<span class="muted">—</span>
-                      {% else %}{{ frame_strength(fr.up_count or 0, fr.down_count or 0) }}{% endif %}
+                      {% else %}<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;text-align:center;font-size:12px;font-weight:700">{{ frame_dir(fr.daily) }}{{ frame_dir(fr.weekly) }}{{ frame_dir(fr.monthly) }}</div>{% endif %}
                     </td>
                     {# الاتجاه #}
                     <td>
