@@ -1280,7 +1280,14 @@ def multi_timeframe(candles, daily_structure=None):
         return None
 
     def _trend(ms):
-        return ms["trend"] if ms else "na"
+        # اتجاه الفريم يحترم الواقع الحالي: القمم/القيعان المؤكّدة تتأخّر لأن قمّة
+        # الاختراق الجديدة لا تتأكّد إلا بعد شمعتين — فحين ينقلب الهيكل (CHOCH) نعرض
+        # اتجاهه الجديد بدل الاتجاه القديم المتأخّر، ليطابق ما يراه المتداول على الشارت.
+        if not ms:
+            return "na"
+        if ms.get("event") == "CHOCH" and ms.get("event_dir") in ("up", "down"):
+            return ms["event_dir"]
+        return ms["trend"]
 
     daily_ms = daily_structure if daily_structure is not None else market_structure(candles[:250])
     daily_t = _trend(daily_ms)
