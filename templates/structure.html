@@ -53,10 +53,10 @@
                 <tr>
                   <th>السهم</th>
                   <th>قوة الفريمات
-                    <div style="display:grid;grid-template-columns:repeat(3,1fr);font-size:10.5px;font-weight:600;opacity:.6;margin-top:4px">
-                      <span style="padding:0 6px">يومي</span>
-                      <span style="padding:0 6px;border-inline-start:2px solid rgba(124,111,230,.7)">أسبوعي</span>
-                      <span style="padding:0 6px;border-inline-start:2px solid rgba(124,111,230,.7)">شهري</span>
+                    <div style="display:grid;grid-template-columns:repeat(3,1fr);font-size:10.5px;font-weight:600;opacity:.7;margin-top:5px">
+                      <span style="padding:2px 6px 9px">يومي</span>
+                      <span style="padding:2px 6px 9px;border-inline-start:2px solid rgba(124,111,230,.8)">أسبوعي</span>
+                      <span style="padding:2px 6px 9px;border-inline-start:2px solid rgba(124,111,230,.8)">شهري</span>
                     </div>
                   </th>
                   <th>الحدث</th>
@@ -79,13 +79,13 @@
                       <div class="muted" style="font-size:12px;line-height:1.35">{{ r.name or '' }}</div>
                       {% if r.sector %}<div style="color:var(--gold);font-size:11.5px;line-height:1.3">{{ r.sector | sector_ar }}</div>{% endif %}
                     </td>
-                    {# قوة الفريمات — الفريمات الثلاثة خام (يومي/أسبوعي/شهري) #}
-                    <td>
-                      {% if not fr %}<span class="muted">—</span>
-                      {% else %}<div style="display:grid;grid-template-columns:repeat(3,1fr);text-align:center;font-size:12px;font-weight:700">
-                        <span style="padding:2px 6px">{{ frame_dir(fr.daily) }}</span>
-                        <span style="padding:2px 6px;border-inline-start:2px solid rgba(124,111,230,.7)">{{ frame_dir(fr.weekly) }}</span>
-                        <span style="padding:2px 6px;border-inline-start:2px solid rgba(124,111,230,.7)">{{ frame_dir(fr.monthly) }}</span>
+                    {# قوة الفريمات — الفريمات الثلاثة خام (يومي/أسبوعي/شهري) بشبكة متّصلة #}
+                    <td style="padding:0">
+                      {% if not fr %}<div style="padding:10px 8px"><span class="muted">—</span></div>
+                      {% else %}<div style="display:flex;height:100%;text-align:center;font-size:12px;font-weight:700">
+                        <span style="flex:1;display:flex;align-items:center;justify-content:center;padding:10px 4px">{{ frame_dir(fr.daily) }}</span>
+                        <span style="flex:1;display:flex;align-items:center;justify-content:center;padding:10px 4px;border-inline-start:2px solid rgba(124,111,230,.8)">{{ frame_dir(fr.weekly) }}</span>
+                        <span style="flex:1;display:flex;align-items:center;justify-content:center;padding:10px 4px;border-inline-start:2px solid rgba(124,111,230,.8)">{{ frame_dir(fr.monthly) }}</span>
                       </div>{% endif %}
                     </td>
                     {# الحدث #}
