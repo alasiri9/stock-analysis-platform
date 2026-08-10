@@ -56,7 +56,7 @@ a { color: inherit; text-decoration: none; }
   padding: 18px 14px;
   flex-shrink: 0;
   display: flex; flex-direction: column;
-  position: sticky; top: 0; height: 100vh; overflow-y: auto;
+  position: sticky; top: 11px; height: calc(100vh - 22px); overflow-y: auto;
 }
 .sidebar::-webkit-scrollbar { width: 7px; }
 .sidebar::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
