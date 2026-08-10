@@ -3,6 +3,12 @@
 {% block title %}قائمة المراقبة{% endblock %}
 
 {% block content %}
+  <style>
+    /* برواز النص الخفيف (حلقات ناعمة) لحقل الإضافة وزرّه */
+    .search input, .search .btn {
+      box-shadow:0 0 0 1px rgba(34,197,94,.5), 0 0 0 2px rgba(167,192,232,.38), 0 0 0 3px rgba(124,111,230,.34), 0 0 6px 1px rgba(124,111,230,.13);
+    }
+  </style>
   <h1 class="page-title">👁 قائمة المراقبة <span class="help-q" data-tip="أسهم تختار متابعتها عن قرب. أضف رمز أي سهم من المنصة (اختره من القائمة المنسدلة أو اكتب أوله) وتابع سعره وحالته في مكان واحد. تعليمي فقط، ليس توصية.">👁</span></h1>
 
   <form class="search" action="{{ url_for('watchlist_add') }}" method="post">
