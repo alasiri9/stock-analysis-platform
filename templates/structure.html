@@ -56,11 +56,12 @@
                 <tr>
                   <th>السهم</th>
                   <th>قوة الفريمات
-                    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;font-size:10.5px;font-weight:600;opacity:.6;margin-top:3px">
-                      <span>يومي</span><span>أسبوعي</span><span>شهري</span>
+                    <div style="display:grid;grid-template-columns:repeat(3,1fr);font-size:10.5px;font-weight:600;opacity:.6;margin-top:4px">
+                      <span style="padding:0 6px">يومي</span>
+                      <span style="padding:0 6px;border-inline-start:1.5px solid rgba(124,111,230,.45)">أسبوعي</span>
+                      <span style="padding:0 6px;border-inline-start:1.5px solid rgba(124,111,230,.45)">شهري</span>
                     </div>
                   </th>
-                  <th>الاتجاه</th>
                   <th>الحدث</th>
                   <th>إعادة الاختبار</th>
                   <th>الهيكل</th>
@@ -84,13 +85,11 @@
                     {# قوة الفريمات — الفريمات الثلاثة خام (يومي/أسبوعي/شهري) #}
                     <td>
                       {% if not fr %}<span class="muted">—</span>
-                      {% else %}<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;text-align:center;font-size:12px;font-weight:700">{{ frame_dir(fr.daily) }}{{ frame_dir(fr.weekly) }}{{ frame_dir(fr.monthly) }}</div>{% endif %}
-                    </td>
-                    {# الاتجاه #}
-                    <td>
-                      {% if ms.trend == 'up' %}<span class="pill buy">🟢 {{ ms.trend_label }}</span>
-                      {% elif ms.trend == 'down' %}<span class="pill sell">🔴 {{ ms.trend_label }}</span>
-                      {% else %}<span class="pill">⚪ {{ ms.trend_label }}</span>{% endif %}
+                      {% else %}<div style="display:grid;grid-template-columns:repeat(3,1fr);text-align:center;font-size:12px;font-weight:700">
+                        <span style="padding:2px 6px">{{ frame_dir(fr.daily) }}</span>
+                        <span style="padding:2px 6px;border-inline-start:1.5px solid rgba(124,111,230,.35)">{{ frame_dir(fr.weekly) }}</span>
+                        <span style="padding:2px 6px;border-inline-start:1.5px solid rgba(124,111,230,.35)">{{ frame_dir(fr.monthly) }}</span>
+                      </div>{% endif %}
                     </td>
                     {# الحدث #}
                     <td>
