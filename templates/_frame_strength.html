@@ -1,0 +1,9 @@
+{# شارة «قوة الفريمات» المتناظرة — مصدر موحّد لصفحتَي هيكل السوق والفريمات.
+   القيم من indicators.multi_timeframe: triple_up / double_up / mixed / double_down / triple_down. #}
+{% macro frame_strength(s) %}
+  {%- if s == 'triple_up' %}<span style="color:var(--green);font-weight:800;white-space:nowrap">🟢 ثلاثية صاعدة</span>
+  {%- elif s == 'double_up' %}<span style="color:var(--green);font-weight:700;white-space:nowrap">🟢 ثنائية صاعدة</span>
+  {%- elif s == 'double_down' %}<span style="color:var(--red);font-weight:700;white-space:nowrap">🔴 ثنائية هابطة</span>
+  {%- elif s == 'triple_down' %}<span style="color:var(--red);font-weight:800;white-space:nowrap">🔴 ثلاثية هابطة</span>
+  {%- else %}<span class="muted" style="font-weight:700;white-space:nowrap">⚪ عرضية</span>{%- endif %}
+{% endmacro %}

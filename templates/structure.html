@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "_frame_strength.html" import frame_strength %}
 {% set active = 'structure' %}
 {% block title %}قراءة هيكل السوق — Algomatix{% endblock %}
 
@@ -113,9 +114,7 @@
                     {# قوة الفريمات (يومي/أسبوعي/شهري) #}
                     <td>
                       {% if not fr %}<span class="muted">—</span>
-                      {% elif fr.strength == 'triple' %}<span style="color:var(--green);font-weight:800;white-space:nowrap">🥇 ثلاثية</span>
-                      {% elif fr.strength == 'double' %}<span style="color:var(--gold);font-weight:700;white-space:nowrap">🥈 ثنائية</span>
-                      {% else %}<span class="muted" style="white-space:nowrap">⚪ ضعيفة</span>{% endif %}
+                      {% else %}{{ frame_strength(fr.strength) }}{% endif %}
                     </td>
                     {# الشراء العنقودي — مطلعو EDGAR #}
                     <td>{% if cluster_buyers is defined and cluster_buyers.get(r.ticker) %}<span style="color:var(--green);font-weight:700;white-space:nowrap">👥 {{ cluster_buyers[r.ticker] }} مطلعين</span>{% else %}<span class="muted">—</span>{% endif %}</td>

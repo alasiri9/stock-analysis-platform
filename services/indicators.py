@@ -1290,6 +1290,16 @@ def multi_timeframe(candles, daily_structure=None):
     trends = [daily_t, weekly_t, monthly_t]
     ups = sum(1 for t in trends if t == "up")
     downs = sum(1 for t in trends if t == "down")
-    strength = "triple" if ups >= 3 else ("double" if ups == 2 else "weak")
+    # قوة متناظرة: توافق صاعد ↑ · مختلط · توافق هابط ↓ (البيانات نفسها up/down_count)
+    if ups >= 3:
+        strength = "triple_up"
+    elif downs >= 3:
+        strength = "triple_down"
+    elif ups == 2:
+        strength = "double_up"
+    elif downs == 2:
+        strength = "double_down"
+    else:
+        strength = "mixed"
     return {"daily": daily_t, "weekly": weekly_t, "monthly": monthly_t,
             "up_count": ups, "down_count": downs, "strength": strength}
