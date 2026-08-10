@@ -1,5 +1,13 @@
 {# شارة «قوة الفريمات» المتناظرة — مصدر موحّد لصفحتَي هيكل السوق والفريمات.
    تُحسب من عدد الفريمات الصاعدة/الهابطة مباشرةً (up/down) فتعمل مع أي كاش. #}
+{# اتجاه فريم مفرد (يومي/أسبوعي/شهري): صاعد أخضر · عرضي فضّي · هابط أحمر #}
+{% macro frame_dir(t) %}
+  {%- if t == 'up' %}<span style="color:var(--green);white-space:nowrap">🟢 صاعد</span>
+  {%- elif t == 'down' %}<span style="color:var(--red);white-space:nowrap">🔴 هابط</span>
+  {%- elif t == 'side' %}<span class="muted" style="white-space:nowrap">⚪ عرضي</span>
+  {%- else %}<span class="muted" style="opacity:.5">—</span>{%- endif %}
+{% endmacro %}
+
 {% macro frame_strength(up, down) %}
   {%- if up >= 3 %}<span style="color:var(--green);font-weight:800;white-space:nowrap">🟢 ثلاثية صاعدة</span>
   {%- elif down >= 3 %}<span style="color:var(--red);font-weight:800;white-space:nowrap">🔴 ثلاثية هابطة</span>
