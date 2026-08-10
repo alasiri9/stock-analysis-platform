@@ -201,6 +201,7 @@ alertcondition(ewBear, "Algomatix — تنبيه مبكّر هابط", "بواد
 //  يقرأ اتجاه كل فريم من تتابع قممه وقيعانه (نفس منطق منصة Algomatix):
 //    قمّة أعلى + قاع أعلى = صاعد · قمّة أدنى + قاع أدنى = هابط · غير ذلك = عرضي.
 //  تحليل من أعلى لأسفل: الأكبر (شهري) أولاً ثم أسبوعي ثم يومي.
+//  + مستوى الحسم لكل فريم: السعر الذي عنده ينقلب هيكل الفريم (كسر آخر قاع/قمة).
 //  ⚠️ قد يتحدّث الفريم الأكبر حتى تُغلق شمعته — تعليمي وصفي لا توصية.
 f_frameTrend(int len) =>
     ph = ta.pivothigh(high, len, len)
@@ -218,18 +219,22 @@ f_frameTrend(int len) =>
     int t = 0
     if not na(ph1) and not na(ph2) and not na(pl1) and not na(pl2)
         t := (ph1 > ph2 and pl1 > pl2) ? 1 : ((ph1 < ph2 and pl1 < pl2) ? -1 : 0)
-    t
+    // مستوى الحسم/الانقلاب: صاعد→آخر قاع (كسره=انقلاب هبوطي) · هابط→آخر قمة (كسرها=انقلاب صعودي)
+    //                       عرضي→أقرب ارتكاز للسعر (أول حسم متوقّع للمدى)
+    float flip = t > 0 ? pl1 : (t < 0 ? ph1 : (na(ph1) ? pl1 : (na(pl1) ? ph1 : (math.abs(close - ph1) < math.abs(close - pl1) ? ph1 : pl1))))
+    [t, flip]
 
-tfMonthly = showFrames ? request.security(syminfo.tickerid, "1M", f_frameTrend(frmSwing)) : 0
-tfWeekly  = showFrames ? request.security(syminfo.tickerid, "1W", f_frameTrend(frmSwing)) : 0
-tfDaily   = showFrames ? request.security(syminfo.tickerid, "1D", f_frameTrend(frmSwing)) : 0
+[tfMonthlyT, tfMonthlyL] = request.security(syminfo.tickerid, "1M", f_frameTrend(frmSwing))
+[tfWeeklyT,  tfWeeklyL]  = request.security(syminfo.tickerid, "1W", f_frameTrend(frmSwing))
+[tfDailyT,   tfDailyL]   = request.security(syminfo.tickerid, "1D", f_frameTrend(frmSwing))
 
 f_frmTxt(int t) => t > 0 ? "صاعد" : (t < 0 ? "هابط" : "عرضي")
 f_frmBg(int t)  => t > 0 ? tblBullCol : (t < 0 ? tblBearCol : color.gray)
+f_lvl(float v)  => na(v) ? "—" : str.tostring(v, format.mintick)
 
 // تنبيه توافق ثلاثي (نفس قاعدة تلوين الاسم أخضر في المنصة عند صعود الفريمات الثلاثة)
-framesAllUp = showFrames and tfMonthly > 0 and tfWeekly > 0 and tfDaily > 0
-framesAllDn = showFrames and tfMonthly < 0 and tfWeekly < 0 and tfDaily < 0
+framesAllUp = showFrames and tfMonthlyT > 0 and tfWeeklyT > 0 and tfDailyT > 0
+framesAllDn = showFrames and tfMonthlyT < 0 and tfWeeklyT < 0 and tfDailyT < 0
 alertcondition(framesAllUp, "Algomatix — توافق ثلاثي صاعد", "الفريمات الثلاثة صاعدة (شهري+أسبوعي+يومي) على {{ticker}} (تعليمي لا توصية)")
 alertcondition(framesAllDn, "Algomatix — توافق ثلاثي هابط", "الفريمات الثلاثة هابطة (شهري+أسبوعي+يومي) على {{ticker}} (تعليمي لا توصية)")
 
@@ -269,10 +274,10 @@ if barstate.islast
     table.cell(tbl, 1, 5, str.tostring(buyConf) + "/5", text_color=color.white, bgcolor=color.new(buyBg, 20), text_size=tSize)
     if showFrames
         table.cell(tbl, 0, 6, "⏱️ الفريمات",  text_color=color.white, bgcolor=tblHeaderCol, text_size=tSize)
-        table.cell(tbl, 1, 6, "الأكبر أولاً",   text_color=color.white, bgcolor=tblHeaderCol, text_size=tSize)
+        table.cell(tbl, 1, 6, "اتجاه · مستوى الحسم", text_color=color.white, bgcolor=tblHeaderCol, text_size=tSize)
         table.cell(tbl, 0, 7, " شهري ",         text_color=tblLabelCol, bgcolor=tblPanelCol, text_size=tSize)
-        table.cell(tbl, 1, 7, f_frmTxt(tfMonthly), text_color=color.white, bgcolor=color.new(f_frmBg(tfMonthly), 20), text_size=tSize)
+        table.cell(tbl, 1, 7, f_frmTxt(tfMonthlyT) + " · " + f_lvl(tfMonthlyL), text_color=color.white, bgcolor=color.new(f_frmBg(tfMonthlyT), 20), text_size=tSize)
         table.cell(tbl, 0, 8, " أسبوعي ",       text_color=tblLabelCol, bgcolor=tblPanelCol, text_size=tSize)
-        table.cell(tbl, 1, 8, f_frmTxt(tfWeekly),  text_color=color.white, bgcolor=color.new(f_frmBg(tfWeekly), 20), text_size=tSize)
+        table.cell(tbl, 1, 8, f_frmTxt(tfWeeklyT) + " · " + f_lvl(tfWeeklyL), text_color=color.white, bgcolor=color.new(f_frmBg(tfWeeklyT), 20), text_size=tSize)
         table.cell(tbl, 0, 9, " يومي ",          text_color=tblLabelCol, bgcolor=tblPanelCol, text_size=tSize)
-        table.cell(tbl, 1, 9, f_frmTxt(tfDaily),   text_color=color.white, bgcolor=color.new(f_frmBg(tfDaily), 20), text_size=tSize)
+        table.cell(tbl, 1, 9, f_frmTxt(tfDailyT) + " · " + f_lvl(tfDailyL), text_color=color.white, bgcolor=color.new(f_frmBg(tfDailyT), 20), text_size=tSize)
