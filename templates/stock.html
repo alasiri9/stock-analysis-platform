@@ -61,7 +61,7 @@
   {# ===== حالة السهم: الحكم الفني + أبرز الإشارات + الدرجات + القوة/الحذر في مكان واحد ===== #}
   {% if (summary and (summary.strengths or summary.cautions)) or report.break_status or report.sustained or meter or scan %}
     <div class="section smart-summary">
-      <h2>📊 حالة السهم
+      <h2>📊 <span class="brand-ink">حالة السهم</span>
         <span class="help-q" data-tip="حالة السهم: نظرة شاملة مُولّدة آلياً — الحكم الفني + أبرز الإشارات + الدرجات + نقاط القوة والحذر في مكان واحد. وصفي تعليمي، ليس توصية ولا تنبؤاً.">👁</span>
       </h2>
 
@@ -186,7 +186,7 @@
 
   {# ===== الشارت التفاعلي (TradingView) — يفتح الشارت العادي بتخطيط المستخدم الخاص ===== #}
   <div class="section">
-    <h2>📊 مسار السعر</h2>
+    <h2>📊 <span class="brand-ink">مسار السعر</span></h2>
     <a class="tv-open" href="https://www.tradingview.com/chart/?symbol={{ report.ticker }}" target="_blank" rel="noopener noreferrer">
       <span class="tv-open-ic">📈</span>
       <span class="tv-open-txt">
@@ -202,7 +202,7 @@
   {# ===== المؤشرات الفنية المتحققة (الصاعدة فقط) ===== #}
   {% if report.indicators %}
   <div class="section">
-    <h2>🎯 المؤشرات الفنية المتحققة
+    <h2>🎯 <span class="brand-ink">المؤشرات الفنية المتحققة</span>
       <span class="tech-count {{ 'strong' if tech.pct >= 60 else '' }}">{{ tech.met|length }} من {{ tech.total }}</span>
       <span class="help-q" data-tip="المؤشرات الفنية المتحققة: كم مؤشراً فنياً يعطي إشارة صاعدة (متحقّقة) من أصل 12 مؤشراً تحسبها المنصة (EMA · MACD · RSI · اختراق ...). نعرض المتحقّقة فقط. تعليمي، ليس توصية.">👁</span>
     </h2>
@@ -222,7 +222,7 @@
   {% if report.reversal %}
   {% set rv = report.reversal %}
   <div class="section">
-    <h2>🕯️ شمعة انعكاس
+    <h2>🕯️ <span class="brand-ink">شمعة انعكاس</span>
       <span class="help-q" data-tip="شمعة الانعكاس: شكل حركة السعر في آخر جلسة (ابتلاع · مطرقة · شهاب · دوجي) قد يمهّد لتغيّر الاتجاه. تنبيه معرفي فقط وليس توصية — شمعة واحدة دليل ضعيف ما لم تؤكّدها الجلسات بعدها. لا تدخل ضمن عدّاد المؤشرات الفنية.">👁</span>
     </h2>
     <div class="tech-badges">
@@ -236,7 +236,7 @@
   {% if report.fibonacci %}
   {% set fib = report.fibonacci %}
   <div class="section">
-    <h2>📐 مستويات فيبوناتشي
+    <h2>📐 <span class="brand-ink">مستويات فيبوناتشي</span>
       <span class="help-q" data-tip="فيبوناتشي: مستويات (23.6% · 38.2% · 50% · 61.8% · 78.6%) تُرسم على الموجة الحالية (بين أعلى قمة وأدنى قاع). في الموجة الصاعدة تعمل كدعوم محتملة عند التصحيح، وفي الهابطة كمقاومات. المستوى 61.8% (الذهبي) هو الأهم. تعليمي وصفي فقط — لا توصية.">👁</span>
     </h2>
     <div class="soon">
@@ -266,7 +266,7 @@
   {% if report.volume_profile %}
   {% set vp = report.volume_profile %}
   <div class="section">
-    <h2>📊 البروفايل الحجمي (POC)
+    <h2>📊 <span class="brand-ink">البروفايل الحجمي (POC)</span>
       <span class="help-q" data-tip="البروفايل الحجمي: نوزّع حجم التداول على مستويات السعر خلال ~3 أشهر. نقطة التحكم (POC) = المستوى الذي تداول عنده أكبر حجم — أقوى دعم/مقاومة (تركّز اهتمام حقيقي). منطقة القيمة (VAL–VAH) = حيث تركّز 70% من التداول. تعليمي وصفي فقط — لا توصية.">👁</span>
     </h2>
     <div class="grid">
@@ -294,7 +294,7 @@
   ] %}
   {% set avail = mlist | selectattr('val', 'ne', none) | list %}
   <div class="section">
-    <h2>📊 المقاييس المالية
+    <h2>📊 <span class="brand-ink">المقاييس المالية</span>
       <span class="tech-count">{{ avail|length }} من {{ mlist|length }}</span>
       <span class="help-q" data-tip="المقاييس المالية: أرقام تعريفية عن أداء الشركة (العائد على حقوق الملكية والأصول، هامش التشغيل والإجمالي، مكرّر الربحية P/E، وPEG). نعرض المتوفّرة منها فقط. تعليمي للاطّلاع، ليس توصية.">👁</span>
     </h2>
@@ -314,7 +314,7 @@
     {% set p = report.piotroski %}
     {% set ptotal = p.computable or 9 %}
     {% set ppct = (p.score / ptotal * 100) | round | int if ptotal else 0 %}
-    <h2>💎 مستوى الجودة المالية المتحققة
+    <h2>💎 <span class="brand-ink">مستوى الجودة المالية المتحققة</span>
       <span class="tech-count {{ 'strong' if ppct >= 60 else '' }}">{{ p.score }} من {{ ptotal }}</span>
       <span class="help-q" data-tip="الجودة المالية (Piotroski): درجة من 0 إلى 9 تقيس صحة الشركة المالية (ربحيتها وديونها وكفاءتها). نعرض النقاط الناجحة فقط. 8 أو 9 تُعتبر قوية. تعليمي.">👁</span>
     </h2>
@@ -350,7 +350,7 @@
 
   {# ===== تفصيل Catalyst ===== #}
   <div class="section">
-    <h2>🚀 تفاصيل النمو
+    <h2>🚀 <span class="brand-ink">تفاصيل النمو</span>
       <span class="help-q" data-tip="«النمو» مقياس مساعد اجتهادي للإرشاد — تعليمي فقط، ليس توصية.">👁</span>
     </h2>
     {% for c in report.catalyst.components %}
@@ -363,7 +363,7 @@
 
   {# ===== معاملات المطلعين (SEC EDGAR) ===== #}
   <div class="section">
-    <h2>🏛️ معاملات المطلعين بالسوق الأمريكي:
+    <h2>🏛️ <span class="brand-ink">معاملات المطلعين بالسوق الأمريكي:</span>
       <span class="help-q" data-tip="بيع أو شراء كبار مسؤولي الشركة (الرئيس التنفيذي، المدير المالي، أعضاء مجلس الإدارة، كبار الملّاك) لأسهم شركتهم — يُلزمهم القانون الأمريكي بالإفصاح عنها لهيئة السوق (SEC). شراؤهم بأموالهم غالباً إشارة ثقة، والبيع قد يكون لأسباب شخصية. تعليمي فقط، ليس توصية.">👁</span>
     </h2>
     {% if report.insider_trades %}
@@ -392,7 +392,7 @@
 
   {# ===== خطة ATR التعليمية ===== #}
   <div class="section">
-    <h2>📈 خطة التداول (حسب تقلّب السعر)
+    <h2>📈 <span class="brand-ink">خطة التداول (حسب تقلّب السعر)</span>
       <span class="help-q" data-tip="حساب تعليمي بحت مبني على ATR ومضاعفات افتراضية — ليس توصية بالدخول أو الخروج.">👁</span>
     </h2>
     {% if report.atr_plan %}
@@ -412,7 +412,7 @@
 
   {# ===== 🔔 تنبيه سعري سريع لهذا السهم (مربوط بالسهم الذي فلترته ودرسته) ===== #}
   <div class="section">
-    <h2>🔔 نبّهني على هذا السهم
+    <h2>🔔 <span class="brand-ink">نبّهني على هذا السهم</span>
       <span class="help-q" data-tip="أضف تنبيهاً سعرياً لهذا السهم مباشرةً — يصلك على تلغرام عند وصوله للسعر الذي تحدّده. يُفحص مرة يومياً بعد تحديث الأسعار. تعليمي فقط.">👁</span>
     </h2>
     {% if request.args.get('alert') == 'added' %}
@@ -440,7 +440,7 @@
   {# ===== أسهم من نفس القطاع (من الكاش — بلا API) ===== #}
   {% if peers %}
     <div class="section">
-      <h2>🏢 ترتيب قطاع نفس السهم ({{ report.sector | sector_ar }})
+      <h2>🏢 <span class="brand-ink">ترتيب قطاع نفس السهم ({{ report.sector | sector_ar }})</span>
         <span class="help-q" data-tip="ترتيب أسهم نفس قطاع هذا السهم حسب قوة التأكيد (الأقوى أولاً). لون الرقم يوضّح القوة: أخضر قوي · ذهبي متوسط · أحمر ضعيف. تعليمي فقط.">👁</span>
       </h2>
       <div class="sector-rank">
