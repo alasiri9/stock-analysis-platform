@@ -65,7 +65,7 @@ ewBearCol = input.color(#f97316, "لون تنبيه هابط مبكّر", group=
 
 gFrm = "⑧ الفريمات الثلاثة (اتجاه متعدّد)"
 showFrames = input.bool(true, "إظهار الفريمات الثلاثة", group=gFrm)
-frmSwing   = input.int(5, "حساسية القمم/القيعان للفريمات", minval=2, group=gFrm)
+frmSwing   = input.int(2, "حساسية القمم/القيعان للفريمات", minval=2, group=gFrm)  // 2 = مطابق لمحرّك المنصة
 
 // ===================== تحويل خيارات الحجم إلى قيم ==========================
 msSize = switch msSizeSel
