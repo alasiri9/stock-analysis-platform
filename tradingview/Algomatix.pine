@@ -230,7 +230,14 @@ f_frameTrend(int len) =>
 
 f_frmTxt(int t) => t > 0 ? "صاعد" : (t < 0 ? "هابط" : "عرضي")
 f_frmBg(int t)  => t > 0 ? tblBullCol : (t < 0 ? tblBearCol : color.gray)
-f_lvl(float v)  => na(v) ? "—" : str.tostring(v, format.mintick)
+// خانة الفريم: الاتجاه + سهم جهة الكسر (↓ تحت السعر · ↑ فوقه) + مستوى الحسم + نسبة البُعد عن السعر
+f_frmCell(int t, float lvl) =>
+    string s = f_frmTxt(t)
+    if not na(lvl)
+        arrow = lvl < close ? "↓" : "↑"
+        pct = (lvl - close) / close * 100.0
+        s := s + " " + arrow + str.tostring(lvl, format.mintick) + " (" + (pct >= 0 ? "+" : "") + str.tostring(pct, "0.0") + "%)"
+    s
 
 // تنبيه توافق ثلاثي (نفس قاعدة تلوين الاسم أخضر في المنصة عند صعود الفريمات الثلاثة)
 framesAllUp = showFrames and tfMonthlyT > 0 and tfWeeklyT > 0 and tfDailyT > 0
@@ -274,10 +281,10 @@ if barstate.islast
     table.cell(tbl, 1, 5, str.tostring(buyConf) + "/5", text_color=color.white, bgcolor=color.new(buyBg, 20), text_size=tSize)
     if showFrames
         table.cell(tbl, 0, 6, "⏱️ الفريمات",  text_color=color.white, bgcolor=tblHeaderCol, text_size=tSize)
-        table.cell(tbl, 1, 6, "اتجاه · مستوى الحسم", text_color=color.white, bgcolor=tblHeaderCol, text_size=tSize)
+        table.cell(tbl, 1, 6, "اتجاه · الحسم · البُعد", text_color=color.white, bgcolor=tblHeaderCol, text_size=tSize)
         table.cell(tbl, 0, 7, " شهري ",         text_color=tblLabelCol, bgcolor=tblPanelCol, text_size=tSize)
-        table.cell(tbl, 1, 7, f_frmTxt(tfMonthlyT) + " · " + f_lvl(tfMonthlyL), text_color=color.white, bgcolor=color.new(f_frmBg(tfMonthlyT), 20), text_size=tSize)
+        table.cell(tbl, 1, 7, f_frmCell(tfMonthlyT, tfMonthlyL), text_color=color.white, bgcolor=color.new(f_frmBg(tfMonthlyT), 20), text_size=tSize)
         table.cell(tbl, 0, 8, " أسبوعي ",       text_color=tblLabelCol, bgcolor=tblPanelCol, text_size=tSize)
-        table.cell(tbl, 1, 8, f_frmTxt(tfWeeklyT) + " · " + f_lvl(tfWeeklyL), text_color=color.white, bgcolor=color.new(f_frmBg(tfWeeklyT), 20), text_size=tSize)
+        table.cell(tbl, 1, 8, f_frmCell(tfWeeklyT, tfWeeklyL), text_color=color.white, bgcolor=color.new(f_frmBg(tfWeeklyT), 20), text_size=tSize)
         table.cell(tbl, 0, 9, " يومي ",          text_color=tblLabelCol, bgcolor=tblPanelCol, text_size=tSize)
-        table.cell(tbl, 1, 9, f_frmTxt(tfDailyT) + " · " + f_lvl(tfDailyL), text_color=color.white, bgcolor=color.new(f_frmBg(tfDailyT), 20), text_size=tSize)
+        table.cell(tbl, 1, 9, f_frmCell(tfDailyT, tfDailyL), text_color=color.white, bgcolor=color.new(f_frmBg(tfDailyT), 20), text_size=tSize)
