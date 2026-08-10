@@ -20,6 +20,8 @@
 
 body {
   margin: 0;
+  padding: 11px;
+  box-sizing: border-box;
   background: linear-gradient(160deg, #0e3a4d 0%, #16305c 50%, #232b57 78%, #362253 100%);
   background-attachment: fixed;
   color: var(--text);
@@ -27,19 +29,24 @@ body {
   direction: rtl;
 }
 
-a { color: inherit; text-decoration: none; }
-
-.layout { display: flex; flex-direction: row-reverse; min-height: 100vh; position: relative; }
-/* برواز الطبقات النص يحيط بحاوية التطبيق كلها (يتمرّر معها، لا يعبر فوق المحتوى) */
-.layout::after {
-  content: ""; position: absolute; inset: 4px; border-radius: 14px;
-  pointer-events: none; z-index: 50;
+/* برواز الطبقات النص يحيط بالتطبيق كله — ثابت في هامش الشاشة (خارج المحتوى، فلا يلامسه أبداً) */
+body::after {
+  content: "";
+  position: fixed;
+  inset: 3px;
+  border-radius: 14px;
+  pointer-events: none;
+  z-index: 9998;
   box-shadow:
     inset 0 0 0 1.5px #7c6fe6,
     inset 0 0 0 3px #a7c0e8,
     inset 0 0 0 4.5px #22c55e,
-    inset 0 0 22px 4px rgba(124,111,230,.12);
+    0 0 16px 3px rgba(124,111,230,.18);
 }
+
+a { color: inherit; text-decoration: none; }
+
+.layout { display: flex; flex-direction: row-reverse; min-height: calc(100vh - 22px); }
 
 /* ---------- السايدبار ---------- */
 .sidebar {
