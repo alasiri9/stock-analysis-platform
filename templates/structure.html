@@ -21,6 +21,8 @@
     .struct-tbl td { padding:10px 8px; border-top:1.5px solid rgba(124,111,230,.4); vertical-align:middle }
     .struct-tbl th + th, .struct-tbl td + td { border-inline-start:2px solid rgba(124,111,230,.4) }
     .struct-tbl tbody tr:nth-child(even) { background:rgba(255,255,255,.025) }
+    /* الشبكة الداخلية لعمود الفريمات (أوضح قليلاً) */
+    .struct-tbl .frm2 { border-inline-start:2px solid rgba(124,111,230,.75) }
     /* برواز الطبقات النص للمربعات الخمسة أعلى الجدول */
     .stat-row.tight { gap:26px; margin-top:20px }
     .stat-row.tight .stat-box {
@@ -51,22 +53,21 @@
             <table class="struct-tbl">
               <thead>
                 <tr>
-                  <th>السهم</th>
-                  <th>قوة الفريمات
-                    <div style="display:grid;grid-template-columns:repeat(3,1fr);font-size:10.5px;font-weight:600;opacity:.7;margin-top:5px">
-                      <span style="padding:2px 6px 9px">يومي</span>
-                      <span style="padding:2px 6px 9px;border-inline-start:2px solid rgba(124,111,230,.8)">أسبوعي</span>
-                      <span style="padding:2px 6px 9px;border-inline-start:2px solid rgba(124,111,230,.8)">شهري</span>
-                    </div>
-                  </th>
-                  <th>الحدث</th>
-                  <th>إعادة الاختبار</th>
-                  <th>الهيكل</th>
-                  <th>مستوى <span style="color:var(--green)">الاختراق</span>/<span style="color:var(--red)">الكسر</span></th>
-                  <th>الاستراتيجيات المتحققة<span class="rng" dir="ltr">13 — 0</span></th>
-                  <th>مجموع نقاط الاستراتيجيات الـ13<span class="rng" dir="ltr">10 — 0</span></th>
-                  <th>درجة مؤشر Algomatix<span class="rng" dir="ltr">100 — 0</span></th>
-                  <th>الشراء العنقودي</th>
+                  <th rowspan="2">السهم</th>
+                  <th colspan="3" style="border-bottom:2px solid rgba(124,111,230,.75)">قوة الفريمات</th>
+                  <th rowspan="2">الحدث</th>
+                  <th rowspan="2">إعادة الاختبار</th>
+                  <th rowspan="2">الهيكل</th>
+                  <th rowspan="2">مستوى <span style="color:var(--green)">الاختراق</span>/<span style="color:var(--red)">الكسر</span></th>
+                  <th rowspan="2">الاستراتيجيات المتحققة<span class="rng" dir="ltr">13 — 0</span></th>
+                  <th rowspan="2">مجموع نقاط الاستراتيجيات الـ13<span class="rng" dir="ltr">10 — 0</span></th>
+                  <th rowspan="2">درجة مؤشر Algomatix<span class="rng" dir="ltr">100 — 0</span></th>
+                  <th rowspan="2">الشراء العنقودي</th>
+                </tr>
+                <tr>
+                  <th style="font-size:11px;font-weight:600;padding:6px 8px">يومي</th>
+                  <th class="frm2" style="font-size:11px;font-weight:600;padding:6px 8px">أسبوعي</th>
+                  <th class="frm2" style="font-size:11px;font-weight:600;padding:6px 8px">شهري</th>
                 </tr>
               </thead>
               <tbody>
@@ -79,15 +80,14 @@
                       <div class="muted" style="font-size:12px;line-height:1.35">{{ r.name or '' }}</div>
                       {% if r.sector %}<div style="color:var(--gold);font-size:11.5px;line-height:1.3">{{ r.sector | sector_ar }}</div>{% endif %}
                     </td>
-                    {# قوة الفريمات — الفريمات الثلاثة خام (يومي/أسبوعي/شهري) بشبكة متّصلة #}
-                    <td style="padding:0">
-                      {% if not fr %}<div style="padding:10px 8px"><span class="muted">—</span></div>
-                      {% else %}<div style="display:flex;height:100%;text-align:center;font-size:12px;font-weight:700">
-                        <span style="flex:1;display:flex;align-items:center;justify-content:center;padding:10px 4px">{{ frame_dir(fr.daily) }}</span>
-                        <span style="flex:1;display:flex;align-items:center;justify-content:center;padding:10px 4px;border-inline-start:2px solid rgba(124,111,230,.8)">{{ frame_dir(fr.weekly) }}</span>
-                        <span style="flex:1;display:flex;align-items:center;justify-content:center;padding:10px 4px;border-inline-start:2px solid rgba(124,111,230,.8)">{{ frame_dir(fr.monthly) }}</span>
-                      </div>{% endif %}
-                    </td>
+                    {# قوة الفريمات — 3 أعمدة حقيقية (يومي/أسبوعي/شهري): شبكة متّصلة تلقائياً #}
+                    {% if not fr %}
+                    <td class="muted">—</td><td class="muted frm2">—</td><td class="muted frm2">—</td>
+                    {% else %}
+                    <td style="font-size:12px;font-weight:700">{{ frame_dir(fr.daily) }}</td>
+                    <td class="frm2" style="font-size:12px;font-weight:700">{{ frame_dir(fr.weekly) }}</td>
+                    <td class="frm2" style="font-size:12px;font-weight:700">{{ frame_dir(fr.monthly) }}</td>
+                    {% endif %}
                     {# الحدث #}
                     <td>
                       {% if ms.status == 'bull' %}<span class="pill buy">{{ ms.event_label }}</span>
