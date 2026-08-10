@@ -76,7 +76,7 @@
                   <tr>
                     {# السهم + القطاع #}
                     <td>
-                      <a href="{{ url_for('stock_report', ticker=r.ticker) }}" style="font-weight:900;font-size:18px;letter-spacing:.5px">{{ r.ticker }}</a>
+                      <a href="{{ url_for('stock_report', ticker=r.ticker) }}" style="font-weight:900;font-size:18px;letter-spacing:.5px{% if fr and (fr.up_count or 0) >= 3 %};color:var(--green){% endif %}">{{ r.ticker }}</a>
                       <div class="muted" style="font-size:12px;line-height:1.35">{{ r.name or '' }}</div>
                       {% if r.sector %}<div style="color:var(--gold);font-size:11.5px;line-height:1.3">{{ r.sector | sector_ar }}</div>{% endif %}
                     </td>
