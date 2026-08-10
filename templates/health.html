@@ -3,10 +3,15 @@
 {% block title %}صحة المنصة — Algomatix{% endblock %}
 
 {% block content %}
+  <style>
+    /* برواز النص الخفيف (حلقات ناعمة) لبطاقات صحة المنصة */
+    .health-grid .health-card {
+      box-shadow:0 0 0 1px rgba(34,197,94,.5), 0 0 0 2px rgba(167,192,232,.38), 0 0 0 3px rgba(124,111,230,.34), 0 0 6px 1px rgba(124,111,230,.13);
+    }
+  </style>
   <section class="panel">
     <div class="panel-head">
-      <h2>🩺 صحة المنصة</h2>
-      <p class="panel-sub">نظرة سريعة على حالة منصتك. للمدير فقط — من قاعدة البيانات، بلا استهلاك باقة.</p>
+      <h2>🩺 صحة المنصة <span class="help-q" data-tip="نظرة سريعة على حالة منصتك. للمدير فقط — من قاعدة البيانات، بلا استهلاك باقة.">👁</span></h2>
     </div>
 
     <div class="health-grid">
