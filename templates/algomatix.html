@@ -52,7 +52,7 @@
         <details style="border-top:1.5px solid rgba(124,111,230,.45);background:{{ 'rgba(255,255,255,.025)' if loop.index0 % 2 else 'transparent' }}">
           <summary style="cursor:pointer;list-style:none;display:grid;grid-template-columns:236px 78px 156px;align-items:center;text-align:center">
             <span style="padding:10px 10px;min-width:0">
-              <b style="font-size:19px;letter-spacing:.5px">{{ r.ticker }}</b>
+              <b style="font-size:19px;letter-spacing:.5px{% if triple_up_tickers is defined and r.ticker in triple_up_tickers %};color:var(--green){% endif %}">{{ r.ticker }}</b>
               <span class="muted" style="display:block;font-size:12.5px;line-height:1.35">{{ r.name or '' }}</span>
               {% if r.sector %}<span style="display:block;font-size:11.5px;color:var(--gold);line-height:1.3">{{ r.sector | sector_ar }}</span>{% endif %}
             </span>

@@ -296,6 +296,20 @@ def create_app():
         except Exception:  # noqa: BLE001 — لا نُسقط أي صفحة بسبب الرادار
             return {"cluster_buyers": {}}
 
+    @app.context_processor
+    def inject_triple_up():
+        # قاعدة المنصة: كل سهم فريماته الثلاثة صاعدة (يومي+أسبوعي+شهري) يُلوَّن اسمه أخضر
+        # تلقائياً في كل الصفحات. مجموعة الرموز تُحسب من الكاش مباشرةً (بلا استدعاء API).
+        try:
+            records, _ = screener.load_records()
+            tickers = {
+                r.get("ticker") for r in records
+                if (r.get("frames") or {}).get("up_count", 0) >= 3 and r.get("ticker")
+            }
+            return {"triple_up_tickers": tickers}
+        except Exception:  # noqa: BLE001 — لا نُسقط أي صفحة بسبب حساب التلوين
+            return {"triple_up_tickers": set()}
+
     @app.route("/announcement/save", methods=["POST"])
     def announcement_save():
         # إرسال رسالة جديدة لكل المستخدمين (تُحفظ في صندوق الرسائل) — للمدير فقط

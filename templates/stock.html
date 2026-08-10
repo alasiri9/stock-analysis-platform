@@ -29,7 +29,7 @@
   {# ===== رأس السهم: الاسم + السعر ===== #}
   <div class="stock-head">
     <div>
-      <div class="ticker">{{ report.ticker }}</div>
+      <div class="ticker"{% if triple_up_tickers is defined and report.ticker in triple_up_tickers %} style="color:var(--green)"{% endif %}>{{ report.ticker }}</div>
       <div class="name" dir="ltr">{{ report.name or '—' }}</div>
       <div class="sector">قطاع السهم / {{ report.sector | sector_ar or '—' }}</div>
     </div>
@@ -447,7 +447,7 @@
         {% for pr in peers %}
           <a class="rank-row" href="{{ url_for('stock_report', ticker=pr.ticker) }}">
             <span class="rank-num">{{ loop.index }}</span>
-            <span class="rank-tk">{{ pr.ticker }}</span>
+            <span class="rank-tk"{% if triple_up_tickers is defined and pr.ticker in triple_up_tickers %} style="color:var(--green)"{% endif %}>{{ pr.ticker }}</span>
             <span class="rank-nm">{{ pr.name or '—' }}</span>
             {% set m = measures_met(pr) %}
             <span class="rank-mt" style="color:{% if m >= 10 %}var(--green){% elif m >= 6 %}var(--gold){% else %}var(--red){% endif %}">🎯 {{ m }}/16</span>
