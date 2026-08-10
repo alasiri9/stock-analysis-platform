@@ -12,14 +12,6 @@
     .frm-tbl th + th, .frm-tbl td + td { border-inline-start:2px solid rgba(124,111,230,.4) }
     .frm-tbl .frm2 { border-inline-start:2px solid rgba(124,111,230,.75) }
     .frm-tbl tbody tr:nth-child(even) { background:rgba(255,255,255,.025) }
-    /* برواز الطبقات النص للمربعات الثلاثة أعلى الجدول (خلفية معتمة فلا نفاذ) */
-    .stat-row.tight { gap:26px; margin-top:18px }
-    .stat-row.tight .stat-box {
-      border:1.25px solid transparent;
-      background:linear-gradient(var(--panel-2),var(--panel-2)) padding-box,
-                 linear-gradient(135deg,#22c55e,#a7c0e8,#7c6fe6) border-box;
-      box-shadow:0 0 0 1.5px #22c55e, 0 0 0 3px #a7c0e8, 0 0 0 4.5px #7c6fe6, 0 0 13px 4px rgba(124,111,230,.28);
-    }
   </style>
 
   <section class="panel">
@@ -27,14 +19,6 @@
       <h2>⏱️ تأكيد الفريمات الثلاثة
         <span class="help-q" data-tip="حالة كل سهم على ثلاثة فريمات زمنية: يومي · أسبوعي · شهري. اتجاه كل فريم يُقرأ بالقمم والقيعان (الأساس في تحديد الاتجاه) من أسعار السهم نفسها (بلا تكلفة). القاعدة الذهبية: لا تدخل إلا والفريم الأكبر إيجابي. القوة متناظرة: 🟢 ثلاثية صاعدة (الثلاثة صاعدة، الأقوى شراءً) · 🟢 ثنائية صاعدة · ⚪ عرضية (لا توافق) · 🔴 ثنائية هابطة · 🔴 ثلاثية هابطة (الثلاثة هابطة، الأقوى هبوطاً). تعليمي وصفي — لا توصية.">👁</span>
       </h2>
-    </div>
-
-    <div class="stat-row tight">
-      <div class="stat-box"><div class="label" style="color:var(--green)">🟢 ثلاثية صاعدة</div><div class="value">{{ counts.triple_up }}</div></div>
-      <div class="stat-box"><div class="label" style="color:var(--green)">🟢 ثنائية صاعدة</div><div class="value">{{ counts.double_up }}</div></div>
-      <div class="stat-box"><div class="label">⚪ عرضية</div><div class="value">{{ counts.mixed }}</div></div>
-      <div class="stat-box"><div class="label" style="color:var(--red)">🔴 ثنائية هابطة</div><div class="value">{{ counts.double_down }}</div></div>
-      <div class="stat-box"><div class="label" style="color:var(--red)">🔴 ثلاثية هابطة</div><div class="value">{{ counts.triple_down }}</div></div>
     </div>
 
     {% if items %}
