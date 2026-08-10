@@ -114,7 +114,7 @@
                     {# قوة الفريمات (يومي/أسبوعي/شهري) #}
                     <td>
                       {% if not fr %}<span class="muted">—</span>
-                      {% else %}{{ frame_strength(fr.strength) }}{% endif %}
+                      {% else %}{{ frame_strength(fr.up_count or 0, fr.down_count or 0) }}{% endif %}
                     </td>
                     {# الشراء العنقودي — مطلعو EDGAR #}
                     <td>{% if cluster_buyers is defined and cluster_buyers.get(r.ticker) %}<span style="color:var(--green);font-weight:700;white-space:nowrap">👥 {{ cluster_buyers[r.ticker] }} مطلعين</span>{% else %}<span class="muted">—</span>{% endif %}</td>

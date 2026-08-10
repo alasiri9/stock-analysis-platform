@@ -1367,8 +1367,15 @@ def create_app():
         # الترتيب: الأقوى صعوداً أولاً ← ... ← الأقوى هبوطاً آخراً (صاعد أعلى، هابط أسفل)
         items.sort(key=lambda x: (x["f"].get("up_count", 0), -x["f"].get("down_count", 0)),
                    reverse=True)
+        def _fstr(f):
+            u, d = f.get("up_count", 0), f.get("down_count", 0)
+            if u >= 3: return "triple_up"
+            if d >= 3: return "triple_down"
+            if u == 2: return "double_up"
+            if d == 2: return "double_down"
+            return "mixed"
         counts = {
-            k: sum(1 for x in items if x["f"].get("strength") == k)
+            k: sum(1 for x in items if _fstr(x["f"]) == k)
             for k in ("triple_up", "double_up", "mixed", "double_down", "triple_down")
         }
         return render_template("frames.html", items=items, counts=counts,
