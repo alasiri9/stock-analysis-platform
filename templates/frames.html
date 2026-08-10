@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "_frame_strength.html" import frame_strength %}
 {% set active = 'frames' %}
 {% block title %}تأكيد الفريمات الثلاثة — Algomatix{% endblock %}
 
@@ -30,14 +31,16 @@
   <section class="panel">
     <div class="panel-head">
       <h2>⏱️ تأكيد الفريمات الثلاثة
-        <span class="help-q" data-tip="حالة كل سهم على ثلاثة فريمات زمنية: يومي · أسبوعي · شهري. اتجاه كل فريم يُقرأ بالقمم والقيعان (الأساس في تحديد الاتجاه) من أسعار السهم نفسها (بلا تكلفة). القاعدة الذهبية: لا تدخل إلا والفريم الأكبر إيجابي. 🥇 ثلاثية = الثلاثة صاعدة (الأقوى) · 🥈 ثنائية = اثنان · ⚪ ضعيفة. تعليمي وصفي — لا توصية.">👁</span>
+        <span class="help-q" data-tip="حالة كل سهم على ثلاثة فريمات زمنية: يومي · أسبوعي · شهري. اتجاه كل فريم يُقرأ بالقمم والقيعان (الأساس في تحديد الاتجاه) من أسعار السهم نفسها (بلا تكلفة). القاعدة الذهبية: لا تدخل إلا والفريم الأكبر إيجابي. القوة متناظرة: 🟢 ثلاثية صاعدة (الثلاثة صاعدة، الأقوى شراءً) · 🟢 ثنائية صاعدة · ⚪ عرضية (لا توافق) · 🔴 ثنائية هابطة · 🔴 ثلاثية هابطة (الثلاثة هابطة، الأقوى هبوطاً). تعليمي وصفي — لا توصية.">👁</span>
       </h2>
     </div>
 
     <div class="stat-row tight">
-      <div class="stat-box"><div class="label" style="color:var(--green)">🥇 قوة ثلاثية</div><div class="value">{{ counts.triple }}</div></div>
-      <div class="stat-box"><div class="label" style="color:var(--gold)">🥈 قوة ثنائية</div><div class="value">{{ counts.double }}</div></div>
-      <div class="stat-box"><div class="label">⚪ ضعيفة</div><div class="value">{{ counts.weak }}</div></div>
+      <div class="stat-box"><div class="label" style="color:var(--green)">🟢 ثلاثية صاعدة</div><div class="value">{{ counts.triple_up }}</div></div>
+      <div class="stat-box"><div class="label" style="color:var(--green)">🟢 ثنائية صاعدة</div><div class="value">{{ counts.double_up }}</div></div>
+      <div class="stat-box"><div class="label">⚪ عرضية</div><div class="value">{{ counts.mixed }}</div></div>
+      <div class="stat-box"><div class="label" style="color:var(--red)">🔴 ثنائية هابطة</div><div class="value">{{ counts.double_down }}</div></div>
+      <div class="stat-box"><div class="label" style="color:var(--red)">🔴 ثلاثية هابطة</div><div class="value">{{ counts.triple_down }}</div></div>
     </div>
 
     {% if items %}
@@ -66,11 +69,7 @@
                     <td>{{ trend_cell(f.daily) }}</td>
                     <td>{{ trend_cell(f.weekly) }}</td>
                     <td>{{ trend_cell(f.monthly) }}</td>
-                    <td>
-                      {% if f.strength == 'triple' %}<span class="pill buy" style="font-size:14px">🥇 ثلاثية</span>
-                      {% elif f.strength == 'double' %}<span class="pill warn" style="font-size:14px;background:none;padding:0">🥈 ثنائية</span>
-                      {% else %}<span class="muted" style="font-weight:700">⚪ ضعيفة</span>{% endif %}
-                    </td>
+                    <td>{{ frame_strength(f.strength) }}</td>
                   </tr>
                 {% endfor %}
               </tbody>
