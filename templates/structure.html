@@ -55,6 +55,7 @@
               <thead>
                 <tr>
                   <th>السهم</th>
+                  <th>قوة الفريمات</th>
                   <th>الاتجاه</th>
                   <th>الحدث</th>
                   <th>إعادة الاختبار</th>
@@ -63,7 +64,6 @@
                   <th>الاستراتيجيات المتحققة<span class="rng" dir="ltr">13 — 0</span></th>
                   <th>مجموع نقاط الاستراتيجيات الـ13<span class="rng" dir="ltr">10 — 0</span></th>
                   <th>درجة مؤشر Algomatix<span class="rng" dir="ltr">100 — 0</span></th>
-                  <th>قوة الفريمات</th>
                   <th>الشراء العنقودي</th>
                 </tr>
               </thead>
@@ -76,6 +76,11 @@
                       <a href="{{ url_for('stock_report', ticker=r.ticker) }}" style="font-weight:900;font-size:18px;letter-spacing:.5px">{{ r.ticker }}</a>
                       <div class="muted" style="font-size:12px;line-height:1.35">{{ r.name or '' }}</div>
                       {% if r.sector %}<div style="color:var(--gold);font-size:11.5px;line-height:1.3">{{ r.sector | sector_ar }}</div>{% endif %}
+                    </td>
+                    {# قوة الفريمات (يومي/أسبوعي/شهري) — متناظرة #}
+                    <td>
+                      {% if not fr %}<span class="muted">—</span>
+                      {% else %}{{ frame_strength(fr.up_count or 0, fr.down_count or 0) }}{% endif %}
                     </td>
                     {# الاتجاه #}
                     <td>
@@ -111,11 +116,6 @@
                     <td style="font-weight:800;font-size:16px">{% if p %}<span dir="ltr">{{ p.total }}</span>{% else %}<span class="muted">—</span>{% endif %}</td>
                     {# درجة Algomatix #}
                     <td><span style="font-weight:900;font-size:19px;color:{{ algx_color(v) }}">{{ v.score }}</span></td>
-                    {# قوة الفريمات (يومي/أسبوعي/شهري) #}
-                    <td>
-                      {% if not fr %}<span class="muted">—</span>
-                      {% else %}{{ frame_strength(fr.up_count or 0, fr.down_count or 0) }}{% endif %}
-                    </td>
                     {# الشراء العنقودي — مطلعو EDGAR #}
                     <td>{% if cluster_buyers is defined and cluster_buyers.get(r.ticker) %}<span style="color:var(--green);font-weight:700;white-space:nowrap">👥 {{ cluster_buyers[r.ticker] }} مطلعين</span>{% else %}<span class="muted">—</span>{% endif %}</td>
                   </tr>
