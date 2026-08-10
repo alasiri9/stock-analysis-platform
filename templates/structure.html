@@ -54,11 +54,11 @@
               <thead>
                 <tr>
                   <th rowspan="2">السهم</th>
+                  <th rowspan="2">الهيكل</th>
                   <th colspan="3" style="border-bottom:2px solid rgba(124,111,230,.75)">قوة الفريمات</th>
                   <th rowspan="2">الحدث</th>
-                  <th rowspan="2">إعادة الاختبار</th>
-                  <th rowspan="2">الهيكل</th>
                   <th rowspan="2">مستوى <span style="color:var(--green)">الاختراق</span>/<span style="color:var(--red)">الكسر</span></th>
+                  <th rowspan="2">إعادة الاختبار</th>
                   <th rowspan="2">الاستراتيجيات المتحققة<span class="rng" dir="ltr">13 — 0</span></th>
                   <th rowspan="2">مجموع نقاط الاستراتيجيات الـ13<span class="rng" dir="ltr">10 — 0</span></th>
                   <th rowspan="2">درجة مؤشر Algomatix<span class="rng" dir="ltr">100 — 0</span></th>
@@ -80,7 +80,13 @@
                       <div class="muted" style="font-size:12px;line-height:1.35">{{ r.name or '' }}</div>
                       {% if r.sector %}<div style="color:var(--gold);font-size:11.5px;line-height:1.3">{{ r.sector | sector_ar }}</div>{% endif %}
                     </td>
-                    {# قوة الفريمات — 3 أعمدة حقيقية (يومي/أسبوعي/شهري): شبكة متّصلة تلقائياً #}
+                    {# الهيكل — تتابع القمم والقيعان (الأساس: نقرؤه أولاً) #}
+                    <td>
+                      <div style="display:flex;flex-wrap:nowrap;gap:5px;justify-content:center">
+                        {% for s in ms.swings %}{{ swing_badge(s) }}{% endfor %}
+                      </div>
+                    </td>
+                    {# قوة الفريمات — 3 أعمدة (الاتجاه المشتق من الهيكل عبر 3 فريمات): شبكة متّصلة تلقائياً #}
                     {% if not fr %}
                     <td class="muted">—</td><td class="muted frm2">—</td><td class="muted frm2">—</td>
                     {% else %}
@@ -94,21 +100,15 @@
                       {% elif ms.status == 'bear' %}<span class="pill sell">{{ ms.event_label }}</span>
                       {% else %}<span class="pill">{{ ms.event_label }}</span>{% endif %}
                     </td>
-                    {# إعادة الاختبار #}
+                    {# مستوى الاختراق (صعود=أخضر) / الكسر (هبوط=أحمر): سعر الحدث #}
+                    <td>
+                      {% if ms.level is not none %}<span dir="ltr" style="font-weight:700;color:{{ 'var(--green)' if ms.event_dir == 'up' else 'var(--red)' }}">{{ "%.2f $"|format(ms.level) }}</span>{% else %}<span class="muted">—</span>{% endif %}
+                    </td>
+                    {# إعادة الاختبار — بعد كسر المستوى #}
                     <td>
                       {% if ms.retest_state == 'confirmed' %}<span style="color:var(--green);font-weight:700">🎯 مؤكّدة</span>
                       {% elif ms.retest_state == 'testing' %}<span style="color:var(--gold);font-weight:700">🎯 جارية</span>
                       {% else %}<span class="muted">—</span>{% endif %}
-                    </td>
-                    {# الهيكل — تتابع القمم والقيعان #}
-                    <td>
-                      <div style="display:flex;flex-wrap:nowrap;gap:5px;justify-content:center">
-                        {% for s in ms.swings %}{{ swing_badge(s) }}{% endfor %}
-                      </div>
-                    </td>
-                    {# مستوى الاختراق (صعود=أخضر) / الكسر (هبوط=أحمر) #}
-                    <td>
-                      {% if ms.level is not none %}<span dir="ltr" style="font-weight:700;color:{{ 'var(--green)' if ms.event_dir == 'up' else 'var(--red)' }}">{{ "%.2f $"|format(ms.level) }}</span>{% else %}<span class="muted">—</span>{% endif %}
                     </td>
                     {# الاستراتيجيات المتحققة #}
                     <td style="font-weight:800;font-size:16px">{% if p %}{{ p.met_count }}{% else %}<span class="muted">—</span>{% endif %}</td>
