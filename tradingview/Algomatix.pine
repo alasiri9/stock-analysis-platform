@@ -271,7 +271,7 @@ if barstate.islast
     table.cell(tbl, 1, 0, "",             bgcolor=tblHeaderCol)
     table.cell(tbl, 0, 1, " 1  الهيكل — قمم وقيعان ", text_color=tblLabelCol, bgcolor=tblPanelCol, text_size=tSize)
     table.cell(tbl, 1, 1, msTxt,             text_color=color.white, bgcolor=color.new(msBg, 20), text_size=tSize)
-    table.cell(tbl, 0, 2, " 2  الاتجاه — المتوسطان ", text_color=tblLabelCol, bgcolor=tblPanelCol, text_size=tSize)
+    table.cell(tbl, 0, 2, " 2  الاتجاه — " + str.tostring(emaSlowLen) + "/" + str.tostring(emaFastLen) + " ", text_color=tblLabelCol, bgcolor=tblPanelCol, text_size=tSize)
     table.cell(tbl, 1, 2, trendTxt,          text_color=color.white, bgcolor=color.new(trendBg, 20), text_size=tSize)
     table.cell(tbl, 0, 3, " RSI ",           text_color=tblLabelCol, bgcolor=tblPanelCol, text_size=tSize)
     table.cell(tbl, 1, 3, str.tostring(math.round(rsi)), text_color=color.white, bgcolor=color.new(rsiBg, 20), text_size=tSize)
