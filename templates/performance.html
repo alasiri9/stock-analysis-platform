@@ -19,7 +19,7 @@
     {% if overall %}
       <div class="stat-row">
         <div class="stat-box">
-          <div class="label">إجمالي الإشارات <span class="help-q" data-tip="عدد الإشارات الناضجة (مرّ عليها 3 أيام فأكثر) الداخلة في الحساب — هي نفسها صفوف الجدول تحت (عدا الطازجة). كلما كبر العدد زادت مصداقية بقية الأرقام.">👁</span></div>
+          <div class="label">إجمالي الإشارات <span class="help-q" data-tip="عدد الإشارات الناضجة (مرّ عليها {{ mature_days }} أيام فأكثر) الداخلة في الحساب — هي نفسها صفوف الجدول تحت (عدا الطازجة). كلما كبر العدد زادت مصداقية بقية الأرقام.">👁</span></div>
           <div class="value">{{ overall.count }}</div>
         </div>
         <div class="stat-box">
@@ -27,9 +27,9 @@
           <div class="value {{ 'pos' if overall.avg >= 0 else 'neg' }}" dir="ltr">{{ "%+.1f"|format(overall.avg) }}%</div>
         </div>
         <div class="stat-box">
-          <div class="label">نسبة النجاح <span class="help-q" data-tip="كم إشارة ربحت من الإجمالي (الصاعدة: صعد السهم؛ الهابطة: نزل). تقيس «كم مرة أصابت» — لا حجم الربح (لذلك اقرأها مع متوسط العائد).">👁</span></div>
+          <div class="label">نسبة النجاح <span class="help-q" data-tip="كم إشارة ربحت من الإجمالي (الصاعدة: صعد السهم؛ الهابطة: نزل). تقيس «كم مرة أصابت» لا حجم الربح. ⚠️ تتأثّر باتجاه السوق: في سوق صاعد ترتفع تلقائياً لأن أغلب الأسهم تصعد — فالمقياس الأصدق للأفضلية هو «مقابل السوق»، اقرأها معه ومع متوسط العائد.">👁</span></div>
           <div class="value" dir="ltr">{{ "%.0f"|format(overall.win_rate) }}%</div>
-          <div class="sub">({{ overall.win_count }} من {{ overall.count }})</div>
+          <div class="sub">({{ overall.win_count }} من {{ overall.count }}) · متأثّرة باتجاه السوق</div>
         </div>
         <div class="stat-box">
           <div class="label">أفضل إشارة <span class="help-q" data-tip="أعلى عائد حقّقته إشارة واحدة في السجل — أفضل حالة (ليست المتوسط).">👁</span></div>
@@ -41,7 +41,7 @@
         </div>
         {% if overall.avg_alpha is defined and overall.avg_alpha is not none %}
           <div class="stat-box {{ 'beat-box' if overall.avg_alpha >= 0 }}">
-            <div class="label">⚔️ مقابل السوق (SPY) <span class="help-q" data-tip="هل تفوّقت الإشارات على مؤشر السوق الأمريكي (S&P 500) عن نفس الفترة؟ موجب = أداؤها أفضل من مجرّد شراء السوق. مقارنة عادلة بنفس النافذة الزمنية لكل إشارة.">👁</span></div>
+            <div class="label">⚔️ مقابل السوق (SPY) — الأداء الحقيقي <span class="help-q" data-tip="المقياس الأصدق للأفضلية: هل تفوّقت الإشارات على مؤشر السوق (S&P 500) عن نفس الفترة؟ قريب من الصفر = لا سبق حقيقي على مجرّد شراء السوق (حتى لو نسبة النجاح عالية — لأنها تتأثّر باتجاه السوق). موجب واضح = سبق حقيقي. مقارنة عادلة بنفس النافذة الزمنية لكل إشارة.">👁</span></div>
             <div class="value {{ 'pos' if overall.avg_alpha >= 0 else 'neg' }}" dir="ltr">{{ "%+.1f"|format(overall.avg_alpha) }}%</div>
             <div class="sub">تفوقت {{ overall.beat_market }} من {{ overall.alpha_count }} إشارة على السوق</div>
           </div>
@@ -50,10 +50,10 @@
 
       {# مقارنة أنواع الإشارات #}
       {% if type_stats %}
-        <h3 class="perf-title">⚖️ أي نوع إشارة أدق؟ <span class="help-q" data-tip="أداء كل نوع إشارة على حدة (اختراق/كسر/شراء انخفاض/جاهز للانطلاق/ذهبية...): متوسط عائده ونسبة نجاحه وعدد إشاراته الناضجة. يساعدك تعرف أي الإشارات أثبتت جدارتها. انتبه للأعداد الصغيرة — أقل دلالة.">👁</span></h3>
+        <h3 class="perf-title">⚖️ أي نوع إشارة أدق؟ <span class="help-q" data-tip="أداء كل نوع إشارة على حدة (اختراق/كسر/شراء انخفاض/جاهز للانطلاق/ذهبية...): متوسط عائده ونسبة نجاحه وعدد إشاراته الناضجة. الأنواع ذات العيّنة الصغيرة (أقل من {{ min_type_sample }} إشارات) نُخفي نسبتها لأنها بلا دلالة إحصائية («100% على إشارتين» يخدع).">👁</span></h3>
         <div class="stat-row">
           {% for t, st in type_stats.items() %}
-            {% if st %}
+            {% if st and st.count >= min_type_sample %}
               <div class="stat-box">
                 <div class="label">{{ t | signal_name }}</div>
                 <div class="value {{ 'pos' if st.avg >= 0 else 'neg' }}" dir="ltr">{{ "%+.1f"|format(st.avg) }}%</div>
@@ -62,6 +62,15 @@
             {% endif %}
           {% endfor %}
         </div>
+        {# الأنواع ذات العيّنة الصغيرة — نعرضها كإشعار بلا نسبة مضلّلة #}
+        {% set small = [] %}
+        {% for t, st in type_stats.items() %}{% if st and st.count < min_type_sample %}{% set _ = small.append(t) %}{% endif %}{% endfor %}
+        {% if small %}
+          <div class="note" style="margin-top:8px;font-size:12.5px">
+            🔬 أنواع عيّنتها صغيرة (أقل من {{ min_type_sample }} إشارات) — نؤجّل الحكم عليها حتى تكبر:
+            {{ small | map('signal_name') | join(' · ') }}
+          </div>
+        {% endif %}
       {% endif %}
     {% endif %}
 
@@ -106,8 +115,9 @@
       </table>
       <div class="note" style="margin-top:14px">
         ℹ️ السجل يكبر تلقائياً كل يوم مع التحديث الليلي — كلما طال الوقت صارت الإحصائيات أدق وأكثر دلالة.<br>
+        🎯 <b>اقرأ «مقابل السوق» قبل «نسبة النجاح»:</b> نسبة النجاح ترتفع تلقائياً في السوق الصاعد (أغلب الأسهم تصعد)، أما «مقابل السوق» فيقيس <b>السبق الحقيقي</b> على مجرّد شراء المؤشر — وهو الأصدق للحكم على جدوى الإشارات.<br>
         ⚠️ إشارة «كسر مؤكّد بحجم» إشارة <b>هبوطية</b> (تحذير)، فتُقاس <b>معكوسة</b>: نزول السهم بعدها = نجاح (عائد موجب)، وصعوده = فشل — لذلك قد يكون السعر الحالي أعلى من سعر الإشارة والعائد سالباً (كسر كاذب).<br>
-        🌱 الإشارات <b>الطازجة (أقل من {{ 3 }} أيام)</b> تظهر في الجدول بوسم «لم تنضج» لكنها <b>لا تدخل الإحصائيات العامة</b> حتى يمرّ عليها وقت كافٍ للحكم بعدل.
+        🌱 الإشارات <b>الطازجة (أقل من {{ mature_days }} أيام)</b> تظهر في الجدول بوسم «لم تنضج» لكنها <b>لا تدخل الإحصائيات العامة</b> حتى يمرّ عليها وقت كافٍ للحكم بعدل.
       </div>
     {% else %}
       <div class="empty">لا توجد إشارات مسجّلة بعد — ستظهر هنا تلقائياً مع تحديثات البيانات.</div>

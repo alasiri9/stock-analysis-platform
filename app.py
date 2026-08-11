@@ -1499,6 +1499,7 @@ def create_app():
         rows, overall, type_stats = screener.signals_performance()
         return render_template(
             "performance.html", rows=rows, overall=overall, type_stats=type_stats,
+            mature_days=screener.MATURE_MIN_DAYS, min_type_sample=screener.MIN_TYPE_SAMPLE,
         )
 
     @app.route("/screener/refresh", methods=["POST"])
