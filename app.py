@@ -301,14 +301,32 @@ def create_app():
         # قاعدة المنصة: كل سهم فريماته الثلاثة صاعدة (يومي+أسبوعي+شهري) يُلوَّن اسمه أخضر
         # تلقائياً في كل الصفحات. مجموعة الرموز تُحسب من الكاش مباشرةً (بلا استدعاء API).
         try:
+            from datetime import datetime as _dt, timezone as _tz
             records, _ = screener.load_records()
             tickers = {
                 r.get("ticker") for r in records
                 if (r.get("frames") or {}).get("up_count", 0) >= 3 and r.get("ticker")
             }
-            return {"triple_up_tickers": tickers}
+            # نضارة الأسعار «شبه لايف»: أحدث وسم price_live_at عبر السجلّات (دقائق منذ آخر تحديث)
+            latest_live = None
+            for r in records:
+                pv = r.get("price_live_at")
+                if not pv:
+                    continue
+                try:
+                    d = _dt.fromisoformat(pv)
+                except ValueError:
+                    continue
+                if latest_live is None or d > latest_live:
+                    latest_live = d
+            live_ago = None
+            if latest_live is not None:
+                if latest_live.tzinfo is None:
+                    latest_live = latest_live.replace(tzinfo=_tz.utc)
+                live_ago = int((_dt.now(_tz.utc) - latest_live).total_seconds() // 60)
+            return {"triple_up_tickers": tickers, "prices_live_ago": live_ago}
         except Exception:  # noqa: BLE001 — لا نُسقط أي صفحة بسبب حساب التلوين
-            return {"triple_up_tickers": set()}
+            return {"triple_up_tickers": set(), "prices_live_ago": None}
 
     @app.route("/announcement/save", methods=["POST"])
     def announcement_save():

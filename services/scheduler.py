@@ -372,8 +372,20 @@ def _cleanup_messages():
     return deleted
 
 
+def _intraday_prices(app):
+    """تحديث «شبه لايف» خفيف للأسعار من Finnhub المجاني (كل 15 دقيقة أثناء السوق)."""
+    with app.app_context():
+        try:
+            n = screener.refresh_prices_intraday()
+            if n:
+                print(f"[scheduler] شبه لايف: تحدّث سعر {n} سهماً "
+                      f"({datetime.now(timezone.utc):%H:%M} UTC)")
+        except Exception as e:  # noqa: BLE001 — لا نُسقط المجدول بخطأ عابر
+            print(f"[scheduler] خطأ تحديث الأسعار اللحظي: {e}")
+
+
 def init_scheduler(app):
-    """يهيّئ المجدول اليومي مرة واحدة لكل عملية."""
+    """يهيّئ المجدول (اليومي الثقيل + شبه لايف للأسعار) مرة واحدة لكل عملية."""
     global _scheduler
     if _scheduler is not None:
         return _scheduler
@@ -387,6 +399,17 @@ def init_scheduler(app):
         replace_existing=True,
         misfire_grace_time=3600,  # لو فات الموعد (إعادة نشر مثلاً) يعوّضه خلال ساعة
     )
+    # شبه لايف: تحديث الأسعار كل 15 دقيقة أثناء ساعات السوق الأمريكي (يغطّي EDT وEST)،
+    # أيام العمل فقط. من Finnhub المجاني (32 طلباً < حد 60/دقيقة) ولا يمسّ حصّة FMP.
+    _scheduler.add_job(
+        _intraday_prices,
+        CronTrigger(day_of_week="mon-fri", hour="13-21", minute="*/15", timezone="UTC"),
+        args=[app],
+        id="intraday_prices",
+        replace_existing=True,
+        misfire_grace_time=300,
+    )
     _scheduler.start()
-    print(f"[scheduler] التحديث التلقائي مفعّل — يومياً {DAILY_HOUR_UTC:02d}:00 UTC")
+    print(f"[scheduler] مفعّل — تحديث ثقيل يومياً {DAILY_HOUR_UTC:02d}:00 UTC "
+          f"+ أسعار شبه لايف كل 15د أثناء السوق")
     return _scheduler

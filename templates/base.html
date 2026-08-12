@@ -19,6 +19,9 @@
         <div class="brand-tag"><span class="tag-line"></span>ماسح ذكي للأسهم الأمريكية<span class="tag-line"></span></div>
         <div class="brand-phrases">نرصد الفرص<span class="sep">|</span>نحلل الاختراقات<span class="sep">|</span>نواكب الصعود</div>
       </div>
+      {% if prices_live_ago is defined and prices_live_ago is not none and prices_live_ago <= 90 %}
+        <div title="الأسعار تُحدَّث كل ~15 دقيقة من Finnhub أثناء ساعات السوق الأمريكي" style="text-align:center;font-size:12px;font-weight:800;color:var(--green);margin:10px 8px 0;padding:5px 6px;background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.35);border-radius:9px">🟢 أسعار حيّة · محدّثة قبل {{ prices_live_ago }} د</div>
+      {% endif %}
       <nav class="nav">
         <div class="nav-group">اكتشاف</div>
         <a href="{{ url_for('index') }}" class="{{ 'active' if active=='home' else '' }}"><span class="ic">📊</span> الرئيسية</a>
