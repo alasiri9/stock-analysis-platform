@@ -108,8 +108,10 @@ def piotroski_score(financials):
     # 4) Accruals = CFO/Assets − ROA < 0  (جودة الأرباح: تدفق نقدي يفوق الربح المحاسبي)
     _accr_tip = "Accruals (جودة الأرباح): مقارنة النقد الفعلي بالربح المحاسبي. سالب = النقد يفوق الربح الورقي = أرباح حقيقية عالية الجودة."
     if cfo_assets0 is not None and roa0 is not None:
-        accr = cfo_assets0 - roa0
-        add(4, "Accruals < 0", accr < 0, f"CFO/Assets − ROA = {accr:.4f}", _accr_tip)
+        # Accruals القياسي = ROA − CFO/Assets؛ النقطة تُمنح حين < 0 (أي CFO/Assets > ROA:
+        # النقد الفعلي يفوق الربح المحاسبي = جودة أرباح عالية). كان مقلوباً سابقاً.
+        accr = roa0 - cfo_assets0
+        add(4, "Accruals < 0", accr < 0, f"ROA − CFO/Assets = {accr:.4f}", _accr_tip)
     else:
         add(4, "Accruals < 0", None, "بيانات غير متوفّرة", _accr_tip)
 
@@ -211,7 +213,8 @@ def catalyst_score(financials):
     else:
         ni_growth = None
 
-    roe = _safe_div(net_income0, equity0)        # كسر
+    # حقوق ملكية سالبة (شركة متعثّرة) + خسارة تعطي ROE موجباً خادعاً → نعتبرها غير محسوبة
+    roe = _safe_div(net_income0, equity0) if (equity0 or 0) > 0 else None  # كسر
     op_margin = _safe_div(op_income0, revenue0)  # كسر
     roa = _safe_div(net_income0, assets0)        # كسر
 
