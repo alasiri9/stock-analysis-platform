@@ -16,6 +16,7 @@ from datetime import datetime, timezone, timedelta, date as date_cls
 
 from models import db, StockCache, Signal, PricePoint
 from services import fmp_client
+from services import finnhub_client
 from services import scoring
 from services import indicators
 from services import telegram_client
@@ -1207,6 +1208,42 @@ def launched_stocks(limit=6):
     if days_list:
         stats["avg_days"] = sum(days_list) / len(days_list)
     return rows, stats
+
+
+def refresh_prices_intraday():
+    """تحديث «شبه لايف» خفيف للسعر الحالي فقط — من Finnhub /quote المجاني.
+
+    يحدّث حقلَي price و change_percent (ووسم price_live_at) لكل أسهم UNIVERSE دون
+    إعادة التحليل الثقيل (الفريمات/الدرجات/التاريخ تبقى من التحديث الليلي). كل سهم =
+    طلب واحد؛ 32 طلباً < حد Finnhub المجاني 60/دقيقة. لا يمسّ updated_at (يبقى وقت
+    التحليل الليلي). None ≠ 0: لو Finnhub لم يُرجع سعراً نُبقي القديم.
+    يُرجع عدد الأسهم التي حُدّث سعرها.
+    """
+    updated = 0
+    now = datetime.now(timezone.utc)
+    for ticker in UNIVERSE:
+        try:
+            q = finnhub_client.get_quote(ticker)
+        except Exception:  # noqa: BLE001 — لا نُسقط الدفعة بخطأ سهم واحد
+            q = None
+        if not q or not q.get("price"):
+            continue
+        row = StockCache.query.filter_by(ticker=_PREFIX + ticker).first()
+        if not row:
+            continue
+        try:
+            record = json.loads(row.data_json)
+        except (ValueError, TypeError):
+            continue
+        record["price"] = q["price"]
+        if q.get("change_percent") is not None:
+            record["change_percent"] = q["change_percent"]
+        record["price_live_at"] = now.isoformat()   # وسم آخر تحديث سعر «شبه لايف»
+        row.data_json = json.dumps(record, ensure_ascii=False)
+        updated += 1
+    if updated:
+        db.session.commit()
+    return updated
 
 
 def load_records():

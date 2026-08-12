@@ -14,6 +14,20 @@
       <h2>🩺 <span class="brand-ink">صحة المنصة</span> <span class="help-q" data-tip="نظرة سريعة على حالة منصتك. للمدير فقط — من قاعدة البيانات، بلا استهلاك باقة.">👁</span></h2>
     </div>
 
+    {# اختبار «شبه لايف»: تحديث الأسعار من Finnhub المجاني يدوياً — للتجربة قبل الجدولة التلقائية #}
+    <div class="note" style="margin:6px 0 16px">
+      {% if request.args.get('priced') is not none %}
+        <div style="color:{{ 'var(--green)' if (request.args.get('priced')|int) > 0 else 'var(--red)' }};font-weight:800;margin-bottom:8px">
+          {% if (request.args.get('priced')|int) > 0 %}✅ تحدّث سعر {{ request.args.get('priced') }} سهماً «شبه لايف» من Finnhub (مجاني){% else %}⚠️ لم يتحدّث أي سعر — تحقّق من مفتاح Finnhub أو أن السوق يعطي بيانات{% endif %}
+        </div>
+      {% endif %}
+      <form action="{{ url_for('prices_refresh') }}" method="post" style="display:inline">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button class="btn" type="submit">⚡ اختبار تحديث الأسعار «شبه لايف» الآن</button>
+      </form>
+      <span class="muted" style="font-size:12.5px;margin-inline-start:8px">من Finnhub المجاني · لا يستهلك حصّة FMP · لا يعيد التحليل الثقيل</span>
+    </div>
+
     <div class="health-grid">
       {# آخر تحديث #}
       <div class="health-card {{ 'ok' if health.hours_since is not none and health.hours_since <= 30 else 'bad' }}">

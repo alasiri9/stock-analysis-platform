@@ -1512,6 +1512,19 @@ def create_app():
             print(f"[app] خطأ أثناء تحديث الماسح: {e}")
         return redirect(url_for("index"))
 
+    @app.route("/prices/refresh", methods=["POST"])
+    def prices_refresh():
+        # تحديث «شبه لايف» خفيف للأسعار من Finnhub المجاني (اختبار يدوي — للمدير).
+        # لا يعيد التحليل الثقيل؛ يحدّث السعر الحالي فقط. لا يستهلك حصّة FMP.
+        if not is_admin():
+            return redirect(url_for("index"))
+        n = 0
+        try:
+            n = screener.refresh_prices_intraday()
+        except Exception as e:  # noqa: BLE001
+            print(f"[app] خطأ تحديث الأسعار اللحظي: {e}")
+        return redirect(url_for("health", priced=n))
+
     @app.route("/stock")
     def stock_search():
         # يستقبل البحث من نموذج الرئيسية ويحوّل لصفحة السهم
