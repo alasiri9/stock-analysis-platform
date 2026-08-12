@@ -399,17 +399,17 @@ def init_scheduler(app):
         replace_existing=True,
         misfire_grace_time=3600,  # لو فات الموعد (إعادة نشر مثلاً) يعوّضه خلال ساعة
     )
-    # شبه لايف: تحديث الأسعار كل 15 دقيقة أثناء ساعات السوق الأمريكي (يغطّي EDT وEST)،
+    # شبه لايف: تحديث الأسعار كل 5 دقائق أثناء ساعات السوق الأمريكي (يغطّي EDT وEST)،
     # أيام العمل فقط. من Finnhub المجاني (32 طلباً < حد 60/دقيقة) ولا يمسّ حصّة FMP.
     _scheduler.add_job(
         _intraday_prices,
-        CronTrigger(day_of_week="mon-fri", hour="13-21", minute="*/15", timezone="UTC"),
+        CronTrigger(day_of_week="mon-fri", hour="13-21", minute="*/5", timezone="UTC"),
         args=[app],
         id="intraday_prices",
         replace_existing=True,
-        misfire_grace_time=300,
+        misfire_grace_time=180,
     )
     _scheduler.start()
     print(f"[scheduler] مفعّل — تحديث ثقيل يومياً {DAILY_HOUR_UTC:02d}:00 UTC "
-          f"+ أسعار شبه لايف كل 15د أثناء السوق")
+          f"+ أسعار شبه لايف كل 5د أثناء السوق")
     return _scheduler
