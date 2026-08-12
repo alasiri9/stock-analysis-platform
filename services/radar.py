@@ -72,8 +72,12 @@ def load_radar():
     # الأحدث أولاً (التواريخ نصية YYYY-MM-DD فالترتيب النصي يكفي؛ None في الأسفل)
     all_tx.sort(key=lambda t: t.get("date") or "", reverse=True)
 
-    # المحفّز الأهم: شراء فعلي من السوق المفتوح (code=P)
-    open_buys = [t for t in all_tx if t.get("code") == "P"]
+    # المحفّز الأهم: شراء فعلي من السوق المفتوح (code=P) — خلال آخر 90 يوماً فقط.
+    # (الشراء العنقودي الحقيقي = مشتريات متقاربة زمنياً؛ مشتريات متباعدة على مدى سنة
+    #  ليست «قناعة جماعية» ولا يصحّ عرضها كذلك.)
+    from datetime import datetime as _dt, timezone as _tz, timedelta as _td
+    _cutoff = (_dt.now(_tz.utc) - _td(days=90)).strftime("%Y-%m-%d")
+    open_buys = [t for t in all_tx if t.get("code") == "P" and (t.get("date") or "") >= _cutoff]
 
     return all_tx, open_buys, latest
 

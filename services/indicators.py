@@ -358,7 +358,10 @@ def squeeze_breakout(candles):
         return False
 
     # 2) اختراق: إغلاق اليوم فوق أعلى قمة الـ20 يوماً السابقة
-    prior_high = max(r["high"] for r in rows[-21:-1] if r["high"] is not None)
+    _prior_highs = [r["high"] for r in rows[-21:-1] if r["high"] is not None]
+    if not _prior_highs:
+        return False
+    prior_high = max(_prior_highs)
     if closes[-1] <= prior_high:
         return False
 

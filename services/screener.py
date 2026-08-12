@@ -1165,6 +1165,9 @@ def launched_stocks(limit=6):
     days_list = []
     seen = set()
     for s in sigs:
+        # الإشارات الهابطة (تحذير كسر) ليست «انطلاقاً» — تُستبعد من هذه اللوحة (تظهر في اختبار الأداء معكوسةً).
+        if s.signal_type in BEARISH_SIGNALS:
+            continue
         if s.ticker in seen:
             continue
         seen.add(s.ticker)

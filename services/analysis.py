@@ -247,7 +247,7 @@ def build_stock_report(ticker):
     gross_margin = scoring._safe_div(gross, revenue)
 
     # P/E = السعر / ربحية السهم
-    price = quote.get("price") if quote else (profile.get("price") if profile else None)
+    price = (quote.get("price") if quote else None) or (profile.get("price") if profile else None)
     pe = scoring._safe_div(price, eps) if (eps is not None and eps != 0) else None
 
     # PEG = P/E مقسوم على نسبة نمو الأرباح (%) — تعليمي، يُحسب فقط لو النمو موجب
