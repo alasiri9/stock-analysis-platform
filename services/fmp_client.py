@@ -27,6 +27,11 @@ TIMEOUT = 8
 # حدّ باقة FMP المجانية اليومي (عدد الطلبات) — لعرضه في لوحة «صحة المنصة»
 DAILY_LIMIT = 250
 
+# عتبة «قاطع الدائرة»: نوقف طلبات مفتاح المنصة عند بلوغها لحماية الحصّة من الاستنزاف.
+# مضبوطة فوق بصمة التحديث الليلي (~195 طلباً يبدأ من صفر) فلا تمسّه أبداً، وتترك هامش
+# أمان قبل الحدّ 250. لا تُطبَّق على مفاتيح المشتركين (BYOK) — لهم حصصهم الخاصة.
+CIRCUIT_LIMIT = 245
+
 
 def _usage_key(day=None):
     """مفتاح عدّاد طلبات اليوم في جدول AppSetting (يوم UTC — نفس توقيت تصفير حصّة FMP)."""
@@ -81,6 +86,15 @@ def _get(endpoint, params=None, api_key=None):
     if not key:
         print("[FMP] خطأ: لا مفتاح FMP متاح (لا مخصّص ولا FMP_API_KEY)")
         return None
+
+    # قاطع الدائرة: نحمي حصّة المنصة اليومية من الاستنزاف. يُطبَّق فقط على مفتاح المنصة
+    # (api_key=None)، لا على مفاتيح المشتركين. لا يمسّ التحديث الليلي (يعمل والعدّاد قرب
+    # الصفر). لو تعذّرت قراءة العدّاد (None) لا نمنع (fail-open — سلامة الجلب أولاً).
+    if not api_key:
+        used = get_today_usage()
+        if used is not None and used >= CIRCUIT_LIMIT:
+            print(f"[FMP] قاطع الدائرة: الاستهلاك {used}/{DAILY_LIMIT} — أوقفنا طلب {endpoint} لحماية الحصّة")
+            return None
 
     params = dict(params or {})
     params["apikey"] = key

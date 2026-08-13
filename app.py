@@ -23,6 +23,7 @@ import secrets
 from flask import Flask, render_template, request, redirect, url_for, session, Response
 
 from werkzeug.security import generate_password_hash, check_password_hash
+from werkzeug.middleware.proxy_fix import ProxyFix
 from flask_wtf import CSRFProtect
 
 from models import (db, Watchlist, PortfolioHolding, PriceAlert,
@@ -52,8 +53,10 @@ _login_state = {}  # ip -> {"fails": int, "lock_until": datetime|None}
 
 
 def _client_ip():
-    fwd = request.headers.get("X-Forwarded-For", "")
-    return fwd.split(",")[0].strip() if fwd else (request.remote_addr or "unknown")
+    # بعد ProxyFix، request.remote_addr = آيبي العميل الحقيقي كما يراه بروكسي Railway الموثوق.
+    # لا نثق بترويسة X-Forwarded-For الخام (قابلة للتزوير فتُبطل حدّ محاولات الدخول وتضخّم
+    # _login_state في الذاكرة بآيبيهات وهمية).
+    return request.remote_addr or "unknown"
 
 
 def _login_locked_minutes():
@@ -123,6 +126,10 @@ def _database_uri():
 
 def create_app():
     app = Flask(__name__)
+    # خلف بروكسي Railway الموثوق (طبقة واحدة): نجعل request.remote_addr = آيبي العميل
+    # الحقيقي، حتى يعمل حدّ محاولات الدخول بدل الاعتماد على ترويسة X-Forwarded-For الخام
+    # (القابلة للتزوير). x_for=1 فقط — لا نغيّر البروتوكول/المضيف لتقليل أي أثر جانبي.
+    app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1)
     app.config["SQLALCHEMY_DATABASE_URI"] = _database_uri()
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
@@ -1522,7 +1529,10 @@ def create_app():
 
     @app.route("/screener/refresh", methods=["POST"])
     def screener_refresh():
-        # إعادة بناء كاش الماسح يدوياً (يستهلك استدعاءات API — لذلك يدوي).
+        # إعادة بناء كاش الماسح يدوياً (يستهلك استدعاءات API بكثرة — لذلك يدوي وللمدير فقط).
+        # حارس صلاحية: يمنع أي مشترك من استنزاف حصّة FMP (250/يوم) — مثل /prices/refresh.
+        if not is_admin():
+            return redirect(url_for("index"))
         # نلتقط أي خطأ حتى لا تظهر صفحة 500؛ ما تم حفظه (commit لكل سهم) يبقى.
         try:
             screener.refresh_cache()
@@ -1592,7 +1602,9 @@ def create_app():
                     else:  # مشترك بلا مفتاح → نُبقي السعر المخزّن ونوضّح تاريخه (بلا استهلاك حصّة أحمد)
                         price_cached = True
                         price_time = up.strftime("%Y-%m-%d %H:%M") + " UTC"
-        if report is None:  # لا كاش صالح: نبني التقرير كاملاً ونخزّنه
+        # نبني تقريراً حيّاً (يستهلك ~6 طلبات FMP) فقط لأسهم UNIVERSE — يمنع استنزاف
+        # حصّة المنصة برموز عشوائية خارج القائمة. الرموز خارجها تُعرض «غير متاحة» أدناه.
+        if report is None and ticker.upper() in screener.UNIVERSE:  # لا كاش صالح: نبنيه ونخزّنه
             report = analysis.build_stock_report(ticker)
             if report is not None:
                 try:
