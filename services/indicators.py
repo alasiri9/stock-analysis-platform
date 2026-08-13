@@ -118,11 +118,26 @@ def build_indicators(candles):
         status = "bull" if macd["hist"] > 0 else "bear"
         badges.append({"label": "MACD", "value": "إيجابي" if status == "bull" else "سلبي", "status": status})
 
+    # --- نسبة حجم اليوم لمتوسط 20 يوماً (تُستخدم في تصنيف RSI وفي شارة الحجم) ---
+    vol_ratio = None
+    if len(rows) >= 21 and rows[-1]["volume"]:
+        _pv = [r["volume"] for r in rows[-21:-1] if r["volume"]]
+        if _pv:
+            _av = sum(_pv) / len(_pv)
+            if _av > 0:
+                vol_ratio = rows[-1]["volume"] / _av
+
     # --- RSI ---
     rsi = _rsi(closes)
     if rsi is not None:
         if rsi >= 70:
-            status, note = "bear", "تشبّع شرائي"
+            # تشبّع شرائي = قوة لا ضعف حين يزامنه حجم عالٍ (تأكيد انطلاق حقيقية)؛
+            # وبلا تأكيد حجم يبقى محايداً (راقب) لا عقوبة — كثير من الأسهم بعد 70 تعطي
+            # عطاءً ممتازاً بشرط تزامنها مع سيولة عالية (ملاحظة أحمد، مؤكّدة فنياً).
+            if vol_ratio is not None and vol_ratio >= 1.2:
+                status, note = "bull", "زخم قوي (مؤكّد بحجم)"
+            else:
+                status, note = "neutral", "تشبّع شرائي — راقب"
         elif rsi <= 30:
             status, note = "bull", "تشبّع بيعي"
         else:
@@ -142,20 +157,15 @@ def build_indicators(candles):
                 "status": "bull" if is_breakout else "neutral",
             })
 
-    # --- الحجم: حجم اليوم مقابل متوسط 20 يوماً ---
-    if len(rows) >= 21 and rows[-1]["volume"]:
-        prior_vols = [r["volume"] for r in rows[-21:-1] if r["volume"]]
-        if prior_vols:
-            avg_vol = sum(prior_vols) / len(prior_vols)
-            if avg_vol > 0:
-                ratio = rows[-1]["volume"] / avg_vol
-                if ratio >= 1.2:
-                    status, val = "bull", "مرتفع"
-                elif ratio <= 0.8:
-                    status, val = "neutral", "منخفض"
-                else:
-                    status, val = "neutral", "عادي"
-                badges.append({"label": "الحجم", "value": val, "status": status})
+    # --- الحجم: حجم اليوم مقابل متوسط 20 يوماً (نفس vol_ratio المحسوب أعلاه) ---
+    if vol_ratio is not None:
+        if vol_ratio >= 1.2:
+            status, val = "bull", "مرتفع"
+        elif vol_ratio <= 0.8:
+            status, val = "neutral", "منخفض"
+        else:
+            status, val = "neutral", "عادي"
+        badges.append({"label": "الحجم", "value": val, "status": status})
 
     # --- ADX: قوة الاتجاه (كانت شارة شكلية — الآن محسوبة فعلياً) ---
     adx = _adx(rows)
