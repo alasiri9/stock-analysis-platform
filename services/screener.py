@@ -717,14 +717,14 @@ def _build_record(ticker):
     }
 
     # اكتمال التحليل: يجب أن تكتمل **كل** بيانات FMP الأساسية — السعر (quote) + الملف
-    # التعريفي (profile) + القوائم المالية (has_financials) + تاريخ الأسعار (full_candles)
-    # ومنه المؤشرات (tech). لو نقص أيّها (فشل profile/الماليات أو توقّف قاطع FMP وسط
-    # التحليل) نعدّه ناقصاً → لا يستبدل سجلاً سليماً ولا يُعلَّم محدثاً لليوم (يُقرأ ويُزال
-    # في refresh_cache فلا يُخزَّن ضمن السجل).
+    # التعريفي (profile) + القوائم المالية الثلاث كاملة (financials_complete، لا any) +
+    # تاريخ الأسعار (full_candles) ومنه المؤشرات (tech). لو نقص أيّها (فشل profile/إحدى
+    # القوائم أو توقّف قاطع FMP وسط التحليل) نعدّه ناقصاً → لا يستبدل سجلاً سليماً ولا
+    # يُعلَّم محدثاً لليوم (يُقرأ ويُزال في refresh_cache فلا يُخزَّن ضمن السجل).
     _complete = (
         (quote is not None and quote.get("price") is not None)
         and profile is not None
-        and has_financials
+        and fmp_client.financials_complete(financials)   # القوائم الثلاث كاملة (لا any)
         and bool(full_candles) and bool(tech)
     )
 

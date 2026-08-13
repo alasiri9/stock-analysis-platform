@@ -18,6 +18,7 @@ if sys.stdout and hasattr(sys.stdout, "reconfigure"):
 
 from dotenv import load_dotenv
 import hashlib
+import ipaddress
 import secrets
 
 from flask import Flask, render_template, request, redirect, url_for, session, Response
@@ -51,19 +52,28 @@ _LOGIN_LOCK_MINUTES = 5
 _login_state = {}  # ip -> {"fails": int, "lock_until": datetime|None}
 
 
+def _valid_ip(s):
+    """هل النص عنوان IP صالح (IPv4/IPv6)؟ — يمنع اعتماد ترويسة مزوّرة بقيمة غير صالحة."""
+    if not s:
+        return False
+    try:
+        ipaddress.ip_address(s)
+        return True
+    except ValueError:
+        return False
+
+
 def _client_ip():
-    # آيبي العميل الحقيقي خلف بروكسي Railway — لحدّ محاولات الدخول. نعتمد الهيدرات التي
-    # يضبطها الـedge نفسه (لا العميل) بترتيب الموثوقية على Railway:
-    #   1) X-Real-IP — الهيدر الموثّق رسمياً في Railway (يضبطه البروكسي بآيبي العميل).
-    #   2) X-Envoy-External-Address — قيمة العميل التي يمرّرها Envoy (احتياط لو تعطّل الأول).
-    # نتجاهل أي قيمة فارغة أو loopback (تدلّ على هيدر معطّل) وننتقل للتالي. لا نثق بترويسة
-    # X-Forwarded-For الخام (سلسلة قابلة للتزوير من جهة العميل — يُضيف إليها من اليسار).
-    # fallback أخير: remote_addr (محلياً/التطوير) ثم "unknown".
-    for _h in ("X-Real-IP", "X-Envoy-External-Address"):
-        _v = (request.headers.get(_h) or "").split(",")[0].strip()
-        if _v and _v not in ("127.0.0.1", "::1", "localhost"):
-            return _v
-    return request.remote_addr or "unknown"
+    # آيبي العميل الحقيقي خلف بروكسي Railway — لحدّ محاولات الدخول. نعتمد **فقط** X-Real-IP
+    # (الهيدر الموثّق رسمياً لدى Railway، يضبطه الـedge بآيبي العميل). لا نستخدم X-Forwarded-For
+    # ولا X-Envoy-External-Address كـ fallback أمني — كلاهما قابل للتزوير حسب مسار الطلب/إعداد
+    # البروكسي. عند غياب/تلف X-Real-IP نرجع لـ remote_addr (عنوان الاتصال المباشر، يضبطه الخادم
+    # لا العميل). نتحقّق من صحّة صيغة IP في الحالتين، وإلا "unknown".
+    real = (request.headers.get("X-Real-IP") or "").strip()
+    if _valid_ip(real):
+        return real
+    ra = (request.remote_addr or "").strip()
+    return ra if _valid_ip(ra) else "unknown"
 
 
 def _login_locked_minutes():
@@ -1615,13 +1625,16 @@ def create_app():
                     report = analysis.build_stock_report(ticker)
                 finally:
                     fmp_client.release_operation()  # يُعيد أي حجز غير مستهلَك
-                if report is not None:
+                # لا نحفظ (ولا نعرض) تقريراً ناقصاً: نخزّن المكتمل فقط؛ الناقص → «غير متاح».
+                if report is not None and report.pop("_complete", False):
                     try:
                         db.session.merge(StockCache(
                             ticker=rkey, data_json=_json.dumps(report, ensure_ascii=False), updated_at=now))
                         db.session.commit()
                     except Exception:  # noqa: BLE001
                         db.session.rollback()
+                else:
+                    report = None
         if report is None:
             # لا كاش ولا جلب: نوضّح أن السهم غير متاح — ونميّز أسهم المنصة (سبب مؤقت غالباً)
             in_universe = ticker.upper() in screener.UNIVERSE

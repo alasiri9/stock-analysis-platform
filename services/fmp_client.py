@@ -98,16 +98,14 @@ def _release_atomic(n):
 def reserve_operation(n):
     """يحجز ميزانية عملية كاملة (n طلبات) **ذرّياً قبل بدئها** (تحليل سهم = 6 طلبات).
 
-    يُرجع True لو نجح الحجز ضمن الحدّ 245 (تُستهلك لاحقاً من المحفظة الخيطية بلا عدّ مزدوج)،
-    False لو لا تتّسع الميزانية للعملية كاملة. لو تعذّر الوصول للعدّاد (None) نسمح بالعملية
-    (fail-open) بلا محفظة — فتمرّ طلباتها عبر الحجز الفردي (يفشل مفتوحاً بدوره).
+    **fail-closed**: لا نبدأ العملية إلا إذا أُثبت نجاح الحجز (True). أي False (لا تتّسع
+    ضمن 245) أو None (خطأ/ضغط قاعدة بيانات) → نرفض بدء العملية — فلا تنطلق طلبات FMP
+    بلا حجز فعلي ولا يُتجاوَز الحدّ 245 عند تعثّر القاعدة.
     """
-    ok = _reserve_atomic(n)
-    if ok is False:
-        return False
-    if ok is True:
+    if _reserve_atomic(n) is True:
         _local.wallet = getattr(_local, "wallet", 0) + n
-    return True
+        return True
+    return False
 
 
 def release_operation():
@@ -115,6 +113,25 @@ def release_operation():
     left = getattr(_local, "wallet", 0)
     _local.wallet = 0
     _release_atomic(left)
+
+
+def financials_complete(financials):
+    """هل القوائم المالية الثلاث مكتملة بالحدّ الأدنى المطلوب للتحليل؟
+
+    Piotroski/Catalyst يحتاجان قائمة الدخل والميزانية بسنتين (للتغيّر السنوي YoY) والتدفق
+    النقدي بسنة على الأقل. **نجاح قائمة أو اثنتين من ثلاث لا يكفي** (لا نعدّ السجل مكتملاً)
+    — يمنع اعتبار قوائم جزئية «تحليلاً كاملاً» فتستبدل الكاش السليم. فحص بنية فقط (لا صيغ).
+    """
+    if not financials:
+        return False
+    inc = financials.get("income")
+    bal = financials.get("balance")
+    cf = financials.get("cashflow")
+    return (
+        isinstance(inc, list) and len(inc) >= 2
+        and isinstance(bal, list) and len(bal) >= 2
+        and isinstance(cf, list) and len(cf) >= 1
+    )
 
 
 def get_today_usage():
@@ -148,8 +165,8 @@ def _get(endpoint, params=None, api_key=None):
         wallet = getattr(_local, "wallet", 0)
         if wallet > 0:
             _local.wallet = wallet - 1
-        elif _reserve_atomic(1) is False:
-            print(f"[FMP] قاطع الدائرة: بلغ الحدّ {CIRCUIT_LIMIT} — أوقفنا طلب {endpoint} لحماية الحصّة")
+        elif _reserve_atomic(1) is not True:  # fail-closed: False (بلغ الحدّ) أو None (خطأ قاعدة) → لا نُرسل
+            print(f"[FMP] قاطع الدائرة: تعذّر حجز الطلب (بلوغ الحدّ {CIRCUIT_LIMIT} أو خطأ قاعدة) — أوقفنا {endpoint}")
             return None
 
     params = dict(params or {})
