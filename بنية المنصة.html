@@ -199,6 +199,21 @@
     .reveal:nth-child(2){animation-delay:.06s} .reveal:nth-child(3){animation-delay:.12s}
     @keyframes rise{to{opacity:1; transform:none}}
   }
+
+  /* ============ الطباعة / PDF — يحافظ على الثيم الداكن ويمنع قصّ العناصر ============ */
+  @media print{
+    @page{ size:A4; margin:0 }
+    *{ -webkit-print-color-adjust:exact !important; print-color-adjust:exact !important }
+    body{ background:var(--bg) !important }
+    .wrap{ max-width:none; padding:18mm 15mm 16mm }
+    .reveal{ animation:none !important; opacity:1 !important; transform:none !important }
+    section{ margin-top:26px }
+    h1{ font-size:2.3rem }
+    .arch,.card,.step,.trow,.tbl-wrap,figure,footer{ break-inside:avoid }
+    h2,.eyebrow{ break-after:avoid }
+    .cards{ gap:12px }
+    a{ text-decoration:none }
+  }
 </style>
 
 <div class="wrap">
