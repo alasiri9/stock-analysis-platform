@@ -52,13 +52,17 @@ _login_state = {}  # ip -> {"fails": int, "lock_until": datetime|None}
 
 
 def _client_ip():
-    # على Railway، بوّابة Envoy الحافّة تضبط X-Envoy-External-Address بآيبي العميل الحقيقي
-    # كقيمة واحدة موثوقة (يضبطها الـedge لا العميل، فلا تُزوَّر ولا تُجمَّع كل الزوّار بآيبي
-    # واحد). نفضّلها؛ ولا نثق بترويسة X-Forwarded-For الخام (سلسلة قابلة للتزوير من جهة
-    # العميل). fallback: remote_addr (محلياً) ثم unknown.
-    envoy = (request.headers.get("X-Envoy-External-Address") or "").strip()
-    if envoy:
-        return envoy
+    # آيبي العميل الحقيقي خلف بروكسي Railway — لحدّ محاولات الدخول. نعتمد الهيدرات التي
+    # يضبطها الـedge نفسه (لا العميل) بترتيب الموثوقية على Railway:
+    #   1) X-Real-IP — الهيدر الموثّق رسمياً في Railway (يضبطه البروكسي بآيبي العميل).
+    #   2) X-Envoy-External-Address — قيمة العميل التي يمرّرها Envoy (احتياط لو تعطّل الأول).
+    # نتجاهل أي قيمة فارغة أو loopback (تدلّ على هيدر معطّل) وننتقل للتالي. لا نثق بترويسة
+    # X-Forwarded-For الخام (سلسلة قابلة للتزوير من جهة العميل — يُضيف إليها من اليسار).
+    # fallback أخير: remote_addr (محلياً/التطوير) ثم "unknown".
+    for _h in ("X-Real-IP", "X-Envoy-External-Address"):
+        _v = (request.headers.get(_h) or "").split(",")[0].strip()
+        if _v and _v not in ("127.0.0.1", "::1", "localhost"):
+            return _v
     return request.remote_addr or "unknown"
 
 
@@ -1603,15 +1607,21 @@ def create_app():
                         price_time = up.strftime("%Y-%m-%d %H:%M") + " UTC"
         # نبني تقريراً حيّاً (يستهلك ~6 طلبات FMP) فقط لأسهم UNIVERSE — يمنع استنزاف
         # حصّة المنصة برموز عشوائية خارج القائمة. الرموز خارجها تُعرض «غير متاحة» أدناه.
+        # نبني حيّاً فقط لأسهم UNIVERSE، وبعد حجز ميزانية العملية كاملة (6 طلبات) ذرّياً —
+        # فلا يبدأ التحليل والميزانية أقل من ستّ ثم يخرج تقرير جزئي. لو لم تتّسع → «غير متاح».
         if report is None and ticker.upper() in screener.UNIVERSE:  # لا كاش صالح: نبنيه ونخزّنه
-            report = analysis.build_stock_report(ticker)
-            if report is not None:
+            if fmp_client.reserve_operation(screener._STOCK_FMP_COST):
                 try:
-                    db.session.merge(StockCache(
-                        ticker=rkey, data_json=_json.dumps(report, ensure_ascii=False), updated_at=now))
-                    db.session.commit()
-                except Exception:  # noqa: BLE001
-                    db.session.rollback()
+                    report = analysis.build_stock_report(ticker)
+                finally:
+                    fmp_client.release_operation()  # يُعيد أي حجز غير مستهلَك
+                if report is not None:
+                    try:
+                        db.session.merge(StockCache(
+                            ticker=rkey, data_json=_json.dumps(report, ensure_ascii=False), updated_at=now))
+                        db.session.commit()
+                    except Exception:  # noqa: BLE001
+                        db.session.rollback()
         if report is None:
             # لا كاش ولا جلب: نوضّح أن السهم غير متاح — ونميّز أسهم المنصة (سبب مؤقت غالباً)
             in_universe = ticker.upper() in screener.UNIVERSE

@@ -11,6 +11,7 @@ fmp_client.py — عميل جلب البيانات من FMP (Financial Modeling 
 """
 
 import os
+import threading
 
 import requests
 from dotenv import load_dotenv
@@ -40,14 +41,18 @@ def _usage_key(day=None):
     return "fmp_calls:" + day
 
 
-def _reserve_call():
-    """يحجز طلب FMP واحداً على عدّاد اليوم بزيادة **ذرّية** آمنة مع التزامن، ويُرجع الرقم
-    الجديد بعد الزيادة (أو None لو تعذّر).
+# محفظة حجز خيطية (لكل خيط طلب/مجدول): تُملأ بحجز عملية كاملة عبر reserve_operation،
+# وتُستهلك منها استدعاءات FMP داخل تلك العملية — فلا يُحسب الطلب الواحد مرّتين.
+_local = threading.local()
 
-    الزيادة تتم عبر عبارة SQL واحدة (value = value + 1) داخل معاملة — قفل الصف يُسلسِل
-    الطلبات المتزامنة فلا يستهلك طلبان نفس الرقم ولا تُفقَد زيادة، ويبقى حدّ القاطع فعلياً
-    بلا تجاوز بسبب سباق. جلسة منفصلة لا تلتزم بيانات المتصل. أي فشل يُتجاهل (fail-open):
-    العدّاد مساعد ويجب ألّا يمنع الجلب.
+
+def _reserve_atomic(n):
+    """يحجز n طلباً **ذرّياً** بشرط ألّا يتجاوز المجموع عتبة القاطع CIRCUIT_LIMIT.
+
+    عبارة UPDATE شرطية واحدة (تزيد فقط إن اتّسع الحجز ضمن الحدّ) — ذرّية وآمنة مع التزامن:
+    لا يبدأ طلبان بنفس الميزانية، ولا تُفقَد زيادة، ولا يُتجاوَز الحدّ 245 بسبب سباق.
+    يُرجع True لو نجح الحجز، False لو لا يتّسع، None لو تعذّر الوصول للعدّاد (المستدعي
+    يعامل None كـ fail-open — سلامة الجلب أولاً).
     """
     try:
         from sqlalchemy import text
@@ -55,36 +60,61 @@ def _reserve_call():
         from models import db, AppSetting
         key = _usage_key()
         with Session(db.engine) as s:
-            # تأكيد وجود الصف (بصفر) — لو تزامن الإنشاء ينجح أحدهما ويُتجاهل الآخر
-            if s.get(AppSetting, key) is None:
+            if s.get(AppSetting, key) is None:  # تأكيد وجود الصف (بصفر)
                 try:
                     s.add(AppSetting(key=key, value="0"))
                     s.commit()
                 except Exception:
                     s.rollback()
-            # زيادة ذرّية ثم قراءة القيمة الجديدة في نفس المعاملة (CAST نصّي متوافق مع
-            # Postgres وSQLite؛ العمود نصّي).
-            s.execute(text(
-                "UPDATE app_setting SET value = CAST(CAST(value AS INTEGER) + 1 AS TEXT) "
-                "WHERE key = :k"), {"k": key})
-            new = s.execute(text(
-                "SELECT CAST(value AS INTEGER) FROM app_setting WHERE key = :k"), {"k": key}).scalar()
+            res = s.execute(text(
+                "UPDATE app_setting SET value = CAST(CAST(value AS INTEGER) + :n AS TEXT) "
+                "WHERE key = :k AND CAST(value AS INTEGER) + :n <= :lim"),
+                {"n": n, "k": key, "lim": CIRCUIT_LIMIT})
             s.commit()
-            return int(new) if new is not None else None
+            return res.rowcount == 1
     except Exception:
         return None
 
 
-def remaining_budget():
-    """كم طلب FMP بمفتاح المنصة يتبقّى قبل بلوغ عتبة القاطع CIRCUIT_LIMIT.
+def _release_atomic(n):
+    """يُعيد n طلباً غير مستهلَك إلى العدّاد (بعد عملية حجزت أكثر مما استهلكت). لا ينزل تحت صفر."""
+    if n <= 0:
+        return
+    try:
+        from sqlalchemy import text
+        from sqlalchemy.orm import Session
+        from models import db
+        key = _usage_key()
+        with Session(db.engine) as s:
+            s.execute(text(
+                "UPDATE app_setting SET value = CAST(CASE WHEN CAST(value AS INTEGER) - :n < 0 "
+                "THEN 0 ELSE CAST(value AS INTEGER) - :n END AS TEXT) WHERE key = :k"),
+                {"n": n, "k": key})
+            s.commit()
+    except Exception:
+        pass
 
-    يستعمله الماسح ليتأكّد من كفاية الميزانية قبل بدء تحليل سهم (فلا يتوقّف القاطع وسط
-    التحليل). None لو تعذّرت قراءة العدّاد → لا نمنع (fail-open، سلامة الجلب أولاً).
+
+def reserve_operation(n):
+    """يحجز ميزانية عملية كاملة (n طلبات) **ذرّياً قبل بدئها** (تحليل سهم = 6 طلبات).
+
+    يُرجع True لو نجح الحجز ضمن الحدّ 245 (تُستهلك لاحقاً من المحفظة الخيطية بلا عدّ مزدوج)،
+    False لو لا تتّسع الميزانية للعملية كاملة. لو تعذّر الوصول للعدّاد (None) نسمح بالعملية
+    (fail-open) بلا محفظة — فتمرّ طلباتها عبر الحجز الفردي (يفشل مفتوحاً بدوره).
     """
-    used = get_today_usage()
-    if used is None:
-        return None
-    return max(0, CIRCUIT_LIMIT - used)
+    ok = _reserve_atomic(n)
+    if ok is False:
+        return False
+    if ok is True:
+        _local.wallet = getattr(_local, "wallet", 0) + n
+    return True
+
+
+def release_operation():
+    """يُعيد أي حجز غير مستهلَك من المحفظة إلى العدّاد ويصفّرها (يُستدعى في finally)."""
+    left = getattr(_local, "wallet", 0)
+    _local.wallet = 0
+    _release_atomic(left)
 
 
 def get_today_usage():
@@ -110,14 +140,16 @@ def _get(endpoint, params=None, api_key=None):
         print("[FMP] خطأ: لا مفتاح FMP متاح (لا مخصّص ولا FMP_API_KEY)")
         return None
 
-    # قاطع الدائرة + الحجز الذرّي (لمفتاح المنصة فقط — لا مفاتيح المشتركين، حصصهم خاصة):
-    # نحجز رقماً ذرّياً في عدّاد اليوم قبل الطلب (يمنع فقدان الزيادات والسباقات)، فإن تجاوز
-    # الحجز العتبة أوقفنا الطلب. لا يمسّ التحديث الليلي (يعمل والعدّاد قرب الصفر). لو تعذّر
-    # الحجز (None) لا نمنع (fail-open — سلامة الجلب أولاً).
+    # القاطع + الحجز (لمفتاح المنصة فقط — لا مفاتيح المشتركين، حصصهم خاصة):
+    # 1) لو للعملية محفظة محجوزة مسبقاً (تحليل سهم/تقرير) نستهلك منها بلا عدّ مزدوج.
+    # 2) وإلا نحجز طلباً فردياً ذرّياً؛ فإن لم يتّسع ضمن الحدّ 245 نوقف الطلب.
+    # لا يمسّ التحديث الليلي (العدّاد قرب الصفر). fail-open لو تعذّر الوصول للعدّاد.
     if not api_key:
-        reserved = _reserve_call()
-        if reserved is not None and reserved > CIRCUIT_LIMIT:
-            print(f"[FMP] قاطع الدائرة: الحجز {reserved} تجاوز {CIRCUIT_LIMIT} — أوقفنا طلب {endpoint} لحماية الحصّة")
+        wallet = getattr(_local, "wallet", 0)
+        if wallet > 0:
+            _local.wallet = wallet - 1
+        elif _reserve_atomic(1) is False:
+            print(f"[FMP] قاطع الدائرة: بلغ الحدّ {CIRCUIT_LIMIT} — أوقفنا طلب {endpoint} لحماية الحصّة")
             return None
 
     params = dict(params or {})

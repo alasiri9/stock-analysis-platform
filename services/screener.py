@@ -716,10 +716,17 @@ def _build_record(ticker):
         "pe": scoring._safe_div(_price, _eps) if _eps not in (None, 0) else None,
     }
 
-    # اكتمال التحليل: توفّر السعر + الشموع (منها تُحسب كل المؤشرات). لو نقص أحدهما (فشل/
-    # توقّف قاطع FMP وسط التحليل) نعدّه ناقصاً → لا يستبدل سجلاً سليماً ولا يُعلَّم محدثاً
-    # لليوم (يُقرأ ويُزال في refresh_cache، فلا يُخزَّن ضمن السجل).
-    _complete = bool(full_candles) and bool(tech) and (quote is not None and quote.get("price") is not None)
+    # اكتمال التحليل: يجب أن تكتمل **كل** بيانات FMP الأساسية — السعر (quote) + الملف
+    # التعريفي (profile) + القوائم المالية (has_financials) + تاريخ الأسعار (full_candles)
+    # ومنه المؤشرات (tech). لو نقص أيّها (فشل profile/الماليات أو توقّف قاطع FMP وسط
+    # التحليل) نعدّه ناقصاً → لا يستبدل سجلاً سليماً ولا يُعلَّم محدثاً لليوم (يُقرأ ويُزال
+    # في refresh_cache فلا يُخزَّن ضمن السجل).
+    _complete = (
+        (quote is not None and quote.get("price") is not None)
+        and profile is not None
+        and has_financials
+        and bool(full_candles) and bool(tech)
+    )
 
     return {
         "ticker": ticker,
@@ -976,12 +983,12 @@ def refresh_cache(time_budget=20):
         if existing and existing.updated_at and existing.updated_at.date() == today:
             continue
 
-        # حارس الميزانية: لا نبدأ تحليل سهم (~6 طلبات FMP) إن لم يتبقَّ ما يكفي لإكماله —
-        # يمنع توقّف قاطع FMP وسط التحليل وحفظ سجل ناقص. None = تعذّرت القراءة → نكمل.
-        rem = fmp_client.remaining_budget()
-        if rem is not None and rem < _STOCK_FMP_COST:
-            print(f"[screener] توقّف مبكّر: المتبقّي {rem} < تكلفة سهم {_STOCK_FMP_COST} — "
-                  f"تُركت بقية الأسهم بسجلّها السليم لتُحدَّث لاحقاً")
+        # حجز ذرّي لميزانية العملية كاملة (6 طلبات) قبل بدء التحليل — يمنع بدء تحليلين
+        # متزامنين بميزانية تبدو كافية ثم توقّف أحدهما وسط التحليل. لو لم تتّسع الميزانية
+        # للعملية كاملة نتوقّف (تبقى بقية الأسهم بسجلّها السليم لتُحدَّث لاحقاً).
+        if not fmp_client.reserve_operation(_STOCK_FMP_COST):
+            print(f"[screener] توقّف: الميزانية لا تتّسع لتحليل سهم كامل ({_STOCK_FMP_COST} طلبات) — "
+                  f"تُركت بقية الأسهم بسجلّها السليم")
             break
 
         try:
@@ -1056,6 +1063,8 @@ def refresh_cache(time_budget=20):
             print(f"[screener] تعذّر تحديث {ticker}: {e}")
             db.session.rollback()
             continue
+        finally:
+            fmp_client.release_operation()  # يُعيد أي حجز غير مستهلَك (نجاح/تخطٍّ/فشل)
 
     return updated
 
