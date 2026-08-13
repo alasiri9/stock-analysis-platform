@@ -18,6 +18,7 @@ if sys.stdout and hasattr(sys.stdout, "reconfigure"):
 
 from dotenv import load_dotenv
 import hashlib
+import ipaddress
 import secrets
 
 from flask import Flask, render_template, request, redirect, url_for, session, Response
@@ -51,9 +52,28 @@ _LOGIN_LOCK_MINUTES = 5
 _login_state = {}  # ip -> {"fails": int, "lock_until": datetime|None}
 
 
+def _valid_ip(s):
+    """هل النص عنوان IP صالح (IPv4/IPv6)؟ — يمنع اعتماد ترويسة مزوّرة بقيمة غير صالحة."""
+    if not s:
+        return False
+    try:
+        ipaddress.ip_address(s)
+        return True
+    except ValueError:
+        return False
+
+
 def _client_ip():
-    fwd = request.headers.get("X-Forwarded-For", "")
-    return fwd.split(",")[0].strip() if fwd else (request.remote_addr or "unknown")
+    # آيبي العميل الحقيقي خلف بروكسي Railway — لحدّ محاولات الدخول. نعتمد **فقط** X-Real-IP
+    # (الهيدر الموثّق رسمياً لدى Railway، يضبطه الـedge بآيبي العميل). لا نستخدم X-Forwarded-For
+    # ولا X-Envoy-External-Address كـ fallback أمني — كلاهما قابل للتزوير حسب مسار الطلب/إعداد
+    # البروكسي. عند غياب/تلف X-Real-IP نرجع لـ remote_addr (عنوان الاتصال المباشر، يضبطه الخادم
+    # لا العميل). نتحقّق من صحّة صيغة IP في الحالتين، وإلا "unknown".
+    real = (request.headers.get("X-Real-IP") or "").strip()
+    if _valid_ip(real):
+        return real
+    ra = (request.remote_addr or "").strip()
+    return ra if _valid_ip(ra) else "unknown"
 
 
 def _login_locked_minutes():
@@ -1522,7 +1542,10 @@ def create_app():
 
     @app.route("/screener/refresh", methods=["POST"])
     def screener_refresh():
-        # إعادة بناء كاش الماسح يدوياً (يستهلك استدعاءات API — لذلك يدوي).
+        # إعادة بناء كاش الماسح يدوياً (يستهلك استدعاءات API بكثرة — لذلك يدوي وللمدير فقط).
+        # حارس صلاحية: يمنع أي مشترك من استنزاف حصّة FMP (250/يوم) — مثل /prices/refresh.
+        if not is_admin():
+            return redirect(url_for("index"))
         # نلتقط أي خطأ حتى لا تظهر صفحة 500؛ ما تم حفظه (commit لكل سهم) يبقى.
         try:
             screener.refresh_cache()
@@ -1592,15 +1615,26 @@ def create_app():
                     else:  # مشترك بلا مفتاح → نُبقي السعر المخزّن ونوضّح تاريخه (بلا استهلاك حصّة أحمد)
                         price_cached = True
                         price_time = up.strftime("%Y-%m-%d %H:%M") + " UTC"
-        if report is None:  # لا كاش صالح: نبني التقرير كاملاً ونخزّنه
-            report = analysis.build_stock_report(ticker)
-            if report is not None:
+        # نبني تقريراً حيّاً (يستهلك ~6 طلبات FMP) فقط لأسهم UNIVERSE — يمنع استنزاف
+        # حصّة المنصة برموز عشوائية خارج القائمة. الرموز خارجها تُعرض «غير متاحة» أدناه.
+        # نبني حيّاً فقط لأسهم UNIVERSE، وبعد حجز ميزانية العملية كاملة (6 طلبات) ذرّياً —
+        # فلا يبدأ التحليل والميزانية أقل من ستّ ثم يخرج تقرير جزئي. لو لم تتّسع → «غير متاح».
+        if report is None and ticker.upper() in screener.UNIVERSE:  # لا كاش صالح: نبنيه ونخزّنه
+            if fmp_client.reserve_operation(screener._STOCK_FMP_COST):
                 try:
-                    db.session.merge(StockCache(
-                        ticker=rkey, data_json=_json.dumps(report, ensure_ascii=False), updated_at=now))
-                    db.session.commit()
-                except Exception:  # noqa: BLE001
-                    db.session.rollback()
+                    report = analysis.build_stock_report(ticker)
+                finally:
+                    fmp_client.release_operation()  # يُعيد أي حجز غير مستهلَك
+                # لا نحفظ (ولا نعرض) تقريراً ناقصاً: نخزّن المكتمل فقط؛ الناقص → «غير متاح».
+                if report is not None and report.pop("_complete", False):
+                    try:
+                        db.session.merge(StockCache(
+                            ticker=rkey, data_json=_json.dumps(report, ensure_ascii=False), updated_at=now))
+                        db.session.commit()
+                    except Exception:  # noqa: BLE001
+                        db.session.rollback()
+                else:
+                    report = None
         if report is None:
             # لا كاش ولا جلب: نوضّح أن السهم غير متاح — ونميّز أسهم المنصة (سبب مؤقت غالباً)
             in_universe = ticker.upper() in screener.UNIVERSE

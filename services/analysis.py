@@ -308,8 +308,17 @@ def build_stock_report(ticker):
         "peg": peg,                        # نسبة (رقم عادي)
     }
 
+    # علَم اكتمال موثوق: السعر + الملف التعريفي + القوائم المالية الثلاث كاملة + المؤشرات
+    # الفنية. يستعمله مسار التقرير ليحفظ فقط تقريراً مكتملاً (لا جزئياً) في الكاش.
+    _complete = (
+        price is not None and profile is not None
+        and fmp_client.financials_complete(financials)
+        and bool(tech_indicators)
+    )
+
     return {
         "ticker": ticker,
+        "_complete": _complete,
         "name": (profile.get("name") if profile else None) or (quote.get("name") if quote else None),
         "sector": profile.get("sector") if profile else None,
         "industry": profile.get("industry") if profile else None,

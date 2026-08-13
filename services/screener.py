@@ -654,6 +654,7 @@ def _build_record(ticker):
     # مؤشرات فنية للكرت (جلب تاريخي إضافي؛ لا يكسر السجلّ لو فشل)
     # FMP يُرجع كل التاريخ المتاح (~5 سنوات) في طلب واحد؛ نأخذ آخر 250 يوماً لبقية المؤشرات
     # (كما كان) ونمرّر التاريخ الكامل للفريمات الثلاثة (يحتاجه الشهري للقمم والقيعان) — بلا طلب إضافي.
+    full_candles = None  # يبقى None لو فشل جلب التاريخ (فشل/قاطع FMP) — إشارة «تحليل ناقص» أدناه
     try:
         full_candles = fmp_client.get_historical_prices(ticker, limit=5000)
         candles = full_candles[:250] if full_candles else None
@@ -715,8 +716,21 @@ def _build_record(ticker):
         "pe": scoring._safe_div(_price, _eps) if _eps not in (None, 0) else None,
     }
 
+    # اكتمال التحليل: يجب أن تكتمل **كل** بيانات FMP الأساسية — السعر (quote) + الملف
+    # التعريفي (profile) + القوائم المالية الثلاث كاملة (financials_complete، لا any) +
+    # تاريخ الأسعار (full_candles) ومنه المؤشرات (tech). لو نقص أيّها (فشل profile/إحدى
+    # القوائم أو توقّف قاطع FMP وسط التحليل) نعدّه ناقصاً → لا يستبدل سجلاً سليماً ولا
+    # يُعلَّم محدثاً لليوم (يُقرأ ويُزال في refresh_cache فلا يُخزَّن ضمن السجل).
+    _complete = (
+        (quote is not None and quote.get("price") is not None)
+        and profile is not None
+        and fmp_client.financials_complete(financials)   # القوائم الثلاث كاملة (لا any)
+        and bool(full_candles) and bool(tech)
+    )
+
     return {
         "ticker": ticker,
+        "_complete": _complete,
         "name": (quote.get("name") if quote else None) or (profile.get("name") if profile else None),
         "sector": profile.get("sector") if profile else None,
         "price": quote.get("price") if quote else None,
@@ -939,6 +953,11 @@ def _refresh_spy_history(today):
         db.session.rollback()
 
 
+# تكلفة تحليل سهم واحد بطلبات FMP (quote + profile + 3 قوائم مالية + تاريخ الأسعار).
+# نستخدمها لضمان كفاية الميزانية قبل بدء تحليل سهم، فلا يتوقّف قاطع FMP وسط التحليل.
+_STOCK_FMP_COST = 6
+
+
 def refresh_cache(time_budget=20):
     """يحدّث كاش الماسح على دفعات ضمن حدّ زمني آمن، ويولّد إشارات للأسهم القوية.
 
@@ -964,9 +983,22 @@ def refresh_cache(time_budget=20):
         if existing and existing.updated_at and existing.updated_at.date() == today:
             continue
 
+        # حجز ذرّي لميزانية العملية كاملة (6 طلبات) قبل بدء التحليل — يمنع بدء تحليلين
+        # متزامنين بميزانية تبدو كافية ثم توقّف أحدهما وسط التحليل. لو لم تتّسع الميزانية
+        # للعملية كاملة نتوقّف (تبقى بقية الأسهم بسجلّها السليم لتُحدَّث لاحقاً).
+        if not fmp_client.reserve_operation(_STOCK_FMP_COST):
+            print(f"[screener] توقّف: الميزانية لا تتّسع لتحليل سهم كامل ({_STOCK_FMP_COST} طلبات) — "
+                  f"تُركت بقية الأسهم بسجلّها السليم")
+            break
+
         try:
             record = _build_record(ticker)
             if not record:
+                continue
+            # تحليل ناقص (بيانات FMP جزئية): لا نستبدل السجل السليم ولا نعلّمه محدثاً لليوم
+            # (يبقى آخر سجل سليم، ويُعاد بناؤه في دفعة/ليلة لاحقة).
+            if not record.pop("_complete", True):
+                print(f"[screener] تحليل {ticker} ناقص — أبقينا آخر سجل سليم ولم نعلّمه محدثاً")
                 continue
 
             # القوة النسبية = تفوّق زخم السهم على زخم السوق عن نفس الفترة (None ≠ 0)
@@ -1031,6 +1063,8 @@ def refresh_cache(time_budget=20):
             print(f"[screener] تعذّر تحديث {ticker}: {e}")
             db.session.rollback()
             continue
+        finally:
+            fmp_client.release_operation()  # يُعيد أي حجز غير مستهلَك (نجاح/تخطٍّ/فشل)
 
     return updated
 

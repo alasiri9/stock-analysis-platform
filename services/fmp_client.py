@@ -11,6 +11,7 @@ fmp_client.py — عميل جلب البيانات من FMP (Financial Modeling 
 """
 
 import os
+import threading
 
 import requests
 from dotenv import load_dotenv
@@ -27,6 +28,11 @@ TIMEOUT = 8
 # حدّ باقة FMP المجانية اليومي (عدد الطلبات) — لعرضه في لوحة «صحة المنصة»
 DAILY_LIMIT = 250
 
+# عتبة «قاطع الدائرة»: نوقف طلبات مفتاح المنصة عند بلوغها لحماية الحصّة من الاستنزاف.
+# مضبوطة فوق بصمة التحديث الليلي (~195 طلباً يبدأ من صفر) فلا تمسّه أبداً، وتترك هامش
+# أمان قبل الحدّ 250. لا تُطبَّق على مفاتيح المشتركين (BYOK) — لهم حصصهم الخاصة.
+CIRCUIT_LIMIT = 245
+
 
 def _usage_key(day=None):
     """مفتاح عدّاد طلبات اليوم في جدول AppSetting (يوم UTC — نفس توقيت تصفير حصّة FMP)."""
@@ -35,28 +41,131 @@ def _usage_key(day=None):
     return "fmp_calls:" + day
 
 
-def _record_call():
-    """يزيد عدّاد طلبات FMP لليوم الحالي بواحد — تشخيصي فقط للوحة صحة المنصة.
+# محفظة حجز خيطية (لكل خيط طلب/مجدول): تُملأ بحجز عملية كاملة عبر reserve_operation،
+# وتُستهلك منها استدعاءات FMP داخل تلك العملية — فلا يُحسب الطلب الواحد مرّتين.
+_local = threading.local()
 
-    - يستخدم جلسة قاعدة بيانات منفصلة حتى لا يتداخل مع معاملة المتصل (لا يلتزم بياناته).
-    - أي فشل (لا سياق تطبيق، لا قاعدة بيانات...) يُتجاهل بصمت: العدّاد مساعد
-      ويجب ألّا يؤثر إطلاقاً على جلب البيانات الحقيقي.
+
+def _reserve_atomic(n):
+    """يحجز n طلباً **ذرّياً** بشرط ألّا يتجاوز المجموع عتبة القاطع CIRCUIT_LIMIT.
+
+    عبارة UPDATE شرطية واحدة (تزيد فقط إن اتّسع الحجز ضمن الحدّ) — ذرّية وآمنة مع التزامن:
+    لا يبدأ طلبان بنفس الميزانية، ولا تُفقَد زيادة، ولا يُتجاوَز الحدّ 245 بسبب سباق.
+    يُرجع True لو نجح الحجز، False لو لا يتّسع، None لو تعذّر الوصول للعدّاد (المستدعي
+    يعامل None كـ fail-open — سلامة الجلب أولاً).
     """
     try:
+        from sqlalchemy import text
         from sqlalchemy.orm import Session
         from models import db, AppSetting
+        key = _usage_key()
         with Session(db.engine) as s:
-            row = s.get(AppSetting, _usage_key())
-            if row is None:
-                s.add(AppSetting(key=_usage_key(), value="1"))
-            else:
+            if s.get(AppSetting, key) is None:  # تأكيد وجود الصف (بصفر)
                 try:
-                    row.value = str(int(row.value) + 1)
-                except (TypeError, ValueError):
-                    row.value = "1"
+                    s.add(AppSetting(key=key, value="0"))
+                    s.commit()
+                except Exception:
+                    s.rollback()
+            res = s.execute(text(
+                "UPDATE app_setting SET value = CAST(CAST(value AS INTEGER) + :n AS TEXT) "
+                "WHERE key = :k AND CAST(value AS INTEGER) + :n <= :lim"),
+                {"n": n, "k": key, "lim": CIRCUIT_LIMIT})
+            s.commit()
+            return res.rowcount == 1
+    except Exception:
+        return None
+
+
+def _release_atomic(n):
+    """يُعيد n طلباً غير مستهلَك إلى العدّاد (بعد عملية حجزت أكثر مما استهلكت). لا ينزل تحت صفر."""
+    if n <= 0:
+        return
+    try:
+        from sqlalchemy import text
+        from sqlalchemy.orm import Session
+        from models import db
+        key = _usage_key()
+        with Session(db.engine) as s:
+            s.execute(text(
+                "UPDATE app_setting SET value = CAST(CASE WHEN CAST(value AS INTEGER) - :n < 0 "
+                "THEN 0 ELSE CAST(value AS INTEGER) - :n END AS TEXT) WHERE key = :k"),
+                {"n": n, "k": key})
             s.commit()
     except Exception:
         pass
+
+
+def reserve_operation(n):
+    """يحجز ميزانية عملية كاملة (n طلبات) **ذرّياً قبل بدئها** (تحليل سهم = 6 طلبات).
+
+    **fail-closed**: لا نبدأ العملية إلا إذا أُثبت نجاح الحجز (True). أي False (لا تتّسع
+    ضمن 245) أو None (خطأ/ضغط قاعدة بيانات) → نرفض بدء العملية — فلا تنطلق طلبات FMP
+    بلا حجز فعلي ولا يُتجاوَز الحدّ 245 عند تعثّر القاعدة.
+    """
+    if _reserve_atomic(n) is True:
+        _local.wallet = getattr(_local, "wallet", 0) + n
+        return True
+    return False
+
+
+def release_operation():
+    """يُعيد أي حجز غير مستهلَك من المحفظة إلى العدّاد ويصفّرها (يُستدعى في finally)."""
+    left = getattr(_local, "wallet", 0)
+    _local.wallet = 0
+    _release_atomic(left)
+
+
+def _row_has(rows, idx, keys):
+    """هل الصفّ رقم idx في القائمة موجود ويحوي **كل** الحقول keys بقيم فعلية (ليست None)؟
+
+    قيمة 0 أو سالبة تُعدّ بيانات فعلية (خسارة/صفر حقيقي)؛ الحقل الغائب أو None = ناقص.
+    (يتحقّق ضمناً من طول القائمة: يجب أن يوجد الصفّ عند idx.)
+    """
+    if not isinstance(rows, list) or len(rows) <= idx:
+        return False
+    row = rows[idx]
+    return isinstance(row, dict) and all(row.get(k) is not None for k in keys)
+
+
+# الحقول المالية الإلزامية لاعتبار التقرير «مكتملاً» — بحيث يُحسب Piotroski (٩ نقاط)
+# وCatalyst (٥ مكوّنات) ومقاييس التقرير **بالكامل** لا جزئياً. مُستخرَجة من المستهلكين
+# الفعليين في scoring.py (piotroski_score/catalyst_score) وanalysis.build_stock_report:
+#   - الدخل: netIncome·revenue·grossProfit·weightedAverageShsOut للسنتين (نمو/دلتا/هامش/
+#     أسهم)، + operatingIncome·eps للسنة الحالية (هامش التشغيل + مضاعف الربحية بالتقرير).
+#   - الميزانية: totalAssets·totalCurrentAssets·totalCurrentLiabilities·longTermDebt للسنتين
+#     (دلتا الرافعة/السيولة/الدوران)، + totalStockholdersEquity للسنة الحالية (ROE).
+#   - التدفق النقدي: operatingCashFlow للسنة الحالية (CFO + جودة الأرباح).
+_INC_FIELDS_CUR = ("netIncome", "revenue", "grossProfit", "weightedAverageShsOut",
+                   "operatingIncome", "eps")
+_INC_FIELDS_PRV = ("netIncome", "revenue", "grossProfit", "weightedAverageShsOut")
+_BAL_FIELDS_CUR = ("totalAssets", "totalCurrentAssets", "totalCurrentLiabilities",
+                   "longTermDebt", "totalStockholdersEquity")
+_BAL_FIELDS_PRV = ("totalAssets", "totalCurrentAssets", "totalCurrentLiabilities", "longTermDebt")
+_CF_FIELDS_CUR = ("operatingCashFlow",)
+
+
+def financials_complete(financials):
+    """هل القوائم المالية الثلاث مكتملة **بكل قيمها الفعلية** اللازمة لحساب التحليل كاملاً؟
+
+    لا يكفي عدد الصفوف (صفوف فارغة {} تُعدّ «مكتملة» خطأً)، ولا يكفي بعض الحقول؛ نشترط
+    توفّر **جميع** الحقول التي يستهلكها الكود فعلاً في Piotroski (٩ نقاط، بسنتين للدلتا)
+    وCatalyst (٥ مكوّنات) ومقاييس التقرير — بقيم غير None (القيمة 0/سالبة بيانات صحيحة).
+    فبذلك _complete=True يعني أن كل الحسابات قابلة للحساب بالكامل لا جزئياً. أي حقل إلزامي
+    مفقود/None → False (فلا يُحفَظ كتقرير مكتمل ولا يستبدل سجلاً سليماً). فحص قيم فقط — لا
+    تغيير لأي صيغة/وزن تحليل.
+    """
+    if not financials:
+        return False
+    inc = financials.get("income")
+    bal = financials.get("balance")
+    cf = financials.get("cashflow")
+    return (
+        _row_has(inc, 0, _INC_FIELDS_CUR)
+        and _row_has(inc, 1, _INC_FIELDS_PRV)
+        and _row_has(bal, 0, _BAL_FIELDS_CUR)
+        and _row_has(bal, 1, _BAL_FIELDS_PRV)
+        and _row_has(cf, 0, _CF_FIELDS_CUR)
+    )
 
 
 def get_today_usage():
@@ -82,6 +191,18 @@ def _get(endpoint, params=None, api_key=None):
         print("[FMP] خطأ: لا مفتاح FMP متاح (لا مخصّص ولا FMP_API_KEY)")
         return None
 
+    # القاطع + الحجز (لمفتاح المنصة فقط — لا مفاتيح المشتركين، حصصهم خاصة):
+    # 1) لو للعملية محفظة محجوزة مسبقاً (تحليل سهم/تقرير) نستهلك منها بلا عدّ مزدوج.
+    # 2) وإلا نحجز طلباً فردياً ذرّياً؛ فإن لم يتّسع ضمن الحدّ 245 نوقف الطلب.
+    # لا يمسّ التحديث الليلي (العدّاد قرب الصفر). fail-open لو تعذّر الوصول للعدّاد.
+    if not api_key:
+        wallet = getattr(_local, "wallet", 0)
+        if wallet > 0:
+            _local.wallet = wallet - 1
+        elif _reserve_atomic(1) is not True:  # fail-closed: False (بلغ الحدّ) أو None (خطأ قاعدة) → لا نُرسل
+            print(f"[FMP] قاطع الدائرة: تعذّر حجز الطلب (بلوغ الحدّ {CIRCUIT_LIMIT} أو خطأ قاعدة) — أوقفنا {endpoint}")
+            return None
+
     params = dict(params or {})
     params["apikey"] = key
     url = f"{BASE_URL}/{endpoint}"
@@ -91,11 +212,6 @@ def _get(endpoint, params=None, api_key=None):
     except requests.RequestException as e:
         print(f"[FMP] فشل الاتصال بـ {endpoint}: {e}")
         return None
-
-    # نحسب الطلب على عدّاد استهلاك المنصة فقط لو استُخدم مفتاح المنصة.
-    # طلبات المشتركين بمفاتيحهم الخاصة تُحسب على حصصهم هم، لا على أحمد.
-    if not api_key:
-        _record_call()
 
     if resp.status_code != 200:
         print(f"[FMP] {endpoint} رجّع حالة {resp.status_code}: {resp.text[:200]}")
