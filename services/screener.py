@@ -1064,6 +1064,15 @@ def signals_performance():
                 return p
         return None
 
+    # لتفادي تضخيم الإحصائيات: الإشارة نفسها تتكرّر كل SIGNAL_COOLDOWN_DAYS يوماً،
+    # فعدّ كل تكرار كعيّنة مستقلّة يحيّز العيّنة (سهم واحد يُثقل النوع). نحتسب في
+    # الإحصائيات **أقدم إشارة فقط لكل (سهم + نوع)** — والباقي يبقى معروضاً بالجدول.
+    # sigs مرتّبة الأحدث أولاً، فالأقدم يُكتب أخيراً في القاموس فيبقى هو المعتمد.
+    _first_sig_id = {}
+    for s in sigs:
+        _first_sig_id[(s.ticker, s.signal_type)] = s.id
+    counted_ids = set(_first_sig_id.values())
+
     now = datetime.now(timezone.utc)
     rows = []
     all_returns = []
@@ -1075,6 +1084,7 @@ def signals_performance():
             triggered_at = triggered_at.replace(tzinfo=timezone.utc)
         days = (now - triggered_at).days
         mature = days >= MATURE_MIN_DAYS  # نضجت؟ (مرّ وقت كافٍ للحكم) — الطازجة لا تدخل الإحصائيات
+        counted = s.id in counted_ids     # أقدم إشارة لنوعها على هذا السهم؟ (وحدها تدخل الإحصائيات)
 
         current = price_by_ticker.get(s.ticker)
         # الإشارات الهابطة (كسر مؤكّد) تُقاس معكوسة: نزول السهم بعدها = نجاح (فائدة تحذير البيع/التفادي).
@@ -1083,7 +1093,7 @@ def signals_performance():
         ret = None
         if current is not None and s.price_at_signal:
             ret = sign * (current - s.price_at_signal) / s.price_at_signal * 100.0
-            if mature:  # الطازجة (< MATURE_MIN_DAYS) تُعرض في الجدول لكن لا تدخل الإحصائيات
+            if mature and counted:  # الطازجة أو المكرّرة تُعرض بالجدول لكن لا تدخل الإحصائيات
                 all_returns.append(ret)
                 by_type.setdefault(s.signal_type, []).append(ret)
 
@@ -1095,7 +1105,7 @@ def signals_performance():
                 spy_ret = (spy_last - spy_start) / spy_start * 100.0  # حركة السوق الفعلية (للعرض)
                 # الألفا بنفس اتجاه الإشارة: شراء للصاعدة, تفادٍ/بيع للهابطة (نطرح مساهمة السوق بنفس الإشارة)
                 alpha = ret - sign * spy_ret
-                if mature:
+                if mature and counted:
                     alphas.append(alpha)
 
         rows.append({
@@ -1105,6 +1115,7 @@ def signals_performance():
             "date": s.triggered_at,
             "days": days,
             "mature": mature,
+            "counted": counted,
             "price_at_signal": s.price_at_signal,
             "current": current,
             "return_pct": ret,
