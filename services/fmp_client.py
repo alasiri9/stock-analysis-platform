@@ -115,12 +115,29 @@ def release_operation():
     _release_atomic(left)
 
 
-def financials_complete(financials):
-    """هل القوائم المالية الثلاث مكتملة بالحدّ الأدنى المطلوب للتحليل؟
+def _row_has(rows, idx, keys):
+    """هل الصفّ رقم idx في القائمة موجود ويحوي **كل** الحقول keys بقيم فعلية (ليست None)؟
 
-    Piotroski/Catalyst يحتاجان قائمة الدخل والميزانية بسنتين (للتغيّر السنوي YoY) والتدفق
-    النقدي بسنة على الأقل. **نجاح قائمة أو اثنتين من ثلاث لا يكفي** (لا نعدّ السجل مكتملاً)
-    — يمنع اعتبار قوائم جزئية «تحليلاً كاملاً» فتستبدل الكاش السليم. فحص بنية فقط (لا صيغ).
+    قيمة 0 أو سالبة تُعدّ بيانات فعلية (خسارة/صفر حقيقي)؛ الحقل الغائب أو None = ناقص.
+    (يتحقّق ضمناً من طول القائمة: يجب أن يوجد الصفّ عند idx.)
+    """
+    if not isinstance(rows, list) or len(rows) <= idx:
+        return False
+    row = rows[idx]
+    return isinstance(row, dict) and all(row.get(k) is not None for k in keys)
+
+
+def financials_complete(financials):
+    """هل القوائم المالية الثلاث مكتملة **بقيمها الفعلية** المطلوبة للتحليل؟
+
+    لا يكفي عدد الصفوف (قد تكون فارغة {} فتُعدّ «مكتملة» خطأً)؛ نتحقّق أن كل صفّ يحوي فعلاً
+    الحقول التي يستهلكها الكود في Piotroski/Catalyst/التقييم (تتبّعناها من scoring.py):
+      - الدخل (سنتان، لنمو YoY + دوران الأصول): netIncome · revenue · (الحالية) عدد الأسهم.
+      - الميزانية (سنتان، لدلتا Piotroski): totalAssets · (الحالية) totalStockholdersEquity.
+      - التدفق النقدي (الحالية): operatingCashFlow.
+    نستثني عمداً longTermDebt والسيولة الجارية (totalCurrentAssets/Liabilities): فهي **null
+    شرعاً لدى البنوك (ميزانية غير مصنّفة) والشركات بلا دين**، ومكوّناتها في Piotroski تتدرّج
+    بأمان إلى None — فاشتراطها يرفض أسهماً سليمة بالخطأ. فحص بنية/قيم فقط، لا تغيير لأي صيغة.
     """
     if not financials:
         return False
@@ -128,9 +145,11 @@ def financials_complete(financials):
     bal = financials.get("balance")
     cf = financials.get("cashflow")
     return (
-        isinstance(inc, list) and len(inc) >= 2
-        and isinstance(bal, list) and len(bal) >= 2
-        and isinstance(cf, list) and len(cf) >= 1
+        _row_has(inc, 0, ("netIncome", "revenue", "weightedAverageShsOut"))
+        and _row_has(inc, 1, ("netIncome", "revenue"))
+        and _row_has(bal, 0, ("totalAssets", "totalStockholdersEquity"))
+        and _row_has(bal, 1, ("totalAssets",))
+        and _row_has(cf, 0, ("operatingCashFlow",))
     )
 
 
