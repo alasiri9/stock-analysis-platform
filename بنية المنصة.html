@@ -1,0 +1,390 @@
+<title>بنية منصة Algomatix</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  :root{
+    /* لوحة Algomatix الداكنة (aurora) — ملتزمة بالثيم الداكن الدائم للمنصة */
+    --bg:#0e1526; --bg-2:#0b1120;
+    --panel:#16203a; --panel-2:#1b2745; --panel-3:#22304f;
+    --ink:#e9eefa; --muted:#a2b3d0; --faint:#6f819f;
+    --line:rgba(167,192,232,.15); --line-2:rgba(167,192,232,.28);
+    --green:#22c55e; --silver:#a7c0e8; --purple:#7c6fe6;
+    --gold:#e3b23c; --bronze:#c08a2e; --red:#ef6b6b;
+    --sans:system-ui,"Segoe UI","Noto Kufi Arabic","Noto Sans Arabic",Tahoma,sans-serif;
+    --mono:"SF Mono","JetBrains Mono","Cascadia Code",ui-monospace,Menlo,Consolas,monospace;
+    --r:16px;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; direction:rtl; font-family:var(--sans);
+    background:
+      radial-gradient(1100px 620px at 82% -8%, rgba(124,111,230,.16), transparent 60%),
+      radial-gradient(900px 520px at 6% 4%, rgba(34,197,94,.10), transparent 55%),
+      var(--bg);
+    color:var(--ink); line-height:1.7;
+    -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
+  }
+  .wrap{max-width:1000px; margin:0 auto; padding:clamp(22px,5vw,60px) clamp(16px,4vw,34px) 80px}
+
+  code,.mono{font-family:var(--mono); font-size:.9em; letter-spacing:.1px}
+  a{color:var(--silver)}
+
+  /* ============ الترويسة ============ */
+  header{margin-bottom:clamp(30px,5vw,52px)}
+  .wordmark{
+    font-family:var(--mono); font-weight:700; font-size:1.05rem; letter-spacing:.5px;
+    background:linear-gradient(90deg,var(--green),var(--silver) 55%,var(--purple));
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+    display:inline-block; margin-bottom:14px;
+  }
+  h1{
+    font-size:clamp(2.1rem,6vw,3.35rem); line-height:1.15; margin:0 0 14px;
+    font-weight:800; letter-spacing:-.5px; text-wrap:balance;
+  }
+  h1 .accent{
+    background:linear-gradient(100deg,var(--silver),var(--purple));
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+  }
+  .lede{font-size:clamp(1.02rem,2.3vw,1.2rem); color:var(--muted); max-width:62ch; margin:0}
+  .meta{display:flex; flex-wrap:wrap; gap:9px; margin-top:22px}
+  .meta span{
+    font-size:.82rem; color:var(--muted); background:var(--panel);
+    border:1px solid var(--line); border-radius:999px; padding:5px 13px;
+  }
+  .meta span b{color:var(--ink); font-weight:600}
+
+  /* ============ عناوين الأقسام ============ */
+  section{margin-top:clamp(40px,7vw,68px)}
+  .eyebrow{
+    font-family:var(--mono); font-size:.74rem; letter-spacing:2px; text-transform:uppercase;
+    color:var(--faint); margin:0 0 8px;
+  }
+  h2{font-size:clamp(1.4rem,3.4vw,1.9rem); margin:0 0 6px; font-weight:750; letter-spacing:-.3px}
+  .sub{color:var(--muted); margin:0 0 24px; max-width:64ch}
+
+  /* ============ المخطط المعماري (برواز الطبقات) ============ */
+  .arch{
+    margin:0; padding:clamp(18px,3vw,30px); border-radius:var(--r);
+    background:linear-gradient(180deg,var(--panel),var(--bg-2));
+    box-shadow:
+      0 0 0 1.5px var(--green), 0 0 0 3px var(--silver),
+      0 0 0 4.5px var(--purple), 0 0 30px 6px rgba(124,111,230,.30);
+    display:flex; flex-direction:column; align-items:stretch; gap:0;
+  }
+  .node{
+    border-radius:13px; padding:15px 18px; background:var(--panel-2);
+    border:1px solid var(--line-2); position:relative;
+  }
+  .node .nrow{display:flex; align-items:center; gap:11px; flex-wrap:wrap}
+  .node .ntitle{font-weight:700; font-size:1.02rem}
+  .node .ntag{font-size:.8rem; color:var(--faint); margin-right:auto}
+  .node .chips{display:flex; flex-wrap:wrap; gap:7px; margin-top:11px}
+  .chip{
+    font-family:var(--mono); font-size:.82rem; padding:3px 10px; border-radius:8px;
+    background:var(--panel); border:1px solid var(--line); color:var(--ink);
+  }
+  /* ترميز لوني لكل طبقة */
+  .node.front{border-right:3px solid var(--green)}
+  .node.back {border-right:3px solid var(--silver)}
+  .node.db   {border-right:3px solid var(--purple)}
+  .node.src  {border-right:3px solid var(--gold)}
+  .node.user {border-right:3px solid var(--muted)}
+  .node.hub{
+    background:linear-gradient(180deg,var(--panel-3),var(--panel-2));
+    box-shadow:0 0 0 1px var(--line-2), 0 6px 24px -12px rgba(124,111,230,.6);
+  }
+  .dot{width:9px; height:9px; border-radius:50%; flex:none}
+  .front .dot{background:var(--green)} .back .dot{background:var(--silver)}
+  .db .dot{background:var(--purple)} .src .dot{background:var(--gold)}
+  .user .dot{background:var(--muted)}
+
+  /* الموصّلات (الأسهم + التسميات) */
+  .conn{
+    display:flex; align-items:center; justify-content:center; gap:10px;
+    padding:9px 0; color:var(--muted); font-size:.86rem;
+  }
+  .conn .arw{font-family:var(--mono); color:var(--silver); font-size:1.05rem; line-height:1}
+  .conn .lab{background:var(--panel); border:1px solid var(--line); border-radius:999px; padding:3px 12px}
+
+  .split{display:grid; grid-template-columns:1fr 1fr; gap:clamp(12px,2.5vw,20px); margin-top:0}
+  .split .conn{flex-direction:column; gap:6px; padding-bottom:4px}
+  .row2{display:grid; grid-template-columns:1fr 1fr; gap:clamp(12px,2.5vw,20px)}
+  figcaption{
+    margin-top:18px; padding-top:16px; border-top:1px solid var(--line);
+    color:var(--muted); font-size:.9rem; text-align:center;
+  }
+  figcaption b{color:var(--green); font-weight:600}
+
+  /* ============ بطاقات الطبقات الأربع ============ */
+  .cards{display:grid; grid-template-columns:repeat(2,1fr); gap:16px}
+  .card{
+    background:var(--panel); border:1px solid var(--line); border-radius:var(--r);
+    padding:22px; position:relative; overflow:hidden;
+  }
+  .card::before{content:""; position:absolute; inset:0 auto 0 0; width:3px; background:var(--c,var(--silver))}
+  .card.c-front{--c:var(--green)} .card.c-back{--c:var(--silver)}
+  .card.c-db{--c:var(--purple)} .card.c-src{--c:var(--gold)}
+  .card h3{margin:0 0 4px; font-size:1.15rem; display:flex; align-items:center; gap:9px}
+  .card .role{font-size:.78rem; color:var(--faint); font-family:var(--mono); letter-spacing:.5px; margin-bottom:12px}
+  .card p{margin:0 0 14px; color:var(--muted); font-size:.94rem}
+  .files{display:flex; flex-wrap:wrap; gap:7px}
+  .files code{
+    background:var(--panel-2); border:1px solid var(--line); border-radius:8px;
+    padding:4px 10px; color:var(--ink); font-size:.83rem;
+  }
+  .files code b{color:var(--c,var(--silver)); font-weight:700}
+
+  /* ============ جدول قاعدة البيانات ============ */
+  .tables{display:grid; grid-template-columns:repeat(auto-fill,minmax(215px,1fr)); gap:11px}
+  .trow{
+    background:var(--panel); border:1px solid var(--line); border-radius:11px;
+    padding:12px 14px; display:flex; flex-direction:column; gap:3px;
+  }
+  .trow .tname{font-family:var(--mono); font-size:.86rem; color:var(--purple); font-weight:600}
+  .trow .tdesc{font-size:.83rem; color:var(--muted)}
+
+  /* ============ جدول الـAPIs ============ */
+  .tbl-wrap{overflow-x:auto; border:1px solid var(--line); border-radius:var(--r); background:var(--panel)}
+  table{border-collapse:collapse; width:100%; min-width:560px; font-size:.9rem}
+  thead th{
+    text-align:right; font-size:.78rem; letter-spacing:.5px; color:var(--silver);
+    background:var(--panel-2); padding:13px 16px; font-weight:700; border-bottom:1px solid var(--line-2);
+  }
+  tbody td{padding:13px 16px; border-bottom:1px solid var(--line); vertical-align:top}
+  tbody tr:last-child td{border-bottom:0}
+  tbody tr:nth-child(even){background:rgba(167,192,232,.03)}
+  td .api{font-weight:700; display:flex; align-items:center; gap:8px}
+  td code{background:var(--panel-2); border:1px solid var(--line); border-radius:6px; padding:2px 7px; font-size:.82rem; color:var(--muted)}
+  .keypill{font-size:.76rem; padding:2px 9px; border-radius:999px; border:1px solid var(--line-2); white-space:nowrap}
+  .keypill.yes{color:var(--gold)} .keypill.no{color:var(--green)}
+
+  /* ============ رحلة البيانات (تسلسل حقيقي) ============ */
+  .flow{display:grid; gap:14px}
+  .step{
+    display:grid; grid-template-columns:auto 1fr; gap:18px; align-items:start;
+    background:var(--panel); border:1px solid var(--line); border-radius:var(--r); padding:20px 22px;
+  }
+  .step .num{
+    font-family:var(--mono); font-size:1.05rem; font-weight:700; width:42px; height:42px;
+    display:grid; place-items:center; border-radius:11px;
+    color:var(--bg); background:linear-gradient(135deg,var(--green),var(--silver));
+  }
+  .step.s2 .num{background:linear-gradient(135deg,var(--silver),var(--purple))}
+  .step.s3 .num{background:linear-gradient(135deg,var(--purple),var(--gold))}
+  .step h4{margin:2px 0 5px; font-size:1.03rem}
+  .step p{margin:0; color:var(--muted); font-size:.92rem}
+  .step p code{background:var(--panel-2); border:1px solid var(--line); border-radius:6px; padding:1px 7px; font-size:.84em; color:var(--ink)}
+
+  /* ============ التذييل ============ */
+  footer{
+    margin-top:clamp(46px,7vw,72px); padding-top:26px; border-top:1px solid var(--line);
+    display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:16px;
+  }
+  .livelink{
+    font-weight:700; text-decoration:none; display:inline-flex; align-items:center; gap:9px;
+    background:var(--panel); border:1px solid var(--line-2); border-radius:999px; padding:10px 18px;
+    color:var(--ink); transition:border-color .2s, transform .2s;
+  }
+  .livelink:hover{border-color:var(--green); transform:translateY(-1px)}
+  .livelink .g{width:8px; height:8px; border-radius:50%; background:var(--green); box-shadow:0 0 8px var(--green)}
+  footer .note{color:var(--faint); font-size:.83rem; font-family:var(--mono)}
+
+  @media (max-width:680px){
+    .cards,.split,.row2{grid-template-columns:1fr}
+    .node .ntag{width:100%; margin:2px 0 0}
+  }
+
+  /* حركة دخول لطيفة */
+  @media (prefers-reduced-motion:no-preference){
+    .reveal{opacity:0; transform:translateY(14px); animation:rise .6s cubic-bezier(.2,.7,.2,1) forwards}
+    .reveal:nth-child(2){animation-delay:.06s} .reveal:nth-child(3){animation-delay:.12s}
+    @keyframes rise{to{opacity:1; transform:none}}
+  }
+</style>
+
+<div class="wrap">
+
+  <header class="reveal">
+    <div class="wordmark">ALGOMATIX · ARCHITECTURE</div>
+    <h1>بنية المنصة — <span class="accent">خريطة كاملة</span></h1>
+    <p class="lede">منصتك <b>تطبيق Flask واحد متكامل</b>: الخادم يبني صفحات HTML جاهزة ويرسلها للمتصفح. هنا ترى أين يعيش كل جزء، ومن أين تأتي بيانات الأسهم والأسعار.</p>
+    <div class="meta">
+      <span><b>Python · Flask</b></span>
+      <span>قاعدة <b>PostgreSQL</b></span>
+      <span>استضافة <b>Railway</b></span>
+      <span>3 مصادر بيانات + تلغرام</span>
+      <span>🔒 فحص قراءة فقط</span>
+    </div>
+  </header>
+
+  <!-- ============ المخطط المعماري ============ -->
+  <figure class="arch reveal">
+    <div class="node user">
+      <div class="nrow"><span class="dot"></span><span class="ntitle">🖥️ المتصفح</span><span class="ntag">أحمد / المشترك</span></div>
+    </div>
+    <div class="conn"><span class="arw">↑↓</span><span class="lab">يطلب صفحة  ·  يستقبل HTML جاهز</span></div>
+
+    <div class="node front">
+      <div class="nrow"><span class="dot"></span><span class="ntitle">🎨 الواجهة (Frontend)</span><span class="ntag">ما يراه المستخدم</span></div>
+      <div class="chips"><span class="chip">templates/</span><span class="chip">static/</span><span class="chip">base.html</span><span class="chip">style.css</span></div>
+    </div>
+    <div class="conn"><span class="arw">↑↓</span><span class="lab">الخادم يبنيها ويُرسلها</span></div>
+
+    <div class="node back hub">
+      <div class="nrow"><span class="dot"></span><span class="ntitle">⚙️ الخلفية (Backend) — القلب</span><span class="ntag">المسارات + المنطق + الحماية</span></div>
+      <div class="chips"><span class="chip">app.py</span><span class="chip">services/</span><span class="chip">models.py</span></div>
+    </div>
+
+    <div class="split">
+      <div class="conn"><span class="arw">↓</span><span class="lab">يقرأ / يخزّن الكاش</span></div>
+      <div class="conn"><span class="arw">↓</span><span class="lab">يجلب: ليلاً + كل 5د</span></div>
+    </div>
+    <div class="row2">
+      <div class="node db">
+        <div class="nrow"><span class="dot"></span><span class="ntitle">🗄️ قاعدة البيانات</span></div>
+        <div class="chips"><span class="chip">PostgreSQL</span><span class="chip">12 جدولاً</span></div>
+      </div>
+      <div class="node src">
+        <div class="nrow"><span class="dot"></span><span class="ntitle">🌐 المصادر الخارجية</span></div>
+        <div class="chips"><span class="chip">FMP</span><span class="chip">Finnhub</span><span class="chip">SEC EDGAR</span></div>
+      </div>
+    </div>
+
+    <figcaption>الأسهم والأسعار تُجلب من المصادر في الخلفية (ليلاً 01:00 + كل 5د)، تُخزَّن في قاعدة البيانات، ومنها تُعرض. <b>لهذا المنصة سريعة وتحمي حصّة FMP</b> — العرض من الكاش لا من الـAPI مباشرة.</figcaption>
+  </figure>
+
+  <!-- ============ الطبقات الأربع ============ -->
+  <section>
+    <p class="eyebrow">THE FOUR LAYERS</p>
+    <h2>الطبقات الأربع — أين كلٌّ منها</h2>
+    <p class="sub">كل طبقة ولها لونها في هذه الصفحة: 🟢 الواجهة · 🔵 الخلفية · 🟣 قاعدة البيانات · 🟡 المصادر.</p>
+    <div class="cards">
+      <div class="card c-front">
+        <h3>🎨 الواجهة</h3>
+        <div class="role">FRONTEND</div>
+        <p>قوالب Jinja2 (HTML بثيم داكن، اتجاه RTL) تُبنى على الخادم وتُرسل جاهزة. <code>base.html</code> هو الهيكل المشترك لكل الصفحات.</p>
+        <div class="files"><code><b>templates/</b></code><code><b>static/</b></code><code>_scard.html</code><code>_gauge.html</code><code>stock.html</code></div>
+      </div>
+      <div class="card c-back">
+        <h3>⚙️ الخلفية</h3>
+        <div class="role">BACKEND</div>
+        <p><code>app.py</code> (1943 سطراً، 58 مساراً) فيه الإعداد والحماية وكل الروابط. ومجلد <code>services/</code> فيه المنطق المتخصّص منفصلاً.</p>
+        <div class="files"><code><b>app.py</b></code><code><b>services/</b></code><code>screener.py</code><code>indicators.py</code><code>scoring.py</code><code>scheduler.py</code></div>
+      </div>
+      <div class="card c-db">
+        <h3>🗄️ قاعدة البيانات</h3>
+        <div class="role">DATABASE</div>
+        <p>PostgreSQL على Railway (وSQLite محلياً). يُعرّفها <code>models.py</code> عبر SQLAlchemy — يمنع ثغرات SQL تلقائياً.</p>
+        <div class="files"><code><b>models.py</b></code><code>StockCache</code><code>Signal</code><code>PricePoint</code></div>
+      </div>
+      <div class="card c-src">
+        <h3>🌐 المصادر</h3>
+        <div class="role">DATA SOURCES</div>
+        <p>من أين تأتي الأرقام: FMP (الرئيسي)، Finnhub (السعر اللحظي + الأخبار)، SEC EDGAR (المطّلعون). وتلغرام للتنبيهات الخارجة.</p>
+        <div class="files"><code><b>fmp_client.py</b></code><code>finnhub_client.py</code><code>edgar_client.py</code><code>news_client.py</code></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ قاعدة البيانات ============ -->
+  <section>
+    <p class="eyebrow">DATABASE · models.py</p>
+    <h2>🗄️ جداول قاعدة البيانات — 12 جدولاً</h2>
+    <p class="sub">كل ما تخزّنه المنصة، معرّفاً في <code>models.py</code>. <code>StockCache</code> هو مصدر العرض الرئيسي (نتائج الفحص مخزّنة JSON).</p>
+    <div class="tables">
+      <div class="trow"><span class="tname">StockCache</span><span class="tdesc">نتائج فحص كل سهم (المصدر الرئيسي للعرض)</span></div>
+      <div class="trow"><span class="tname">PricePoint</span><span class="tdesc">تاريخ الأسعار (يشمل SPY لبار السوق)</span></div>
+      <div class="trow"><span class="tname">Signal</span><span class="tdesc">الإشارات التاريخية (لاختبار الأداء)</span></div>
+      <div class="trow"><span class="tname">Subscriber</span><span class="tdesc">المشتركون + مفتاح FMP المشفّر</span></div>
+      <div class="trow"><span class="tname">PortfolioHolding</span><span class="tdesc">أسهم المحفظة</span></div>
+      <div class="trow"><span class="tname">PortfolioSnapshot</span><span class="tdesc">لقطات أداء المحفظة اليومية</span></div>
+      <div class="trow"><span class="tname">Watchlist</span><span class="tdesc">قائمة المراقبة لكل مستخدم</span></div>
+      <div class="trow"><span class="tname">PriceAlert</span><span class="tdesc">التنبيهات السعرية</span></div>
+      <div class="trow"><span class="tname">Message</span><span class="tdesc">صندوق رسائل المدير</span></div>
+      <div class="trow"><span class="tname">MessageTrash</span><span class="tdesc">سلة مهملات الرسائل</span></div>
+      <div class="trow"><span class="tname">AppSetting</span><span class="tdesc">إعدادات (عدّاد FMP · spy_live · الإعلانات)</span></div>
+      <div class="trow"><span class="tname">MarketMoodSnapshot</span><span class="tdesc">لقطة مزاج السوق اليومية</span></div>
+    </div>
+  </section>
+
+  <!-- ============ الـAPIs ============ -->
+  <section>
+    <p class="eyebrow">EXTERNAL APIs</p>
+    <h2>🌐 مصادر البيانات والـ APIs</h2>
+    <p class="sub">من أين تأتي بيانات الأسهم والأسعار، وأي ملف مسؤول عن كل مصدر.</p>
+    <div class="tbl-wrap">
+      <table>
+        <thead>
+          <tr><th>المصدر</th><th>الرابط الأساسي</th><th>ماذا يجلب</th><th>المفتاح</th><th>الملف</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><div class="api">🟢 FMP</div><div style="color:var(--faint);font-size:.8rem">الرئيسي</div></td>
+            <td><code>financialmodelingprep.com/stable</code></td>
+            <td>السعر · القوائم المالية · تاريخ الأسعار · الأرباح</td>
+            <td><span class="keypill yes">FMP_API_KEY</span></td>
+            <td><code>fmp_client.py</code></td>
+          </tr>
+          <tr>
+            <td><div class="api">🔵 Finnhub</div></td>
+            <td><code>finnhub.io/api/v1</code></td>
+            <td>السعر اللحظي (شبه لايف) + الأخبار</td>
+            <td><span class="keypill yes">FINNHUB_API_KEY</span></td>
+            <td><code>finnhub_client.py</code></td>
+          </tr>
+          <tr>
+            <td><div class="api">🟣 SEC EDGAR</div></td>
+            <td><code>sec.gov · data.sec.gov</code></td>
+            <td>معاملات المطّلعين (نماذج Form 4)</td>
+            <td><span class="keypill no">بلا مفتاح</span></td>
+            <td><code>edgar_client.py</code></td>
+          </tr>
+          <tr>
+            <td><div class="api">🟡 Telegram</div><div style="color:var(--faint);font-size:.8rem">خارج فقط</div></td>
+            <td><code>api.telegram.org</code></td>
+            <td>يُرسل التنبيهات والتقارير للمدير</td>
+            <td><span class="keypill yes">BOT_TOKEN</span></td>
+            <td><code>telegram_client.py</code></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ============ رحلة البيانات ============ -->
+  <section>
+    <p class="eyebrow">DATA JOURNEY · تسلسل حقيقي</p>
+    <h2>🔄 رحلة بيانات الأسهم — من الـAPI إلى الشاشة</h2>
+    <p class="sub">ثلاث خطوات مرتّبة: كيف تصل الأرقام من المصدر إلى عين المشترك.</p>
+    <div class="flow">
+      <div class="step s1">
+        <div class="num">١</div>
+        <div>
+          <h4>ليلاً 01:00 UTC — التحديث الثقيل</h4>
+          <p><code>scheduler.py</code> يوقظ <code>screener.py</code> ← يجلب من <b style="color:var(--green)">FMP</b> (أسعار + مالية + تاريخ) ← يحسب المؤشرات (<code>indicators</code>) والدرجات (<code>scoring</code>) ← يخزّن النتيجة في <code>StockCache</code>.</p>
+        </div>
+      </div>
+      <div class="step s2">
+        <div class="num">٢</div>
+        <div>
+          <h4>كل 5 دقائق أثناء السوق — شبه لايف</h4>
+          <p><code>refresh_prices_intraday</code> يجلب السعر اللحظي من <b style="color:var(--silver)">Finnhub</b> ويحدّث <code>StockCache</code> + <code>spy_live</code> — بلا لمس التحليل الثقيل ولا حصّة FMP.</p>
+        </div>
+      </div>
+      <div class="step s3">
+        <div class="num">٣</div>
+        <div>
+          <h4>عند فتح صفحة — العرض</h4>
+          <p><code>app.py</code> يقرأ من <b style="color:var(--purple)">قاعدة البيانات</b> (لا من الـAPI غالباً) ← يمرّرها لقالب في <code>templates/</code> ← صفحة HTML جاهزة تصل المتصفح.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <a class="livelink" href="https://algomatix-production.up.railway.app" target="_blank" rel="noopener">
+      <span class="g"></span> المنصة الحيّة — algomatix-production.up.railway.app
+    </a>
+    <span class="note">خريطة تقنية · 2026-08-13 · قراءة فقط</span>
+  </footer>
+
+</div>
