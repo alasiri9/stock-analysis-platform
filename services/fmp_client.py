@@ -127,17 +127,32 @@ def _row_has(rows, idx, keys):
     return isinstance(row, dict) and all(row.get(k) is not None for k in keys)
 
 
-def financials_complete(financials):
-    """هل القوائم المالية الثلاث مكتملة **بقيمها الفعلية** المطلوبة للتحليل؟
+# الحقول المالية الإلزامية لاعتبار التقرير «مكتملاً» — بحيث يُحسب Piotroski (٩ نقاط)
+# وCatalyst (٥ مكوّنات) ومقاييس التقرير **بالكامل** لا جزئياً. مُستخرَجة من المستهلكين
+# الفعليين في scoring.py (piotroski_score/catalyst_score) وanalysis.build_stock_report:
+#   - الدخل: netIncome·revenue·grossProfit·weightedAverageShsOut للسنتين (نمو/دلتا/هامش/
+#     أسهم)، + operatingIncome·eps للسنة الحالية (هامش التشغيل + مضاعف الربحية بالتقرير).
+#   - الميزانية: totalAssets·totalCurrentAssets·totalCurrentLiabilities·longTermDebt للسنتين
+#     (دلتا الرافعة/السيولة/الدوران)، + totalStockholdersEquity للسنة الحالية (ROE).
+#   - التدفق النقدي: operatingCashFlow للسنة الحالية (CFO + جودة الأرباح).
+_INC_FIELDS_CUR = ("netIncome", "revenue", "grossProfit", "weightedAverageShsOut",
+                   "operatingIncome", "eps")
+_INC_FIELDS_PRV = ("netIncome", "revenue", "grossProfit", "weightedAverageShsOut")
+_BAL_FIELDS_CUR = ("totalAssets", "totalCurrentAssets", "totalCurrentLiabilities",
+                   "longTermDebt", "totalStockholdersEquity")
+_BAL_FIELDS_PRV = ("totalAssets", "totalCurrentAssets", "totalCurrentLiabilities", "longTermDebt")
+_CF_FIELDS_CUR = ("operatingCashFlow",)
 
-    لا يكفي عدد الصفوف (قد تكون فارغة {} فتُعدّ «مكتملة» خطأً)؛ نتحقّق أن كل صفّ يحوي فعلاً
-    الحقول التي يستهلكها الكود في Piotroski/Catalyst/التقييم (تتبّعناها من scoring.py):
-      - الدخل (سنتان، لنمو YoY + دوران الأصول): netIncome · revenue · (الحالية) عدد الأسهم.
-      - الميزانية (سنتان، لدلتا Piotroski): totalAssets · (الحالية) totalStockholdersEquity.
-      - التدفق النقدي (الحالية): operatingCashFlow.
-    نستثني عمداً longTermDebt والسيولة الجارية (totalCurrentAssets/Liabilities): فهي **null
-    شرعاً لدى البنوك (ميزانية غير مصنّفة) والشركات بلا دين**، ومكوّناتها في Piotroski تتدرّج
-    بأمان إلى None — فاشتراطها يرفض أسهماً سليمة بالخطأ. فحص بنية/قيم فقط، لا تغيير لأي صيغة.
+
+def financials_complete(financials):
+    """هل القوائم المالية الثلاث مكتملة **بكل قيمها الفعلية** اللازمة لحساب التحليل كاملاً؟
+
+    لا يكفي عدد الصفوف (صفوف فارغة {} تُعدّ «مكتملة» خطأً)، ولا يكفي بعض الحقول؛ نشترط
+    توفّر **جميع** الحقول التي يستهلكها الكود فعلاً في Piotroski (٩ نقاط، بسنتين للدلتا)
+    وCatalyst (٥ مكوّنات) ومقاييس التقرير — بقيم غير None (القيمة 0/سالبة بيانات صحيحة).
+    فبذلك _complete=True يعني أن كل الحسابات قابلة للحساب بالكامل لا جزئياً. أي حقل إلزامي
+    مفقود/None → False (فلا يُحفَظ كتقرير مكتمل ولا يستبدل سجلاً سليماً). فحص قيم فقط — لا
+    تغيير لأي صيغة/وزن تحليل.
     """
     if not financials:
         return False
@@ -145,11 +160,11 @@ def financials_complete(financials):
     bal = financials.get("balance")
     cf = financials.get("cashflow")
     return (
-        _row_has(inc, 0, ("netIncome", "revenue", "weightedAverageShsOut"))
-        and _row_has(inc, 1, ("netIncome", "revenue"))
-        and _row_has(bal, 0, ("totalAssets", "totalStockholdersEquity"))
-        and _row_has(bal, 1, ("totalAssets",))
-        and _row_has(cf, 0, ("operatingCashFlow",))
+        _row_has(inc, 0, _INC_FIELDS_CUR)
+        and _row_has(inc, 1, _INC_FIELDS_PRV)
+        and _row_has(bal, 0, _BAL_FIELDS_CUR)
+        and _row_has(bal, 1, _BAL_FIELDS_PRV)
+        and _row_has(cf, 0, _CF_FIELDS_CUR)
     )
 
 
