@@ -23,7 +23,6 @@ import secrets
 from flask import Flask, render_template, request, redirect, url_for, session, Response
 
 from werkzeug.security import generate_password_hash, check_password_hash
-from werkzeug.middleware.proxy_fix import ProxyFix
 from flask_wtf import CSRFProtect
 
 from models import (db, Watchlist, PortfolioHolding, PriceAlert,
@@ -53,9 +52,13 @@ _login_state = {}  # ip -> {"fails": int, "lock_until": datetime|None}
 
 
 def _client_ip():
-    # بعد ProxyFix، request.remote_addr = آيبي العميل الحقيقي كما يراه بروكسي Railway الموثوق.
-    # لا نثق بترويسة X-Forwarded-For الخام (قابلة للتزوير فتُبطل حدّ محاولات الدخول وتضخّم
-    # _login_state في الذاكرة بآيبيهات وهمية).
+    # على Railway، بوّابة Envoy الحافّة تضبط X-Envoy-External-Address بآيبي العميل الحقيقي
+    # كقيمة واحدة موثوقة (يضبطها الـedge لا العميل، فلا تُزوَّر ولا تُجمَّع كل الزوّار بآيبي
+    # واحد). نفضّلها؛ ولا نثق بترويسة X-Forwarded-For الخام (سلسلة قابلة للتزوير من جهة
+    # العميل). fallback: remote_addr (محلياً) ثم unknown.
+    envoy = (request.headers.get("X-Envoy-External-Address") or "").strip()
+    if envoy:
+        return envoy
     return request.remote_addr or "unknown"
 
 
@@ -126,10 +129,6 @@ def _database_uri():
 
 def create_app():
     app = Flask(__name__)
-    # خلف بروكسي Railway الموثوق (طبقة واحدة): نجعل request.remote_addr = آيبي العميل
-    # الحقيقي، حتى يعمل حدّ محاولات الدخول بدل الاعتماد على ترويسة X-Forwarded-For الخام
-    # (القابلة للتزوير). x_for=1 فقط — لا نغيّر البروتوكول/المضيف لتقليل أي أثر جانبي.
-    app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1)
     app.config["SQLALCHEMY_DATABASE_URI"] = _database_uri()
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 

@@ -40,28 +40,51 @@ def _usage_key(day=None):
     return "fmp_calls:" + day
 
 
-def _record_call():
-    """يزيد عدّاد طلبات FMP لليوم الحالي بواحد — تشخيصي فقط للوحة صحة المنصة.
+def _reserve_call():
+    """يحجز طلب FMP واحداً على عدّاد اليوم بزيادة **ذرّية** آمنة مع التزامن، ويُرجع الرقم
+    الجديد بعد الزيادة (أو None لو تعذّر).
 
-    - يستخدم جلسة قاعدة بيانات منفصلة حتى لا يتداخل مع معاملة المتصل (لا يلتزم بياناته).
-    - أي فشل (لا سياق تطبيق، لا قاعدة بيانات...) يُتجاهل بصمت: العدّاد مساعد
-      ويجب ألّا يؤثر إطلاقاً على جلب البيانات الحقيقي.
+    الزيادة تتم عبر عبارة SQL واحدة (value = value + 1) داخل معاملة — قفل الصف يُسلسِل
+    الطلبات المتزامنة فلا يستهلك طلبان نفس الرقم ولا تُفقَد زيادة، ويبقى حدّ القاطع فعلياً
+    بلا تجاوز بسبب سباق. جلسة منفصلة لا تلتزم بيانات المتصل. أي فشل يُتجاهل (fail-open):
+    العدّاد مساعد ويجب ألّا يمنع الجلب.
     """
     try:
+        from sqlalchemy import text
         from sqlalchemy.orm import Session
         from models import db, AppSetting
+        key = _usage_key()
         with Session(db.engine) as s:
-            row = s.get(AppSetting, _usage_key())
-            if row is None:
-                s.add(AppSetting(key=_usage_key(), value="1"))
-            else:
+            # تأكيد وجود الصف (بصفر) — لو تزامن الإنشاء ينجح أحدهما ويُتجاهل الآخر
+            if s.get(AppSetting, key) is None:
                 try:
-                    row.value = str(int(row.value) + 1)
-                except (TypeError, ValueError):
-                    row.value = "1"
+                    s.add(AppSetting(key=key, value="0"))
+                    s.commit()
+                except Exception:
+                    s.rollback()
+            # زيادة ذرّية ثم قراءة القيمة الجديدة في نفس المعاملة (CAST نصّي متوافق مع
+            # Postgres وSQLite؛ العمود نصّي).
+            s.execute(text(
+                "UPDATE app_setting SET value = CAST(CAST(value AS INTEGER) + 1 AS TEXT) "
+                "WHERE key = :k"), {"k": key})
+            new = s.execute(text(
+                "SELECT CAST(value AS INTEGER) FROM app_setting WHERE key = :k"), {"k": key}).scalar()
             s.commit()
+            return int(new) if new is not None else None
     except Exception:
-        pass
+        return None
+
+
+def remaining_budget():
+    """كم طلب FMP بمفتاح المنصة يتبقّى قبل بلوغ عتبة القاطع CIRCUIT_LIMIT.
+
+    يستعمله الماسح ليتأكّد من كفاية الميزانية قبل بدء تحليل سهم (فلا يتوقّف القاطع وسط
+    التحليل). None لو تعذّرت قراءة العدّاد → لا نمنع (fail-open، سلامة الجلب أولاً).
+    """
+    used = get_today_usage()
+    if used is None:
+        return None
+    return max(0, CIRCUIT_LIMIT - used)
 
 
 def get_today_usage():
@@ -87,13 +110,14 @@ def _get(endpoint, params=None, api_key=None):
         print("[FMP] خطأ: لا مفتاح FMP متاح (لا مخصّص ولا FMP_API_KEY)")
         return None
 
-    # قاطع الدائرة: نحمي حصّة المنصة اليومية من الاستنزاف. يُطبَّق فقط على مفتاح المنصة
-    # (api_key=None)، لا على مفاتيح المشتركين. لا يمسّ التحديث الليلي (يعمل والعدّاد قرب
-    # الصفر). لو تعذّرت قراءة العدّاد (None) لا نمنع (fail-open — سلامة الجلب أولاً).
+    # قاطع الدائرة + الحجز الذرّي (لمفتاح المنصة فقط — لا مفاتيح المشتركين، حصصهم خاصة):
+    # نحجز رقماً ذرّياً في عدّاد اليوم قبل الطلب (يمنع فقدان الزيادات والسباقات)، فإن تجاوز
+    # الحجز العتبة أوقفنا الطلب. لا يمسّ التحديث الليلي (يعمل والعدّاد قرب الصفر). لو تعذّر
+    # الحجز (None) لا نمنع (fail-open — سلامة الجلب أولاً).
     if not api_key:
-        used = get_today_usage()
-        if used is not None and used >= CIRCUIT_LIMIT:
-            print(f"[FMP] قاطع الدائرة: الاستهلاك {used}/{DAILY_LIMIT} — أوقفنا طلب {endpoint} لحماية الحصّة")
+        reserved = _reserve_call()
+        if reserved is not None and reserved > CIRCUIT_LIMIT:
+            print(f"[FMP] قاطع الدائرة: الحجز {reserved} تجاوز {CIRCUIT_LIMIT} — أوقفنا طلب {endpoint} لحماية الحصّة")
             return None
 
     params = dict(params or {})
@@ -105,11 +129,6 @@ def _get(endpoint, params=None, api_key=None):
     except requests.RequestException as e:
         print(f"[FMP] فشل الاتصال بـ {endpoint}: {e}")
         return None
-
-    # نحسب الطلب على عدّاد استهلاك المنصة فقط لو استُخدم مفتاح المنصة.
-    # طلبات المشتركين بمفاتيحهم الخاصة تُحسب على حصصهم هم، لا على أحمد.
-    if not api_key:
-        _record_call()
 
     if resp.status_code != 200:
         print(f"[FMP] {endpoint} رجّع حالة {resp.status_code}: {resp.text[:200]}")
