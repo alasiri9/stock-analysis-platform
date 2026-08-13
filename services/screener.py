@@ -1056,6 +1056,23 @@ def signals_performance():
     spy_by_date = {p.date: p.price for p in spy_rows if p.price is not None}
     spy_last = spy_by_date[max(spy_by_date)] if spy_by_date else None
 
+    # ⏱️ SPY لحظي: لو توفّر سعر SPY اللحظي (يحدّثه شبه لايف كل 5د في AppSetting) وكان
+    # تاريخه أحدث من آخر إغلاق مخزّن، نستعمله كنقطة «الآن» ليطابق توقيت الأسعار اللحظية
+    # للأسهم — فيزول انزياح الألفا (سهم لحظي مقابل SPY إغلاق أمس). الإغلاق الرسمي يفوز
+    # بمجرّد توفّره (تاريخه ≥ تاريخ اللحظي). أي خطأ: نبقى على الإغلاق المخزّن.
+    try:
+        from models import AppSetting
+        srow = db.session.get(AppSetting, "spy_live")
+        if srow and srow.value:
+            live = json.loads(srow.value)
+            if live.get("price") and live.get("at"):
+                live_date = datetime.fromisoformat(live["at"]).date()
+                last_close = max(spy_by_date) if spy_by_date else None
+                if last_close is None or live_date > last_close:
+                    spy_last = live["price"]
+    except Exception:  # noqa: BLE001
+        pass
+
     def _spy_on(day):
         """سعر المؤشر في يومٍ ما (أو أقرب يوم تداول سابق خلال أسبوع). None لو غير متوفر."""
         for back in range(8):
@@ -1257,7 +1274,27 @@ def refresh_prices_intraday():
         record["price_live_at"] = now.isoformat()   # وسم آخر تحديث سعر «شبه لايف»
         row.data_json = json.dumps(record, ensure_ascii=False)
         updated += 1
-    if updated:
+
+    # ⏱️ SPY لحظياً أيضاً (نفس مصدر Finnhub المجاني، طلب واحد إضافي < حد 60/دقيقة):
+    # يُخزَّن في AppSetting منفصل ('spy_live') حتى لا يلوّث سلسلة الإغلاقات اليومية في
+    # price_point ولا يتعارض مع _refresh_spy_history. يستعمله «اختبار الأداء» كنقطة
+    # «الآن» فيطابق توقيت الأسعار اللحظية للأسهم (يزيل انزياح الألفا).
+    spy_stored = False
+    try:
+        sq = finnhub_client.get_quote(MARKET_BENCHMARK)
+        if sq and sq.get("price"):
+            from models import AppSetting
+            payload = json.dumps({"price": sq["price"], "at": now.isoformat()})
+            srow = db.session.get(AppSetting, "spy_live")
+            if srow:
+                srow.value = payload
+            else:
+                db.session.add(AppSetting(key="spy_live", value=payload))
+            spy_stored = True
+    except Exception:  # noqa: BLE001 — فشل SPY لا يُسقط تحديث أسعار الأسهم
+        pass
+
+    if updated or spy_stored:
         db.session.commit()
     return updated
 
