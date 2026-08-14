@@ -26,24 +26,66 @@ DAILY_HOUR_UTC = 1
 _scheduler = None  # مرجع وحيد يمنع إنشاء مجدولين بنفس العملية
 
 
+def _set_update_status(complete, fresh, total):
+    """يحفظ حالة اكتمال التحديث الليلي في AppSetting (مرئية للمدير/التشخيص)."""
+    try:
+        from models import db, AppSetting
+        now_iso = datetime.now(timezone.utc).isoformat(timespec="minutes")
+        for key, val in (
+            ("nightly_update_complete", "1" if complete else "0"),
+            ("nightly_update_fresh", str(fresh)),
+            ("nightly_update_total", str(total)),
+            ("nightly_update_at", now_iso),
+        ):
+            db.session.merge(AppSetting(key=key, value=val))
+        db.session.commit()
+    except Exception as e:  # noqa: BLE001 — تسجيل الحالة لا يجب أن يُسقط المجدول
+        print(f"[scheduler] تعذّر حفظ حالة التحديث: {e}")
+
+
+# سقف أمان للدفعات (كل دفعة time_budget=60ث): يغطّي الـ32 سهماً حتى مع بطء FMP، ويمنع
+# أي حلقة لا نهائية لو تعطّل المصدر. الاكتمال يُحسم بتحقّق فعلي (universe_fresh_today) لا
+# بمجرّد بلوغ السقف أو انتهاء عدّاد الدفعات.
+_MAX_REFRESH_ROUNDS = 15
+
+
 def _auto_refresh(app):
-    """يشغّل التحديث على دفعات متتالية حتى الاكتمال أو توقف التقدّم."""
+    """يشغّل التحديث على دفعات حتى تحديث كل رموز UNIVERSE فعلاً أو توقّف التقدّم.
+
+    الاكتمال = تحقّق فعلي أن كل رمز في UNIVERSE محدَّث اليوم (screener.universe_fresh_today)،
+    لا مجرّد «رجعت الدفعة صفراً». نتوقّف لو: اكتمل الكل، أو دفعة لم تُحرز أي تقدّم (لا سهم
+    جديد أصبح طازجاً — حصة/أخطاء)، أو بلوغ سقف الأمان. الحالة تُحفظ في AppSetting.
+    """
     with app.app_context():
+        total = len(screener.UNIVERSE)
         total_updated = 0
-        # حد أقصى 12 دفعة (كل دفعة time_budget=60ث) — يغطّي الـ32 سهماً بأمان حتى مع بطء FMP.
-        # الحلقة تتوقّف تلقائياً عند updated==0 (اكتمل الكل أو توقّف التقدّم)، فالسقف مجرد
-        # صمام أمان ضد اللانهاية؛ رفعه لا يهدر دفعات حين ينتهي التحديث مبكّراً.
-        for round_no in range(1, 13):
+        fresh = screener.universe_fresh_today()
+        for round_no in range(1, _MAX_REFRESH_ROUNDS + 1):
+            if len(fresh) >= total:
+                break  # تحقّق فعلي: كل الأسهم محدَّثة اليوم — اكتمل
             try:
                 updated = screener.refresh_cache(time_budget=60)
             except Exception as e:  # noqa: BLE001 — لا نُسقط المجدول بخطأ عابر
                 print(f"[scheduler] خطأ في الدفعة {round_no}: {e}")
                 break
             total_updated += updated
-            print(f"[scheduler] دفعة {round_no}: تحدّث {updated} سهماً")
-            if updated == 0:
-                break  # لا جديد: إمّا اكتمل الكل أو توقّف التقدّم (حصة/أخطاء)
-        print(f"[scheduler] انتهى التحديث التلقائي — إجمالي المحدَّث: {total_updated} "
+            fresh_after = screener.universe_fresh_today()
+            print(f"[scheduler] دفعة {round_no}: تحدّث {updated} سهماً "
+                  f"(الطازج {len(fresh_after)}/{total})")
+            # توقّف عند غياب التقدّم الفعلي: لا سهم جديد أصبح طازجاً هذه الدفعة (حصة/أخطاء)
+            # — يمنع أي حلقة لا نهائية مع مصدر بطيء/متعطّل.
+            if len(fresh_after) <= len(fresh):
+                fresh = fresh_after
+                break
+            fresh = fresh_after
+        complete = len(fresh) >= total
+        _set_update_status(complete, len(fresh), total)
+        if not complete:
+            missing = sorted(set(screener.UNIVERSE) - fresh)
+            print(f"[scheduler] ⚠️ التحديث غير مكتمل — طازج {len(fresh)}/{total}، "
+                  f"متبقٍّ: {', '.join(missing)}")
+        print(f"[scheduler] انتهى التحديث التلقائي — إجمالي المحدَّث: {total_updated}، "
+              f"مكتمل: {'نعم' if complete else 'لا'} ({len(fresh)}/{total}) "
               f"({datetime.now(timezone.utc):%Y-%m-%d %H:%M} UTC)")
 
         # بعد بيانات السوق: رادار المحفزات (EDGAR بلا حصص لكنه بطيء — دفعات أيضاً)

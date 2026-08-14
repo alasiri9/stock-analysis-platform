@@ -105,7 +105,8 @@ def build_quick_summary(ticker):
 
     # لا نبني مقاييس/درجات من قوائم مالية ناقصة (تُضلّل المقارنة): نعرضها فقط عند اكتمال
     # كل الحقول المطلوبة فعلاً؛ وإلا «—». (السعر والاسم يبقيان من الاقتباس.)
-    if fmp_client.financials_complete(financials):
+    _complete = fmp_client.financials_complete(financials)
+    if _complete:
         metrics = {
             # ROE: حقوق ملكية سالبة + خسارة تعطي نسبة موجبة خادعة → لا نعرضها (حرس equity>0)
             "roe": (_pct(scoring._safe_div(net_income, equity)) if (equity or 0) > 0 else None),
@@ -129,6 +130,7 @@ def build_quick_summary(ticker):
         "metrics": metrics,
         "piotroski": piotroski,
         "catalyst": catalyst,
+        "complete": bool(_complete),  # حارس العرض: تُظهر المقارنة الدرجات فقط عند الاكتمال
     }
 
 
@@ -307,8 +309,9 @@ def build_stock_report(ticker):
         chart = None
 
     # --- معاملات المطلعين من SEC EDGAR (لا تكسر الصفحة لو فشلت) ---
+    # EDGAR يُرجع None عند الفشل و[] عند النجاح-الفارغ — كلاهما يُعرض كـ«لا معاملات».
     try:
-        insider_trades = edgar_client.get_insider_transactions(ticker)
+        insider_trades = edgar_client.get_insider_transactions(ticker) or []
     except Exception as e:  # noqa: BLE001 — أي خطأ هنا لا يجب أن يُسقط التقرير
         print(f"[analysis] تعذّر جلب معاملات المطلعين لـ {ticker}: {e}")
         insider_trades = []

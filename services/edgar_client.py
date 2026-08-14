@@ -134,13 +134,18 @@ def _parse_form4(xml_text):
 
 
 def get_insider_transactions(ticker, max_filings=10, max_rows=15):
-    """يُرجع قائمة بأحدث معاملات المطلعين، أو [] لو لا شيء/فشل.
+    """يُرجع أحدث معاملات المطلعين. نُميّز الفشل عن النجاح-الفارغ صراحةً:
+
+    - None  = فشل الجلب (تعذّر تحديد CIK، أو سقط سجل الإيداعات، أو فشلت كل محاولات
+      تحميل النماذج بلا نتيجة). المتصل يُبقي كاش المطلعين السابق ولا يمسحه.
+    - []    = نجاح بلا معاملات (لا نماذج Form 4، أو نماذج بلا صفقات فعلية). حالة سليمة.
+    - قائمة غير فارغة = نجاح بمعاملات.
 
     max_filings: كم نموذج Form 4 نفحص. max_rows: حد أقصى للمعاملات المعروضة.
     """
     cik = get_cik(ticker)
     if not cik:
-        return []
+        return None  # تعذّر تحديد الشركة — فشل لا «لا-معاملات»
 
     try:
         sub = requests.get(
@@ -149,7 +154,7 @@ def get_insider_transactions(ticker, max_filings=10, max_rows=15):
         ).json()
     except (requests.RequestException, ValueError) as e:
         print(f"[EDGAR] فشل جلب سجل الإيداعات لـ {ticker}: {e}")
-        return []
+        return None  # سقط المصدر — فشل لا «لا-معاملات»
 
     recent = sub.get("filings", {}).get("recent", {})
     forms = recent.get("form", [])
@@ -158,6 +163,7 @@ def get_insider_transactions(ticker, max_filings=10, max_rows=15):
 
     results = []
     checked = 0
+    fetch_failed = False  # سقطت محاولة تحميل نموذج واحد على الأقل
     for i, form in enumerate(forms):
         if form != "4":
             continue
@@ -171,10 +177,14 @@ def get_insider_transactions(ticker, max_filings=10, max_rows=15):
         try:
             xml_text = requests.get(url, headers=HEADERS, timeout=TIMEOUT).text
         except requests.RequestException:
+            fetch_failed = True
             continue
         results.extend(_parse_form4(xml_text))
         time.sleep(0.12)  # لطف مع خوادم SEC (أقل من 10 طلبات/ثانية)
 
+    # لو فشلت كل المحاولات ولم نحصل على شيء = فشل لا «لا-معاملات» (لا نمسح الكاش السليم).
+    if fetch_failed and not results:
+        return None
     return results[:max_rows]
 
 
@@ -184,7 +194,7 @@ def get_insider_transactions(ticker, max_filings=10, max_rows=15):
 if __name__ == "__main__":
     ticker = "AAPL"
     print(f"=== معاملات المطلعين لـ {ticker} (SEC EDGAR) ===\n")
-    rows = get_insider_transactions(ticker)
+    rows = get_insider_transactions(ticker) or []  # None (فشل) أو [] (لا معاملات)
     if not rows:
         print("لا توجد معاملات متاحة.")
     for r in rows:

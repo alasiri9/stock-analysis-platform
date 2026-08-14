@@ -1,15 +1,20 @@
 """
-test_audit_high_v2_regression.py — اختبارات regression للإصلاحات الستّة (تدقيق Codex، الجولة الثانية).
+test_audit_high_v2_regression.py — اختبارات regression للإصلاحات (تدقيق Codex).
 
-يغطّي المشاكل المؤكَّدة التي أُصلحت:
-  ② المقارنة لا تُبنى من قوائم مالية ناقصة  (analysis.build_quick_summary)
+يغطّي السلوك المصحَّح بعد جولة Codex الثانية:
+  ② المقارنة لا تُبنى/تُعرَض من قوائم مالية ناقصة  (analysis.build_quick_summary + علَم complete)
   ③ ROE لا يُعرض موجباً مضلِّلاً عند حقوق ملكية سالبة  (analysis + screener metrics)
-  ④ لا تُفقَد بيانات الأرباح/الأسهم الحرة السليمة عند فشل الجلب الجماعي  (screener.refresh_cache)
-  ⑤ لا تُمسح بيانات المطلعين السليمة عند فشل EDGAR  (radar.refresh_radar)
+  ④ تمييز فشل الجلب عن النجاح-الفارغ للأرباح/الأسهم الحرة:
+     - فشل (None) → نُبقي القيم السليمة السابقة.
+     - نجاح-فارغ ({}) → نُحدّث فعلاً (تُمسح المواعيد المنتهية).
+  ⑤ تمييز فشل EDGAR (None) عن النجاح-الفارغ ([]):
+     - فشل → نُبقي كاش المطلعين السابق.
+     - نجاح-فارغ → نخزّن [] (تعكس الواقع الصحيح).
   ⑥ التنبيه السعري لا يُطفأ إلا عند نجاح إرسال تلغرام  (screener.check_price_alerts)
-  ⑦ التحديث الليلي يكرّر الدفعات بما يكفي لتغطية الـ32  (scheduler._auto_refresh)
+  ⑦ التحديث الليلي يكتمل بتحقّق فعلي من تحديث كل رموز UNIVERSE، لا بمجرّد عدّاد دفعات،
+     ولا يدخل حلقة لا نهائية مع مصدر بطيء/متعطّل  (scheduler._auto_refresh)
 
-(المشكلتان ① حماية FMP المركزية — مُصلَحة أصلاً عبر _reserve_atomic؛ لا مسار يتجاوز _get.)
+(المشكلة ① حماية FMP المركزية — مُصلَحة أصلاً عبر _reserve_atomic؛ لا مسار يتجاوز _get.)
 
 التشغيل:  python tests/test_audit_high_v2_regression.py
 """
@@ -32,6 +37,9 @@ from services import (fmp_client, finnhub_client, edgar_client, news_client,  # 
 news_client.get_market_news = lambda *a, **k: []
 from app import app  # noqa: E402
 from models import db, StockCache, AppSetting, PriceAlert  # noqa: E402
+
+# مراجع للدوال الأصلية قبل أي stub (لاختبار السلوك الحقيقي لطبقة العميل)
+_REAL_INSIDER = edgar_client.get_insider_transactions
 
 _passed = 0
 _failed = 0
@@ -109,9 +117,9 @@ def test_roe_negative_equity():
           "screener._build_record: equity سالب → metrics.roe=None")
 
 
-# ==================== ② المقارنة من قوائم ناقصة ====================
+# ==================== ② المقارنة من قوائم ناقصة + علَم complete ====================
 def test_compare_incomplete():
-    print("\n[②] المقارنة لا تُبنى من قوائم مالية ناقصة:")
+    print("\n[②] المقارنة لا تُبنى/تُعرَض من قوائم مالية ناقصة:")
     fmp_client.get_quote = lambda t: {"price": 100, "name": "X"}
     # قوائم ناقصة (تدفق نقدي مفقود) → لا مقاييس/درجات
     PART = copy.deepcopy(FULL); PART["cashflow"] = None
@@ -120,17 +128,48 @@ def test_compare_incomplete():
     check(all(v is None for v in r["metrics"].values()), "قوائم ناقصة → كل المقاييس None")
     check(r["piotroski"]["score"] is None and r["catalyst"]["score"] is None,
           "قوائم ناقصة → Piotroski/Catalyst score=None (لا درجات جزئية)")
+    check(r.get("complete") is False, "قوائم ناقصة → complete=False (القالب يُخفي الدرجات)")
     check(r["price"] == 100, "السعر يبقى معروضاً (من الاقتباس)")
-    # قوائم كاملة → المقاييس والدرجات تظهر
+    # قوائم كاملة → المقاييس والدرجات تظهر + complete=True
     fmp_client.get_financials = lambda t, years=2: copy.deepcopy(FULL)
     r2 = analysis.build_quick_summary("X")
     check(r2["metrics"]["roa"] is not None and r2["catalyst"]["score"] is not None,
           "قوائم كاملة → المقاييس والدرجات تظهر طبيعياً")
+    check(r2.get("complete") is True, "قوائم كاملة → complete=True")
 
 
-# ==================== ④ الأرباح/الأسهم الحرة عند فشل الجلب ====================
-def test_earnings_float_preserve():
-    print("\n[④] لا تُفقَد الأرباح/الأسهم الحرة السليمة عند فشل الجلب الجماعي:")
+# ==================== ④ الأرباح/الأسهم الحرة: فشل مقابل نجاح-فارغ ====================
+def test_earnings_float_source_semantics():
+    print("\n[④] تمييز فشل الجلب عن النجاح-الفارغ للأرباح/الأسهم الحرة:")
+
+    # (أ) طبقة عميل FMP: None (فشل) / [] (نجاح-فارغ) / قائمة (نجاح)
+    _orig_get = fmp_client._get
+    fmp_client._get = lambda *a, **k: None
+    check(fmp_client.get_earnings_calendar("2026-01-01", "2026-01-10") is None,
+          "get_earnings_calendar: فشل _get → None")
+    check(fmp_client.get_shares_float_all() is None, "get_shares_float_all: فشل _get → None")
+    fmp_client._get = lambda *a, **k: []
+    check(fmp_client.get_earnings_calendar("2026-01-01", "2026-01-10") == [],
+          "get_earnings_calendar: نجاح بقائمة فارغة → [] (لا None)")
+    check(fmp_client.get_shares_float_all() == [], "get_shares_float_all: نجاح فارغ → []")
+    fmp_client._get = lambda *a, **k: [{"symbol": "AAPL", "date": "2026-01-05"}]
+    check(fmp_client.get_earnings_calendar("2026-01-01", "2026-01-10") == [{"symbol": "AAPL", "date": "2026-01-05"}],
+          "get_earnings_calendar: نجاح ببيانات → القائمة كما هي")
+    fmp_client._get = _orig_get
+
+    # (ب) طبقة الخرائط في screener: None (فشل) / {} (نجاح-فارغ) / خريطة (نجاح)
+    fmp_client.get_earnings_calendar = lambda f, t: None
+    check(screener._upcoming_earnings() is None, "_upcoming_earnings: فشل المصدر → None")
+    fmp_client.get_earnings_calendar = lambda f, t: []
+    check(screener._upcoming_earnings() == {}, "_upcoming_earnings: نجاح-فارغ → {} (لا None)")
+    fmp_client.get_shares_float_all = lambda: None
+    check(screener._shares_float_map() is None, "_shares_float_map: فشل المصدر → None")
+    fmp_client.get_shares_float_all = lambda: []
+    check(screener._shares_float_map() == {}, "_shares_float_map: نجاح-فارغ → {}")
+
+
+def _prep_refresh_stub():
+    """يهيّئ refresh_cache لسهم واحد ببيانات كاملة (لاختبارات ④)."""
     screener._refresh_spy_history = lambda *a, **k: None
     screener._benchmark_return = lambda *a, **k: None
     screener.is_golden = lambda r: False
@@ -141,9 +180,14 @@ def test_earnings_float_preserve():
                                         "squeeze_breakout": False, "golden_cross": None,
                                         "trend_pullback": False, "break_status": None,
                                         "indicators": [{}], "days_to_earnings": None}
-    # فشل الجلب الجماعي (خرائط فارغة)
-    screener._upcoming_earnings = lambda: {}
-    screener._shares_float_map = lambda: {}
+
+
+def test_earnings_float_preserve_on_failure():
+    print("\n[④] فشل الجلب الجماعي → القيم السليمة السابقة محفوظة:")
+    _prep_refresh_stub()
+    # فشل الجلب = None (لا {} — تلك أصبحت «نجاح-فارغ»)
+    screener._upcoming_earnings = lambda: None
+    screener._shares_float_map = lambda: None
     OLD = {"ticker": "AAPL", "earnings_date": "2026-09-01", "days_to_earnings": 5,
            "float_shares": 1234, "free_float_pct": 80.0}
     yest = datetime.now(timezone.utc) - timedelta(days=1)
@@ -155,14 +199,46 @@ def test_earnings_float_preserve():
         screener.refresh_cache()
         stored = json.loads(db.session.get(StockCache, screener._PREFIX + "AAPL").data_json)
     check(stored.get("earnings_date") == "2026-09-01",
-          "فشل جلب الأرباح → earnings_date السليم محفوظ (لم يُمسح)")
+          "فشل جلب الأرباح (None) → earnings_date السليم محفوظ (لم يُمسح)")
     check(stored.get("float_shares") == 1234 and stored.get("free_float_pct") == 80.0,
-          "فشل جلب الأسهم الحرة → القيم السليمة محفوظة (لم تُمسح)")
+          "فشل جلب الأسهم الحرة (None) → القيم السليمة محفوظة (لم تُمسح)")
 
 
-# ==================== ⑤ بيانات المطلعين عند فشل EDGAR ====================
-def test_edgar_preserve():
-    print("\n[⑤] لا تُمسح بيانات المطلعين السليمة عند فشل EDGAR:")
+def test_earnings_float_clear_on_success_empty():
+    print("\n[④] نجاح-فارغ → المواعيد المنتهية تُمسح (لا تُحمل قديمة خاطئة):")
+    _prep_refresh_stub()
+    # نجاح الجلب بلا نتائج لأسهمنا = {} (يجب ألا نحمل موعداً منتهياً قديماً)
+    screener._upcoming_earnings = lambda: {}
+    screener._shares_float_map = lambda: {}
+    STALE = {"ticker": "AAPL", "earnings_date": "2020-01-01", "days_to_earnings": -900,
+             "float_shares": 999, "free_float_pct": 10.0}
+    yest = datetime.now(timezone.utc) - timedelta(days=1)
+    with app.app_context():
+        db.session.merge(StockCache(ticker=screener._PREFIX + "AAPL",
+                                    data_json=json.dumps(STALE), updated_at=yest))
+        db.session.merge(AppSetting(key=fmp_client._usage_key(), value="0"))
+        db.session.commit()
+        screener.refresh_cache()
+        stored = json.loads(db.session.get(StockCache, screener._PREFIX + "AAPL").data_json)
+    check(stored.get("earnings_date") is None and stored.get("days_to_earnings") is None,
+          "نجاح-فارغ للأرباح → الموعد المنتهي القديم مُسِح (لم يُحمَل)")
+    check(stored.get("float_shares") is None and stored.get("free_float_pct") is None,
+          "نجاح-فارغ للأسهم الحرة → القيم القديمة لم تُحمَل (تحدّثت فعلاً)")
+
+
+# ==================== ⑤ بيانات المطلعين: فشل EDGAR مقابل نجاح-فارغ ====================
+def test_edgar_source_semantics():
+    print("\n[⑤] EDGAR يُميّز الفشل (None) عن النجاح-الفارغ ([]):")
+    # تعذّر تحديد CIK = فشل لا «لا-معاملات» → None (بلا شبكة)
+    _orig_cik = edgar_client.get_cik
+    edgar_client.get_cik = lambda t: None
+    check(_REAL_INSIDER("ZZZZ") is None,
+          "get_insider_transactions: لا CIK → None (فشل، لا [])")
+    edgar_client.get_cik = _orig_cik
+
+
+def test_edgar_preserve_on_failure():
+    print("\n[⑤] فشل EDGAR (None) → كاش المطلعين السليم محفوظ:")
     radar.UNIVERSE = ["AAPL"]
     GOOD_TX = [{"name": "Insider A", "code": "P", "shares": 1000, "date": "2026-08-01"}]
     yest = datetime.now(timezone.utc) - timedelta(days=1)
@@ -170,17 +246,35 @@ def test_edgar_preserve():
         db.session.merge(StockCache(ticker=radar._PREFIX + "AAPL",
                                     data_json=json.dumps(GOOD_TX), updated_at=yest))
         db.session.commit()
-        # فشل EDGAR يعيد [] بلا استثناء
-        edgar_client.get_insider_transactions = lambda *a, **k: []
+        # فشل EDGAR = None (لا [])
+        edgar_client.get_insider_transactions = lambda *a, **k: None
         radar.refresh_radar()
         row = db.session.get(StockCache, radar._PREFIX + "AAPL")
         preserved = json.loads(row.data_json)
     check(preserved == GOOD_TX and row.updated_at.date() == yest.date(),
-          "EDGAR يعيد [] → البيانات السليمة محفوظة (لم تُستبدل بقائمة فارغة)")
+          "EDGAR يعيد None → البيانات السليمة محفوظة (لم تُمسح، لم يُعلَّم محدثاً)")
 
-    # عند نجاح EDGAR ببيانات جديدة → تُحدَّث
+
+def test_edgar_store_on_success_empty():
+    print("\n[⑤] نجاح EDGAR بلا معاملات ([]) → يُخزَّن الواقع الصحيح:")
+    radar.UNIVERSE = ["AAPL"]
+    GOOD_TX = [{"name": "Insider A", "code": "P", "shares": 1000, "date": "2026-08-01"}]
+    yest = datetime.now(timezone.utc) - timedelta(days=1)
+    with app.app_context():
+        db.session.merge(StockCache(ticker=radar._PREFIX + "AAPL",
+                                    data_json=json.dumps(GOOD_TX), updated_at=yest))
+        db.session.commit()
+        # نجاح فعلي بلا معاملات = [] (المطلع باع كل شيء/لا نشاط حديث) → يُخزَّن []
+        edgar_client.get_insider_transactions = lambda *a, **k: []
+        radar.refresh_radar()
+        stored = json.loads(db.session.get(StockCache, radar._PREFIX + "AAPL").data_json)
+    check(stored == [], "EDGAR ينجح بلا معاملات → يُخزَّن [] (يعكس الواقع، لا يُبقي قديماً)")
+    # نجاح ببيانات جديدة → تُحدَّث (نُعيد الطابع الزمني للأمس حتى لا يتخطّاه «محدَّث اليوم»)
     NEW_TX = [{"name": "Insider B", "code": "P", "shares": 5000, "date": "2026-08-10"}]
     with app.app_context():
+        row = db.session.get(StockCache, radar._PREFIX + "AAPL")
+        row.updated_at = yest
+        db.session.commit()
         edgar_client.get_insider_transactions = lambda *a, **k: NEW_TX
         radar.refresh_radar()
         updated = json.loads(db.session.get(StockCache, radar._PREFIX + "AAPL").data_json)
@@ -209,37 +303,171 @@ def test_price_alert_telegram():
           "نجاح إرسال تلغرام → التنبيه يُطفأ (مرة واحدة)")
 
 
-# ==================== ⑦ سقف دفعات التحديث الليلي ====================
-def test_nightly_round_cap():
-    print("\n[⑦] التحديث الليلي يكرّر الدفعات بما يكفي لتغطية الـ32:")
-    from services import scheduler
-    calls = {"n": 0}
-    screener.refresh_cache = lambda time_budget=60: (calls.__setitem__("n", calls["n"] + 1) or 1)  # تقدّم دائم
-    radar.refresh_radar = lambda time_budget=90: 0  # يوقف حلقة الرادار فوراً
-    # نعزل ما بعد الحلقتين (كلها ملفوفة بـtry، لكن نُهدّئ الضجيج)
+# ==================== ⑦ اكتمال التحديث الليلي (تحقّق فعلي، بلا حلقة لا نهائية) ====================
+def _mark_fresh(sym):
+    now = datetime.now(timezone.utc)
+    db.session.merge(StockCache(ticker=screener._PREFIX + sym, data_json="{}", updated_at=now))
+    db.session.commit()
+
+
+def _clear_screen_cache():
+    StockCache.query.filter(StockCache.ticker.like(screener._PREFIX + "%")).delete(
+        synchronize_session=False)
+    db.session.commit()
+
+
+def _quiet_post_loop():
+    """يُهدّئ ما بعد حلقتي التحديث في _auto_refresh (كلها ملفوفة بـtry أصلاً)."""
+    radar.refresh_radar = lambda time_budget=90: 0
     screener.check_price_alerts = lambda: 0
     screener.notify_new_prelaunch = lambda: 0
     screener.load_records = lambda: ([], None)
     screener.market_mood = lambda recs: None
+    telegram_client.is_configured = lambda: False
+
+
+def _run_auto_refresh():
+    from services import scheduler
+    _quiet_post_loop()
     scheduler._auto_refresh(app)
-    # السقف الجديد 12 دفعة (كان 6 = يغطّي 24 فقط < 32)
-    check(calls["n"] == 12, f"عدد دفعات refresh_cache = {calls['n']} (السقف 12 ≥ ما يكفي للـ32)")
-    check(calls["n"] >= 11, "السقف يكفي لتغطية 32 سهماً حتى مع بطء FMP (كان 6 غير كافٍ)")
+    with app.app_context():
+        c = db.session.get(AppSetting, "nightly_update_complete")
+        f = db.session.get(AppSetting, "nightly_update_fresh")
+        return (c.value if c else None), (f.value if f else None)
+
+
+def test_nightly_complete_all():
+    print("\n[⑦] كل رموز UNIVERSE محدَّثة → يُعلَّم مكتملاً بتحقّق فعلي:")
+    _orig_univ = screener.UNIVERSE
+    _orig_fresh = screener.universe_fresh_today
+    _orig_refresh = screener.refresh_cache
+    screener.UNIVERSE = ["A", "B", "C"]
+    with app.app_context():
+        _clear_screen_cache()
+
+    calls = {"n": 0}
+
+    def _refresh(time_budget=60):
+        # كل دفعة تُحدّث حتى سهمين لم يُحدَّثا بعد (يلزم عدّة دفعات لتغطية الثلاثة)
+        calls["n"] += 1
+        with app.app_context():
+            fresh = screener.universe_fresh_today()
+            todo = [s for s in screener.UNIVERSE if s not in fresh][:2]
+            for s in todo:
+                _mark_fresh(s)
+            return len(todo)
+
+    screener.refresh_cache = _refresh
+    complete, fresh = _run_auto_refresh()
+    check(complete == "1", "كل الأسهم طازجة → nightly_update_complete=1 (اكتمل)")
+    check(fresh == "3", f"عدد الطازج المسجّل = {fresh} (يساوي حجم UNIVERSE)")
+    check(calls["n"] == 2, f"توقّف فور الاكتمال (دفعتان لا 15) — عدد الدفعات {calls['n']}")
+
+    screener.UNIVERSE = _orig_univ
+    screener.universe_fresh_today = _orig_fresh
+    screener.refresh_cache = _orig_refresh
+
+
+def test_nightly_incomplete_missing_symbol():
+    print("\n[⑦] بقاء رمز غير محدَّث → لا يُعلَّم مكتملاً:")
+    _orig_univ = screener.UNIVERSE
+    _orig_refresh = screener.refresh_cache
+    screener.UNIVERSE = ["A", "B", "C"]
+    with app.app_context():
+        _clear_screen_cache()
+
+    def _refresh(time_budget=60):
+        # C لا يُحدَّث أبداً (رمز عالق) → لا يكتمل
+        with app.app_context():
+            fresh = screener.universe_fresh_today()
+            todo = [s for s in ["A", "B"] if s not in fresh][:2]
+            for s in todo:
+                _mark_fresh(s)
+            return len(todo)
+
+    screener.refresh_cache = _refresh
+    complete, fresh = _run_auto_refresh()
+    check(complete == "0", "رمز مفقود → nightly_update_complete=0 (غير مكتمل)")
+    check(fresh == "2", f"الطازج المسجّل = {fresh} < 3 (يعكس النقص بوضوح)")
+
+    screener.UNIVERSE = _orig_univ
+    screener.refresh_cache = _orig_refresh
+
+
+def test_nightly_no_infinite_loop_on_stall():
+    print("\n[⑦] مصدر متعطّل (لا تقدّم) → يتوقّف فوراً بلا حلقة لا نهائية:")
+    _orig_univ = screener.UNIVERSE
+    _orig_refresh = screener.refresh_cache
+    screener.UNIVERSE = ["A", "B", "C"]
+    with app.app_context():
+        _clear_screen_cache()
+
+    calls = {"n": 0}
+
+    def _refresh(time_budget=60):
+        calls["n"] += 1  # لا يُحدّث أي سهم (حصة نفدت/أخطاء)
+        return 0
+
+    screener.refresh_cache = _refresh
+    complete, fresh = _run_auto_refresh()
+    check(complete == "0", "لا تقدّم → غير مكتمل")
+    check(calls["n"] == 1, f"توقّف بعد دفعة واحدة بلا تقدّم (لا حلقة لا نهائية) — الدفعات {calls['n']}")
+
+    screener.UNIVERSE = _orig_univ
+    screener.refresh_cache = _orig_refresh
+
+
+def test_nightly_safety_cap():
+    print("\n[⑦] سقف أمان الدفعات يمنع اللانهاية حتى مع تقدّم بطيء جداً:")
+    from services import scheduler
+    _orig_univ = screener.UNIVERSE
+    _orig_refresh = screener.refresh_cache
+    # 20 سهماً وسهم واحد يُحدَّث كل دفعة → يتجاوز السقف قبل الاكتمال
+    screener.UNIVERSE = [f"S{i}" for i in range(20)]
+    with app.app_context():
+        _clear_screen_cache()
+
+    calls = {"n": 0}
+
+    def _refresh(time_budget=60):
+        calls["n"] += 1
+        with app.app_context():
+            fresh = screener.universe_fresh_today()
+            todo = [s for s in screener.UNIVERSE if s not in fresh][:1]  # سهم واحد فقط/دفعة
+            for s in todo:
+                _mark_fresh(s)
+            return len(todo)
+
+    screener.refresh_cache = _refresh
+    complete, fresh = _run_auto_refresh()
+    check(calls["n"] == scheduler._MAX_REFRESH_ROUNDS,
+          f"توقّف عند سقف الأمان {scheduler._MAX_REFRESH_ROUNDS} دفعة (لا لانهاية) — الدفعات {calls['n']}")
+    check(complete == "0", "لم يكتمل ضمن السقف → مُعلَّم غير مكتمل بصدق")
+
+    screener.UNIVERSE = _orig_univ
+    screener.refresh_cache = _orig_refresh
 
 
 def main():
     print("=" * 62)
-    print("regression للإصلاحات الستّة (تدقيق Codex — الجولة الثانية)")
+    print("regression للإصلاحات (تدقيق Codex)")
     print("=" * 62)
     test_roe_negative_equity()
     test_compare_incomplete()
-    test_earnings_float_preserve()
-    test_edgar_preserve()
+    test_earnings_float_source_semantics()
+    test_earnings_float_preserve_on_failure()
+    test_earnings_float_clear_on_success_empty()
+    test_edgar_source_semantics()
+    test_edgar_preserve_on_failure()
+    test_edgar_store_on_success_empty()
     test_price_alert_telegram()
-    test_nightly_round_cap()
+    test_nightly_complete_all()
+    test_nightly_incomplete_missing_symbol()
+    test_nightly_no_infinite_loop_on_stall()
+    test_nightly_safety_cap()
     print("\n" + "-" * 62)
     if _failed == 0:
-        print(f"كل اختبارات regression نجحت ✓ ({_passed} تحقّقاً) — الإصلاحات الستّة مقفولة.")
+        print(f"كل اختبارات regression نجحت ✓ ({_passed} تحقّقاً) — الإصلاحات مقفولة.")
         return 0
     print(f"✗ فشل {_failed} (نجح {_passed}).")
     return 1

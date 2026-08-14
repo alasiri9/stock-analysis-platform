@@ -1708,6 +1708,21 @@ def create_app():
         _recs, _ = screener.load_records()
         _screen_by = {r["ticker"]: r for r in _recs}
 
+        def _finalize(d):
+            # حارس عرض المقارنة (دفاع في العمق): لا نُظهر درجات جودة/نمو أو مقاييس مالية
+            # إلا إذا كانت الجودة (Piotroski) محسوبة من بيانات كاملة. أي مسار يصل بدرجة
+            # Piotroski مفقودة = بيانات ناقصة → نُفرّغ الدرجات والمقاييس ونُبقي الاسم/السعر/
+            # التغيّر. نضبط علَم complete ليعتمده القالب في إظهار/إخفاء الدرجات.
+            if not d:
+                return d
+            complete = (d.get("piotroski") or {}).get("score") is not None
+            if not complete:
+                d["piotroski"] = {"score": None}
+                d["catalyst"] = {"score": None}
+                d["metrics"] = dict(_NULL_METRICS)
+            d["complete"] = complete
+            return d
+
         def _quick(t):
             # 1) تقرير السهم المخزّن (فيه كل المقاييس) — بلا أي طلب FMP
             cached = db.session.get(StockCache, "report:" + t)
@@ -1717,27 +1732,27 @@ def create_app():
                 if (_dt.now(_tz.utc) - up) < _td(hours=24):
                     try:
                         rep = _json.loads(cached.data_json)
-                        return {
+                        return _finalize({
                             "ticker": rep.get("ticker", t), "name": rep.get("name"),
                             "price": rep.get("price"), "change_percent": rep.get("change_percent"),
                             "metrics": {**_NULL_METRICS, **(rep.get("metrics") or {})},
                             "piotroski": {"score": None, **(rep.get("piotroski") or {})},
                             "catalyst": {"score": None, **(rep.get("catalyst") or {})},
-                        }
+                        })
                     except Exception:  # noqa: BLE001
                         pass
             # 2) سجل الماسح المخزّن (جودة/نمو/سعر/اسم — بلا مقاييس، بلا طلب FMP)
             r = _screen_by.get(t)
             if r:
-                return {
+                return _finalize({
                     "ticker": t, "name": r.get("name"), "price": r.get("price"),
                     "change_percent": r.get("change_percent"),
                     "metrics": {**_NULL_METRICS, **(r.get("metrics") or {})},
                     "piotroski": {"score": r.get("piotroski")},
                     "catalyst": {"score": r.get("catalyst")},
-                }
+                })
             # 3) جلب مباشر من FMP (نادراً) — فقط عند غياب الكاش نهائياً
-            return analysis.build_quick_summary(t)
+            return _finalize(analysis.build_quick_summary(t))
 
         summaries = []
         for t in tickers:
