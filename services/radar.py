@@ -35,6 +35,15 @@ def refresh_radar(time_budget=60):
 
         try:
             rows = edgar_client.get_insider_transactions(ticker, max_filings=6, max_rows=10)
+            # فشل EDGAR يعيد [] بلا استثناء — لا نستبدل بيانات مطلعين سليمة سابقة بقائمة
+            # فارغة. لو لم نحصل على صفوف وكان الموجود غير فارغ، نُبقيه (يُعاد لاحقاً).
+            if not rows and existing:
+                try:
+                    _had = bool(json.loads(existing.data_json))
+                except (ValueError, TypeError):
+                    _had = False
+                if _had:
+                    continue
             payload = json.dumps(rows, ensure_ascii=False)
             now = datetime.now(timezone.utc)
             if existing:

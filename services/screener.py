@@ -709,7 +709,9 @@ def _build_record(ticker):
     _equity = _bal[0].get("totalStockholdersEquity") if _bal else None
     _price = quote.get("price") if quote else None
     metrics = {
-        "roe": (None if scoring._safe_div(_ni, _equity) is None else scoring._safe_div(_ni, _equity) * 100.0),
+        # ROE: حقوق ملكية سالبة + خسارة تعطي نسبة موجبة خادعة → لا نعرضها (حرس equity>0)
+        "roe": (scoring._safe_div(_ni, _equity) * 100.0
+                if ((_equity or 0) > 0 and scoring._safe_div(_ni, _equity) is not None) else None),
         "roa": (None if scoring._safe_div(_ni, _assets) is None else scoring._safe_div(_ni, _assets) * 100.0),
         "op_margin": (None if scoring._safe_div(_op, _rev) is None else scoring._safe_div(_op, _rev) * 100.0),
         "gross_margin": (None if scoring._safe_div(_gross, _rev) is None else scoring._safe_div(_gross, _rev) * 100.0),
@@ -897,7 +899,10 @@ def check_price_alerts():
                or (a.direction == "above" and price >= a.target_price))
         if not hit:
             continue
-        telegram_client.notify_price_alert(a.ticker, a.direction, a.target_price, price)
+        # لا نطفئ التنبيه إلا إذا نجح إرسال تلغرام فعلاً — وإلا يبقى نشطاً ليُعاد المحاولة
+        # في الفحص التالي (فلا يفقد المستخدم تنبيهه عند فشل إرسال عابر).
+        if not telegram_client.notify_price_alert(a.ticker, a.direction, a.target_price, price):
+            continue
         a.active = False
         a.triggered_at = now
         fired += 1
@@ -973,6 +978,10 @@ def refresh_cache(time_budget=20):
     spy_mom = _benchmark_return(MOMENTUM_SESSIONS)  # زخم السوق لنفس الفترة (يُحسب مرة واحدة)
     earnings_map = _upcoming_earnings()  # مواعيد الأرباح القادمة (طلب FMP واحد لكل الأسهم)
     float_map = _shares_float_map()  # الأسهم الحرة (طلب FMP واحد لكل الأسهم)
+    # خريطة فارغة = فشل الجلب الجماعي (لا «لا-بيانات»): عندها لا نُسقط القيم السليمة
+    # السابقة من السجل، بل نحملها كما هي (تُعاد بالجلب الناجح لاحقاً).
+    earnings_ok = bool(earnings_map)
+    float_ok = bool(float_map)
     for ticker in UNIVERSE:
         if time.monotonic() - start > time_budget:
             break  # انتهى الحدّ الزمني — نرجع، وضغطة أخرى تُكمل الباقي
@@ -1020,6 +1029,23 @@ def refresh_cache(time_budget=20):
             if fl:
                 record["float_shares"] = fl.get("float_shares")
                 record["free_float_pct"] = fl.get("free_float_pct")
+
+            # عند فشل الجلب الجماعي (خريطة فارغة) نحمل القيم السليمة السابقة بدل مسحها.
+            if (not earnings_ok or not float_ok) and existing:
+                try:
+                    _old = json.loads(existing.data_json)
+                except (ValueError, TypeError):
+                    _old = {}
+                if not earnings_ok and _old.get("earnings_date"):
+                    record["earnings_date"] = _old["earnings_date"]
+                    try:
+                        record["days_to_earnings"] = (date_cls.fromisoformat(_old["earnings_date"]) - today).days
+                    except (ValueError, TypeError):
+                        record["days_to_earnings"] = _old.get("days_to_earnings")
+                if not float_ok:
+                    for _k in ("float_shares", "free_float_pct"):
+                        if _old.get(_k) is not None:
+                            record[_k] = _old[_k]
 
             row = existing
             payload = json.dumps(record, ensure_ascii=False)

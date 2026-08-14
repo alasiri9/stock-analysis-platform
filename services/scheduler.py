@@ -30,7 +30,10 @@ def _auto_refresh(app):
     """يشغّل التحديث على دفعات متتالية حتى الاكتمال أو توقف التقدّم."""
     with app.app_context():
         total_updated = 0
-        for round_no in range(1, 7):  # حد أقصى 6 دفعات (يغطي 24 سهماً بسهولة)
+        # حد أقصى 12 دفعة (كل دفعة time_budget=60ث) — يغطّي الـ32 سهماً بأمان حتى مع بطء FMP.
+        # الحلقة تتوقّف تلقائياً عند updated==0 (اكتمل الكل أو توقّف التقدّم)، فالسقف مجرد
+        # صمام أمان ضد اللانهاية؛ رفعه لا يهدر دفعات حين ينتهي التحديث مبكّراً.
+        for round_no in range(1, 13):
             try:
                 updated = screener.refresh_cache(time_budget=60)
             except Exception as e:  # noqa: BLE001 — لا نُسقط المجدول بخطأ عابر
