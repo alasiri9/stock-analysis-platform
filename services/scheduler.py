@@ -102,30 +102,8 @@ def _auto_refresh(app):
                 break
         print(f"[scheduler] انتهى تحديث الرادار — إجمالي: {radar_total}")
 
-        # لقطة يومية لقيمة المحفظة (بعد تحديث الأسعار — لمنحنى الأداء)
-        try:
-            from services import portfolio
-            portfolio.record_snapshot()
-        except Exception as e:  # noqa: BLE001
-            print(f"[scheduler] تعذّر تسجيل لقطة المحفظة: {e}")
-
-        # فحص التنبيهات السعرية مقابل الأسعار المحدَّثة (يرسل تلغرام عند التحقّق)
-        try:
-            fired = screener.check_price_alerts()
-            if fired:
-                print(f"[scheduler] أُطلقت {fired} تنبيهات سعرية")
-        except Exception as e:  # noqa: BLE001
-            print(f"[scheduler] تعذّر فحص التنبيهات السعرية: {e}")
-
-        # تنبيه الأسهم الجديدة الداخلة قائمة "الاستعداد للانطلاق"
-        try:
-            n = screener.notify_new_prelaunch()
-            if n:
-                print(f"[scheduler] {n} سهم جديد جاهز للانطلاق (أُرسلت تنبيهات)")
-        except Exception as e:  # noqa: BLE001
-            print(f"[scheduler] تعذّر تنبيه الاستعداد للانطلاق: {e}")
-
-        # تذكير المدير بالمشتركين الذين تنتهي اشتراكاتهم قريباً (للتجديد)
+        # عمليات مستقلة عن اكتمال بيانات السوق (تعمل دائماً): تذكيرات الاشتراكات وتنظيف
+        # الرسائل — لا تعتمد على أسعار/سجلات الليلة، فلا يصحّ حجبها عند التحديث الجزئي.
         try:
             n = _notify_expiring_subs()
             if n:
@@ -133,7 +111,6 @@ def _auto_refresh(app):
         except Exception as e:  # noqa: BLE001
             print(f"[scheduler] تعذّر إرسال تذكير التجديد: {e}")
 
-        # تذكير المشترك نفسه (رسالة في صندوقه) قبل انتهاء اشتراكه بأسبوع ثم بـ3 أيام
         try:
             n = _notify_subs_expiry_inbox()
             if n:
@@ -141,7 +118,6 @@ def _auto_refresh(app):
         except Exception as e:  # noqa: BLE001
             print(f"[scheduler] تعذّر تذكير المشترك بانتهاء اشتراكه: {e}")
 
-        # تنظيف الرسائل القديمة: خاصة تُحذف بعد 30 يوماً من اختفائها، عامة بعد 90 يوماً
         try:
             n = _cleanup_messages()
             if n:
@@ -149,32 +125,64 @@ def _auto_refresh(app):
         except Exception as e:  # noqa: BLE001
             print(f"[scheduler] تعذّر تنظيف الرسائل القديمة: {e}")
 
-        # لقطة يومية لمزاج السوق (لرسم نبض السوق التاريخي)
-        try:
-            from models import db, MarketMoodSnapshot
-            from datetime import date as _date
-            recs, _ = screener.load_records()
-            mood = screener.market_mood(recs)
-            if mood:
-                db.session.merge(MarketMoodSnapshot(
-                    date=_date.today(), bull=mood["bull"], neutral=mood["neutral"],
-                    bear=mood["bear"], bull_pct=mood["bull_pct"]))
-                db.session.commit()
-        except Exception as e:  # noqa: BLE001
-            print(f"[scheduler] تعذّر تسجيل نبض السوق: {e}")
+        # العمليات المعتمدة على اكتمال بيانات السوق: لقطة المحفظة، التنبيهات السعرية، تنبيه
+        # الاستعداد للانطلاق، لقطة مزاج السوق، التقرير الصباحي/الأسبوعي. لا تُشغَّل إلا عند
+        # complete=True حتى لا نبني/ننشر نتيجة نهائية على خليط بيانات قديمة وحديثة (تحديث
+        # جزئي). عند عدم الاكتمال نتخطّاها وتُشغَّل في التحديث الكامل التالي (الحالة محفوظة).
+        if not complete:
+            print(f"[scheduler] ⏸️ تحديث غير مكتمل ({len(fresh)}/{total}) — تخطّي اللقطات "
+                  f"والتنبيهات والتقارير المعتمدة على اكتمال بيانات السوق (لا تقرير نهائي "
+                  f"على بيانات مختلطة)")
+        else:
+            # لقطة يومية لقيمة المحفظة (بعد تحديث الأسعار — لمنحنى الأداء)
+            try:
+                from services import portfolio
+                portfolio.record_snapshot()
+            except Exception as e:  # noqa: BLE001
+                print(f"[scheduler] تعذّر تسجيل لقطة المحفظة: {e}")
 
-        # ختاماً: التقرير الصباحي المجمّع بتلغرام (خامل بلا إعداد، وفشله لا يؤثر)
-        try:
-            _send_daily_report()
-        except Exception as e:  # noqa: BLE001
-            print(f"[scheduler] تعذّر إرسال التقرير الصباحي: {e}")
+            # فحص التنبيهات السعرية مقابل الأسعار المحدَّثة (يرسل تلغرام عند التحقّق)
+            try:
+                fired = screener.check_price_alerts()
+                if fired:
+                    print(f"[scheduler] أُطلقت {fired} تنبيهات سعرية")
+            except Exception as e:  # noqa: BLE001
+                print(f"[scheduler] تعذّر فحص التنبيهات السعرية: {e}")
 
-        # تقرير أسبوعي (السبت فقط) — ملخّص أداء الإشارات
-        try:
-            if datetime.now(timezone.utc).weekday() == 5:  # 5 = السبت
-                _send_weekly_report()
-        except Exception as e:  # noqa: BLE001
-            print(f"[scheduler] تعذّر إرسال التقرير الأسبوعي: {e}")
+            # تنبيه الأسهم الجديدة الداخلة قائمة "الاستعداد للانطلاق"
+            try:
+                n = screener.notify_new_prelaunch()
+                if n:
+                    print(f"[scheduler] {n} سهم جديد جاهز للانطلاق (أُرسلت تنبيهات)")
+            except Exception as e:  # noqa: BLE001
+                print(f"[scheduler] تعذّر تنبيه الاستعداد للانطلاق: {e}")
+
+            # لقطة يومية لمزاج السوق (لرسم نبض السوق التاريخي)
+            try:
+                from models import db, MarketMoodSnapshot
+                from datetime import date as _date
+                recs, _ = screener.load_records()
+                mood = screener.market_mood(recs)
+                if mood:
+                    db.session.merge(MarketMoodSnapshot(
+                        date=_date.today(), bull=mood["bull"], neutral=mood["neutral"],
+                        bear=mood["bear"], bull_pct=mood["bull_pct"]))
+                    db.session.commit()
+            except Exception as e:  # noqa: BLE001
+                print(f"[scheduler] تعذّر تسجيل نبض السوق: {e}")
+
+            # ختاماً: التقرير الصباحي المجمّع بتلغرام (خامل بلا إعداد، وفشله لا يؤثر)
+            try:
+                _send_daily_report()
+            except Exception as e:  # noqa: BLE001
+                print(f"[scheduler] تعذّر إرسال التقرير الصباحي: {e}")
+
+            # تقرير أسبوعي (السبت فقط) — ملخّص أداء الإشارات
+            try:
+                if datetime.now(timezone.utc).weekday() == 5:  # 5 = السبت
+                    _send_weekly_report()
+            except Exception as e:  # noqa: BLE001
+                print(f"[scheduler] تعذّر إرسال التقرير الأسبوعي: {e}")
 
 
 def _send_daily_report():

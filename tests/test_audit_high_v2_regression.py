@@ -24,6 +24,7 @@ import sys
 import copy
 import json
 import tempfile
+import requests
 from datetime import datetime, timezone, timedelta
 
 os.environ["APP_PASSWORD"] = "regress-v2-pw"
@@ -281,6 +282,98 @@ def test_edgar_store_on_success_empty():
     check(updated == NEW_TX, "EDGAR ينجح ببيانات → تُحدَّث طبيعياً")
 
 
+# ========== ⑤-HTTP فحص نجاح HTTP صراحةً في EDGAR (4xx/5xx فشل لا نجاح فارغ) ==========
+_SUB_JSON = {"filings": {"recent": {
+    "form": ["4"],
+    "accessionNumber": ["0001-23-456789"],
+    "primaryDocument": ["xslF345X05/wf-form4.xml"],
+}}}
+_VALID_EMPTY_XML = (
+    '<?xml version="1.0"?><ownershipDocument>'
+    '<reportingOwner><reportingOwnerId><rptOwnerName>Owner X</rptOwnerName></reportingOwnerId>'
+    '<reportingOwnerRelationship><isDirector>1</isDirector></reportingOwnerRelationship>'
+    '</reportingOwner></ownershipDocument>'
+)
+_VALID_TX_XML = (
+    '<?xml version="1.0"?><ownershipDocument>'
+    '<reportingOwner><reportingOwnerId><rptOwnerName>Owner X</rptOwnerName></reportingOwnerId>'
+    '<reportingOwnerRelationship><isDirector>1</isDirector></reportingOwnerRelationship>'
+    '</reportingOwner><nonDerivativeTable><nonDerivativeTransaction>'
+    '<transactionDate><value>2026-08-01</value></transactionDate>'
+    '<transactionCoding><transactionCode>P</transactionCode></transactionCoding>'
+    '<transactionAmounts>'
+    '<transactionShares><value>100</value></transactionShares>'
+    '<transactionPricePerShare><value>10.5</value></transactionPricePerShare>'
+    '<transactionAcquiredDisposedCode><value>A</value></transactionAcquiredDisposedCode>'
+    '</transactionAmounts></nonDerivativeTransaction></nonDerivativeTable></ownershipDocument>'
+)
+
+
+class _FakeResp:
+    def __init__(self, status_code=200, json_data=None, text=""):
+        self.status_code = status_code
+        self._json = json_data
+        self.text = text
+
+    def json(self):
+        if self._json is None:
+            raise ValueError("ليست JSON")
+        return self._json
+
+
+def _router(sub_resp, doc_resp):
+    def _g(url, **kw):
+        return sub_resp if "submissions" in url else doc_resp
+    return _g
+
+
+def _run_insider_with(get_fn):
+    _orig_get = edgar_client.requests.get
+    _orig_cik = edgar_client.get_cik
+    edgar_client.get_cik = lambda t: "0000000001"
+    edgar_client.requests.get = get_fn
+    try:
+        return _REAL_INSIDER("AAPL", max_filings=2, max_rows=5)
+    finally:
+        edgar_client.requests.get = _orig_get
+        edgar_client.get_cik = _orig_cik
+
+
+def test_edgar_http_semantics():
+    print("\n[⑤-HTTP] EDGAR يفحص نجاح HTTP صراحةً (4xx/5xx فشل لا نجاح فارغ):")
+    # HTTP 500 على سجل الإيداعات → فشل (None) — لا يصل لمسار النجاح الفارغ
+    check(_run_insider_with(_router(_FakeResp(500, text="err"), _FakeResp(200))) is None,
+          "HTTP 500 على سجل الإيداعات → None (فشل، لا [])")
+
+    # فشل اتصال (RequestException) → فشل
+    def _raise(url, **kw):
+        raise requests.RequestException("انقطاع اتصال")
+    check(_run_insider_with(_raise) is None, "فشل الاتصال → None (فشل)")
+
+    # HTTP 200 لكن استجابة سجل الإيداعات ليست JSON صالحة → فشل
+    check(_run_insider_with(_router(_FakeResp(200, json_data=None, text="<html>"),
+                                    _FakeResp(200))) is None,
+          "استجابة سجل الإيداعات غير صالحة (ليست JSON) → None")
+
+    # HTTP 500 على تحميل النموذج → فشل (لا يُحسب نجاحاً فارغاً)
+    check(_run_insider_with(_router(_FakeResp(200, _SUB_JSON), _FakeResp(500, text="err"))) is None,
+          "HTTP 500 على تحميل النموذج → None (فشل)")
+
+    # XML غير صالح على النموذج → فشل تحليل (None) لا []
+    check(_run_insider_with(_router(_FakeResp(200, _SUB_JSON), _FakeResp(200, text="<broken"))) is None,
+          "XML غير صالح → None (فشل تحليل، لا نجاح فارغ)")
+
+    # HTTP ناجح + نموذج صحيح بلا معاملات غير مشتقّة → [] (نجاح فارغ حقيقي)
+    check(_run_insider_with(_router(_FakeResp(200, _SUB_JSON),
+                                    _FakeResp(200, text=_VALID_EMPTY_XML))) == [],
+          "HTTP ناجح + نموذج بلا معاملات → [] (نجاح فارغ)")
+
+    # HTTP ناجح + نموذج بمعاملة → قائمة بمعاملة واحدة (نجاح ببيانات)
+    r = _run_insider_with(_router(_FakeResp(200, _SUB_JSON), _FakeResp(200, text=_VALID_TX_XML)))
+    check(isinstance(r, list) and len(r) == 1 and r[0].get("code") == "P",
+          "HTTP ناجح + نموذج بمعاملة → قائمة بمعاملة واحدة (code=P)")
+
+
 # ==================== ⑥ التنبيه السعري وإرسال تلغرام ====================
 def test_price_alert_telegram():
     print("\n[⑥] التنبيه السعري لا يُطفأ إلا عند نجاح إرسال تلغرام:")
@@ -448,6 +541,70 @@ def test_nightly_safety_cap():
     screener.refresh_cache = _orig_refresh
 
 
+def _run_auto_refresh_tracking(universe, mark_symbols):
+    """يشغّل _auto_refresh مع تتبّع أي عمليات نُفّذت. mark_symbols = الرموز التي
+    ستُصبح طازجة (لضبط الاكتمال). يُرجع (calls set, complete str)."""
+    from services import scheduler, portfolio
+    _orig_univ = screener.UNIVERSE
+    _orig_refresh = screener.refresh_cache
+    screener.UNIVERSE = universe
+    with app.app_context():
+        _clear_screen_cache()
+    calls = set()
+
+    def _refresh(time_budget=60):
+        with app.app_context():
+            fresh = screener.universe_fresh_today()
+            todo = [s for s in mark_symbols if s not in fresh]
+            for s in todo:
+                _mark_fresh(s)
+            return len(todo)
+
+    screener.refresh_cache = _refresh
+    radar.refresh_radar = lambda time_budget=90: 0
+    # عمليات معتمدة على اكتمال بيانات السوق (يجب ألا تُنفَّذ عند incomplete)
+    screener.check_price_alerts = lambda: (calls.add("price_alerts") or 0)
+    screener.notify_new_prelaunch = lambda: (calls.add("prelaunch") or 0)
+    portfolio.record_snapshot = lambda: calls.add("snapshot")
+    screener.load_records = lambda: (calls.add("load_records") or ([], None))
+    screener.market_mood = lambda recs: (calls.add("mood") or None)
+    scheduler._send_daily_report = lambda: calls.add("daily_report")
+    scheduler._send_weekly_report = lambda: calls.add("weekly_report")
+    # عمليات مستقلة عن السوق (يجب أن تُنفَّذ دائماً)
+    scheduler._notify_expiring_subs = lambda: (calls.add("expiring_subs") or 0)
+    scheduler._notify_subs_expiry_inbox = lambda: (calls.add("subs_inbox") or 0)
+    scheduler._cleanup_messages = lambda: (calls.add("cleanup") or 0)
+    telegram_client.is_configured = lambda: False
+    scheduler._auto_refresh(app)
+    with app.app_context():
+        c = db.session.get(AppSetting, "nightly_update_complete")
+        complete = c.value if c else None
+    screener.UNIVERSE = _orig_univ
+    screener.refresh_cache = _orig_refresh
+    return calls, complete
+
+
+def test_nightly_gates_market_ops_on_incomplete():
+    print("\n[⑦] تحديث جزئي (incomplete) → حجب العمليات النهائية المعتمدة على السوق:")
+    MARKET_OPS = {"price_alerts", "prelaunch", "snapshot", "mood", "daily_report"}
+    INDEP_OPS = {"expiring_subs", "subs_inbox", "cleanup"}
+
+    # incomplete: C لا يُحدَّث أبداً
+    calls, complete = _run_auto_refresh_tracking(["A", "B", "C"], ["A", "B"])
+    check(complete == "0", "بقاء رمز غير محدَّث → complete=0")
+    check(not (calls & MARKET_OPS),
+          "incomplete → لم تُنفَّذ أي عملية سوق (تقرير/تنبيهات/لقطات/مزاج)")
+    check(INDEP_OPS <= calls,
+          "incomplete → العمليات المستقلة (اشتراكات/تنظيف) نُفّذت رغم النقص")
+
+    # complete: كل الرموز تُحدَّث
+    calls2, complete2 = _run_auto_refresh_tracking(["A", "B", "C"], ["A", "B", "C"])
+    check(complete2 == "1", "اكتمال كل UNIVERSE → complete=1")
+    check(MARKET_OPS <= calls2,
+          "complete → كل عمليات السوق نُفّذت (المسار الطبيعي)")
+    check(INDEP_OPS <= calls2, "complete → العمليات المستقلة نُفّذت أيضاً")
+
+
 def main():
     print("=" * 62)
     print("regression للإصلاحات (تدقيق Codex)")
@@ -458,6 +615,7 @@ def main():
     test_earnings_float_preserve_on_failure()
     test_earnings_float_clear_on_success_empty()
     test_edgar_source_semantics()
+    test_edgar_http_semantics()
     test_edgar_preserve_on_failure()
     test_edgar_store_on_success_empty()
     test_price_alert_telegram()
@@ -465,6 +623,7 @@ def main():
     test_nightly_incomplete_missing_symbol()
     test_nightly_no_infinite_loop_on_stall()
     test_nightly_safety_cap()
+    test_nightly_gates_market_ops_on_incomplete()
     print("\n" + "-" * 62)
     if _failed == 0:
         print(f"كل اختبارات regression نجحت ✓ ({_passed} تحقّقاً) — الإصلاحات مقفولة.")
