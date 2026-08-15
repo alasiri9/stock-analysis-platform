@@ -173,10 +173,25 @@ def get_insider_transactions(ticker, max_filings=10, max_rows=15):
         print(f"[EDGAR] استجابة سجل الإيداعات لـ {ticker} غير صالحة (ليست JSON): {e}")
         return None
 
-    recent = sub.get("filings", {}).get("recent", {})
-    forms = recent.get("form", [])
-    accns = recent.get("accessionNumber", [])
-    docs = recent.get("primaryDocument", [])
+    # تحقّق دلالي من بنية استجابة SEC: رد 200 وJSON سليم نحوياً قد يكون رسالة خطأ
+    # ({"error": "..."}) أو بنية ناقصة. لا يجوز أن يتحوّل ذلك إلى forms=[] ثم «نجاح فارغ»
+    # يمسح الكاش السليم — نعدّه فشلاً (None) ما لم تكن البنية المتوقّعة سليمة فعلاً.
+    if not isinstance(sub, dict) or "error" in sub:
+        print(f"[EDGAR] استجابة سجل الإيداعات لـ {ticker} ليست بنية متوقّعة (خطأ/غير قاموس) — فشل")
+        return None
+    filings = sub.get("filings")
+    recent = filings.get("recent") if isinstance(filings, dict) else None
+    if not isinstance(recent, dict):
+        print(f"[EDGAR] سجل الإيداعات لـ {ticker} بلا بنية filings.recent — فشل")
+        return None
+    forms = recent.get("form")
+    accns = recent.get("accessionNumber")
+    docs = recent.get("primaryDocument")
+    # الحقول المتوازية يجب أن تكون قوائم متوافقة الطول (ثابت بنية SEC) — وإلا بنية غير صحيحة.
+    if not (isinstance(forms, list) and isinstance(accns, list) and isinstance(docs, list)
+            and len(forms) == len(accns) == len(docs)):
+        print(f"[EDGAR] حقول سجل الإيداعات لـ {ticker} غير متوافقة (form/accession/document) — فشل")
+        return None
 
     results = []
     checked = 0

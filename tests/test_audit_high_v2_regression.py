@@ -437,6 +437,61 @@ def test_edgar_partial_failure_and_invalid_content():
     check(r == [], "كل النماذج Form 4 صحيحة بلا معاملات → [] (نجاح فارغ حقيقي)")
 
 
+def test_edgar_error_json_body():
+    print("\n[⑤-JSON] رد 200 بـJSON صحيح نحوياً لكنه رسالة خطأ/بنية ناقصة → فشل (None):")
+
+    # (أ) طبقة العميل: 200 + {"error": ...} JSON صالح نحوياً لكنه رسالة خطأ → None
+    check(_run_insider_with(_router(_FakeResp(200, {"error": "temporary upstream failure"}),
+                                    _FakeResp(200))) is None,
+          "HTTP 200 + JSON رسالة خطأ → None (لا يتحوّل إلى نجاح فارغ)")
+
+    # بنية بلا filings.recent → فشل
+    check(_run_insider_with(_router(_FakeResp(200, {"foo": "bar"}), _FakeResp(200))) is None,
+          "HTTP 200 + JSON بلا filings.recent → None")
+
+    # حقول متوازية غير متوافقة الطول (بنية غير صحيحة) → فشل
+    check(_run_insider_with(_router(_FakeResp(200, {"filings": {"recent": {
+              "form": ["4", "4"], "accessionNumber": ["x"], "primaryDocument": ["y", "z"]}}}),
+              _FakeResp(200))) is None,
+          "HTTP 200 + حقول غير متوافقة الطول → None")
+
+    # استجابة ليست قاموساً أصلاً (JSON قائمة) → فشل
+    check(_run_insider_with(_router(_FakeResp(200, ["not", "a", "dict"]), _FakeResp(200))) is None,
+          "HTTP 200 + JSON ليس قاموساً → None")
+
+    # ضمان عدم الانحدار: بنية SEC سليمة فعلاً بلا نماذج Form 4 → [] (نجاح فارغ حقيقي)
+    check(_run_insider_with(_router(_FakeResp(200, {"filings": {"recent": {
+              "form": [], "accessionNumber": [], "primaryDocument": []}}}),
+              _FakeResp(200))) == [],
+          "HTTP 200 + بنية سليمة بلا Form 4 → [] (نجاح فارغ حقيقي)")
+
+    # (ب) end-to-end عبر radar: رد خطأ من EDGAR → الكاش السليم محفوظ (لا يُمسح بقائمة فارغة)
+    radar.UNIVERSE = ["AAPL"]
+    GOOD_TX = [{"name": "Insider A", "code": "P", "shares": 1000, "date": "2026-08-01"}]
+    yest = datetime.now(timezone.utc) - timedelta(days=1)
+    with app.app_context():
+        db.session.merge(StockCache(ticker=radar._PREFIX + "AAPL",
+                                    data_json=json.dumps(GOOD_TX), updated_at=yest))
+        db.session.commit()
+        _orig_get = edgar_client.requests.get
+        _orig_cik = edgar_client.get_cik
+        _orig_insider = edgar_client.get_insider_transactions
+        edgar_client.get_cik = lambda t: "0000000001"
+        edgar_client.get_insider_transactions = _REAL_INSIDER  # نمرّ بالدالة الحقيقية
+        edgar_client.requests.get = _router(
+            _FakeResp(200, {"error": "temporary upstream failure"}), _FakeResp(200))
+        try:
+            radar.refresh_radar()
+        finally:
+            edgar_client.requests.get = _orig_get
+            edgar_client.get_cik = _orig_cik
+            edgar_client.get_insider_transactions = _orig_insider
+        row = db.session.get(StockCache, radar._PREFIX + "AAPL")
+        preserved = json.loads(row.data_json)
+    check(preserved == GOOD_TX and row.updated_at.date() == yest.date(),
+          "radar: رد خطأ 200 من EDGAR → الكاش السليم محفوظ (لم يُمسح)")
+
+
 # ==================== ⑥ التنبيه السعري وإرسال تلغرام ====================
 def test_price_alert_telegram():
     print("\n[⑥] التنبيه السعري لا يُطفأ إلا عند نجاح إرسال تلغرام:")
@@ -680,6 +735,7 @@ def main():
     test_edgar_source_semantics()
     test_edgar_http_semantics()
     test_edgar_partial_failure_and_invalid_content()
+    test_edgar_error_json_body()
     test_edgar_preserve_on_failure()
     test_edgar_store_on_success_empty()
     test_price_alert_telegram()
