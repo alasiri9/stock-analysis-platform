@@ -406,8 +406,12 @@
       </div>
       {# فصل نضارة السعر عن نضارة التحليل: لو عُرض سعر لحظي أحدث بالأعلى، نوضّح أن الخطة
          والمستويات محسوبة على «سعر التحليل» حتى لا تُفهم أرقام من توقيتين وكأنها لحظة واحدة. #}
-      {% if report.analysis_price is not none and report.price is not none and report.analysis_price != report.price %}
-        <div class="muted" style="font-size:.82rem;margin-top:10px">ℹ️ الخطة والمستويات (الدخول/الوقف/الهدف) محسوبة على <b>سعر التحليل</b> <span dir="ltr">{{ "%.2f $"|format(report.analysis_price) }}</span>. السعر بالأعلى <span dir="ltr">{{ "%.2f $"|format(report.price) }}</span> لحظي وقد يختلف — قارن المستويات بسعر التحليل.</div>
+      {# سعر التحليل عبر الآلية الموحّدة (تعالج التقارير القديمة بلا حقل analysis_price:
+         fallback إلى price) — بدل الوصول المباشر report.analysis_price الذي يصبح Undefined
+         في Jinja على التقارير القديمة ويسبّب خطأ عند التنسيق. #}
+      {% set ap = analysis_price(report) %}
+      {% if ap is not none and report.price is not none and ap != report.price %}
+        <div class="muted" style="font-size:.82rem;margin-top:10px">ℹ️ الخطة والمستويات (الدخول/الوقف/الهدف) محسوبة على <b>سعر التحليل</b> <span dir="ltr">{{ "%.2f $"|format(ap) }}</span>. السعر بالأعلى <span dir="ltr">{{ "%.2f $"|format(report.price) }}</span> لحظي وقد يختلف — قارن المستويات بسعر التحليل.</div>
       {% endif %}
       <a class="btn" style="margin-top:12px; display:inline-block" href="{{ url_for('calculator') }}?entry={{ '%.2f'|format(p.entry) }}&stop={{ '%.2f'|format(p.stop) }}">🧮 احسب كمية الشراء المناسبة لمخاطرتك</a>
     {% else %}

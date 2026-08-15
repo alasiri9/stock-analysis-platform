@@ -1609,6 +1609,10 @@ def create_app():
                         try:
                             q = fmp_client.get_quote(ticker, api_key=_sub_key)
                             if q and q.get("price") is not None:
+                                # نحفظ سعر التحليل قبل استبدال العرض بالسعر اللحظي — يضمن وجوده
+                                # حتى للتقارير القديمة (المخزّنة قبل إضافة analysis_price)، فتبقى
+                                # مستويات الخطة مفهومة على سعر التحليل ولا يظهر خطأ في القالب.
+                                report.setdefault("analysis_price", report.get("price"))
                                 report["price"] = q.get("price")
                                 report["change"] = q.get("change")
                                 report["change_percent"] = q.get("change_percent")
