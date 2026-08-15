@@ -327,6 +327,29 @@ def _router(sub_resp, doc_resp):
     return _g
 
 
+# سجل إيداعات فيه نموذجا Form 4 (لاختبار الفشل الجزئي: نجاح واحد + فشل آخر)
+_SUB_JSON_2 = {"filings": {"recent": {
+    "form": ["4", "4"],
+    "accessionNumber": ["0001-23-000001", "0001-23-000002"],
+    "primaryDocument": ["xslF345X05/a.xml", "xslF345X05/b.xml"],
+}}}
+
+# رد 200 لكن محتواه HTML (صفحة خطأ) — XML سليم الشكل لكنه ليس Form 4
+_HTML_200 = "<html><body>SEC error page — not a form</body></html>"
+
+
+def _router_multi(sub_resp, doc_map):
+    """يوجّه طلب سجل الإيداعات لـ sub_resp، وكل نموذج حسب مفتاح يظهر في رابطه."""
+    def _g(url, **kw):
+        if "submissions" in url:
+            return sub_resp
+        for key, resp in doc_map.items():
+            if key in url:
+                return resp
+        raise AssertionError("رابط غير متوقّع: " + url)
+    return _g
+
+
 def _run_insider_with(get_fn):
     _orig_get = edgar_client.requests.get
     _orig_cik = edgar_client.get_cik
@@ -372,6 +395,46 @@ def test_edgar_http_semantics():
     r = _run_insider_with(_router(_FakeResp(200, _SUB_JSON), _FakeResp(200, text=_VALID_TX_XML)))
     check(isinstance(r, list) and len(r) == 1 and r[0].get("code") == "P",
           "HTTP ناجح + نموذج بمعاملة → قائمة بمعاملة واحدة (code=P)")
+
+
+def test_edgar_partial_failure_and_invalid_content():
+    print("\n[⑤-جزئي] فشل نموذج واحد لا يُعامَل كنجاح جزئي + محتوى 200 غير صالح:")
+
+    # (أ) الفشل الجزئي: نموذج ينجح بمعاملة وآخر يفشل بـHTTP 500 → النتيجة كلّها فشل (None)،
+    #     لا نتيجة جزئية بمعاملة النموذج الناجح.
+    r = _run_insider_with(_router_multi(_FakeResp(200, _SUB_JSON_2), {
+        "a.xml": _FakeResp(200, text=_VALID_TX_XML),  # نجح بمعاملة
+        "b.xml": _FakeResp(500, text="خطأ خادم"),      # فشل HTTP
+    }))
+    check(r is None, "نجاح نموذج + فشل HTTP بآخر → None (لا نتيجة جزئية)")
+
+    # الفشل الجزئي عبر XML غير صالح بالنموذج الثاني → فشل كامل (None)
+    r = _run_insider_with(_router_multi(_FakeResp(200, _SUB_JSON_2), {
+        "a.xml": _FakeResp(200, text=_VALID_TX_XML),
+        "b.xml": _FakeResp(200, text="<broken"),       # XML غير صالح
+    }))
+    check(r is None, "نجاح نموذج + XML غير صالح بآخر → None (لا نتيجة جزئية)")
+
+    # الفشل الجزئي عبر فشل اتصال بالنموذج الثاني → فشل كامل (None)
+    def _get_partial_conn(url, **kw):
+        if "submissions" in url:
+            return _FakeResp(200, _SUB_JSON_2)
+        if "a.xml" in url or "000123000001" in url:
+            return _FakeResp(200, text=_VALID_TX_XML)
+        raise requests.RequestException("انقطاع على النموذج الثاني")
+    r = _run_insider_with(_get_partial_conn)
+    check(r is None, "نجاح نموذج + فشل اتصال بآخر → None (لا نتيجة جزئية)")
+
+    # (ب) HTTP 200 بمحتوى HTML (XML سليم الشكل لكنه ليس Form 4) → فشل (None) لا نجاح فارغ []
+    r = _run_insider_with(_router(_FakeResp(200, _SUB_JSON), _FakeResp(200, text=_HTML_200)))
+    check(r is None, "HTTP 200 بمحتوى HTML (ليس Form 4) → None (لا يتحوّل إلى [] فارغة)")
+
+    # ضمان عدم الانحدار: نجاح كل النماذج المطلوبة كـForm 4 صحيحة بلا معاملات → [] (نجاح فارغ)
+    r = _run_insider_with(_router_multi(_FakeResp(200, _SUB_JSON_2), {
+        "a.xml": _FakeResp(200, text=_VALID_EMPTY_XML),
+        "b.xml": _FakeResp(200, text=_VALID_EMPTY_XML),
+    }))
+    check(r == [], "كل النماذج Form 4 صحيحة بلا معاملات → [] (نجاح فارغ حقيقي)")
 
 
 # ==================== ⑥ التنبيه السعري وإرسال تلغرام ====================
@@ -616,6 +679,7 @@ def main():
     test_earnings_float_clear_on_success_empty()
     test_edgar_source_semantics()
     test_edgar_http_semantics()
+    test_edgar_partial_failure_and_invalid_content()
     test_edgar_preserve_on_failure()
     test_edgar_store_on_success_empty()
     test_price_alert_telegram()

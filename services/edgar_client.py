@@ -82,12 +82,18 @@ def _parse_form4(xml_text):
     """يحلّل XML خام لنموذج Form 4 ويُرجع قائمة معاملات (غير مشتقّة).
 
     كل معاملة dict: owner, title, date, code, code_label, direction, shares, price.
-    يُرجع None لو كان XML غير صالح (فشل تحليل) — يُميَّز عن القائمة الفارغة (نموذج
-    صحيح لكن بلا معاملات غير مشتقّة). None هنا = فشل، [] = نجاح بلا صفوف.
+    يُرجع None لو كان المحتوى ليس Form 4 صحيحاً (XML غير صالح، أو HTML/صفحة خطأ، أو
+    جذر ليس ownershipDocument) — يُميَّز عن القائمة الفارغة (نموذج صحيح لكن بلا معاملات
+    غير مشتقّة). None هنا = فشل/محتوى غير صالح، [] = نجاح Form 4 صحيح بلا صفوف.
     """
     try:
         root = ET.fromstring(xml_text)
     except ET.ParseError:
+        return None
+
+    # لا يكفي أن يكون XML سليماً: نتأكّد أنه نموذج Form 4 فعلاً (جذره ownershipDocument)
+    # حتى لا تتحوّل صفحة HTML/خطأ برد 200 (قد تكون XML سليمة الشكل) إلى «نجاح فارغ».
+    if root.tag.split("}")[-1] != "ownershipDocument":
         return None
 
     owner_el = root.find(".//reportingOwner")
@@ -195,14 +201,16 @@ def get_insider_transactions(ticker, max_filings=10, max_rows=15):
             continue
         parsed = _parse_form4(doc_resp.text)
         if parsed is None:
-            fetch_failed = True  # XML غير صالح = فشل تحليل، لا «لا-معاملات»
+            fetch_failed = True  # محتوى غير صالح (XML/ليس Form 4) = فشل، لا «لا-معاملات»
             continue
-        results.extend(parsed)  # قائمة (قد تكون فارغة = نموذج صحيح بلا صفوف)
+        results.extend(parsed)  # قائمة (قد تكون فارغة = نموذج Form 4 صحيح بلا صفوف)
         time.sleep(0.12)  # لطف مع خوادم SEC (أقل من 10 طلبات/ثانية)
 
-    # لو تعثّرت أي محاولة (HTTP/اتصال/XML) ولم نجمع أي صفّ = فشل، لا «لا-معاملات»:
-    # نُعيد None فيُبقي المتصل (radar) الكاش السليم السابق بدل استبداله بقائمة فارغة.
-    if fetch_failed and not results:
+    # فشل جزئي في أي نموذج (HTTP/اتصال/XML/محتوى ليس Form 4) = نتيجة غير مكتملة → فشل:
+    # لا نرجع نتائج جزئية ولا نعدّها نجاحاً لمجرد نجاح نموذج آخر؛ نُعيد None فيُبقي المتصل
+    # (radar) الكاش السليم السابق بدل استبداله بجزء. [] لا تُرجَع إلا بعد نجاح كل النماذج
+    # المطلوبة (Form 4 صحيحة) بلا معاملات فعلية.
+    if fetch_failed:
         return None
     return results[:max_rows]
 
