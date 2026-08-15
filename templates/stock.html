@@ -144,16 +144,22 @@
         </div>
         {% endif %}
         <div class="score-card">
-          {{ gauge(report.piotroski.score, 9, '', 'lg', '', 'الجودة المالية (Piotroski): درجة من 0 إلى 9 تقيس صحة الشركة المالية (ربحيتها وديونها وكفاءتها). 8 أو 9 تُعتبر قوية.') }}
+          {# المقام المرئي = عدد النقاط القابلة للحساب (9 عادةً؛ أقل لو تعذّر حساب بعضها) — لا نعرض /9 مضلِّلاً #}
+          {% set pmax = report.piotroski.computable if (report.piotroski.computable is defined and report.piotroski.computable) else 9 %}
+          {{ gauge(report.piotroski.score, pmax, '', 'lg', '', 'الجودة المالية (Piotroski): درجة تقيس صحة الشركة المالية (ربحيتها وديونها وكفاءتها). المقام هو عدد النقاط القابلة للحساب (9 عادةً). 8 أو 9 من 9 تُعتبر قوية.') }}
           <div class="cap">الجودة المالية</div>
-          {% if report.piotroski.score >= 8 %}<div class="badge-gem">💎 جوهرة</div>{% endif %}
-          {% if report.piotroski.computable < 9 %}
-            <div class="cap">أمكن حساب {{ report.piotroski.computable }} نقاط فقط</div>
+          {# الجوهرة = Piotroski ≥ 8 والنقاط التسع كلها قابلة للحساب (لا يستفيد التصنيف من نقص) #}
+          {% if report.piotroski.score >= 8 and (report.piotroski.computable is not defined or report.piotroski.computable >= 9) %}<div class="badge-gem">💎 جوهرة</div>{% endif %}
+          {% if report.piotroski.computable is defined and report.piotroski.computable < 9 %}
+            <div class="cap">أمكن حساب {{ report.piotroski.computable }} نقاط فقط (من 9)</div>
           {% endif %}
         </div>
         <div class="score-card">
-          {{ gauge(report.catalyst.score, 100, '', 'lg', '', 'النمو (Catalyst): درجة من 0 إلى 100 تقيس نمو الشركة (مبيعات وأرباح) وقوة ربحيتها (العائد والهوامش) معاً. 🟢 قوي 80+ · 🟡 متوسط 40–79 · 🔴 ضعيف أقل من 40.') }}
+          {{ gauge(report.catalyst.score, 100, '', 'lg', '', 'النمو (Catalyst): درجة من 0 إلى 100 تقيس نمو الشركة (مبيعات وأرباح) وقوة ربحيتها (العائد والهوامش) معاً. المكوّن الناقص يُحسب صفراً على الوزن الكامل فلا يرفع نقص البيانات الدرجة. 🟢 قوي 80+ · 🟡 متوسط 40–79 · 🔴 ضعيف أقل من 40.') }}
           <div class="cap">النمو</div>
+          {% if report.catalyst.complete is defined and report.catalyst.complete == false %}
+            <div class="cap" style="color:var(--gold)">درجة جزئية — بعض مكوّنات النمو غير متوفّرة</div>
+          {% endif %}
         </div>
       </div>
       {% if meter %}
@@ -404,6 +410,15 @@
         <div class="metric"><div class="label">الهدف {% if p.target_basis == 'resistance' %}(أقرب مقاومة{% if p.target_touches and p.target_touches > 1 %} · {{ p.target_touches }} لمسات{% endif %}){% else %}(+{{ "%.1f"|format(p.target_mult) }}×ATR){% endif %}</div><div class="num" style="color:var(--green)">{{ "%.2f $"|format(p.target) }}</div></div>
         <div class="metric"><div class="label"><span style="color:var(--green)">العائد</span>/<span style="color:var(--red)">المخاطرة</span>{% if p.rr_quality == 'weak' %} ⚠️{% elif p.rr_quality == 'good' %} 🟢{% endif %}</div><div class="num">{% if p.risk_reward is not none %}<span style="color:var(--green)">{{ "%.1f"|format(p.risk_reward) }}</span> : <span style="color:var(--red)">1</span>{% else %}—{% endif %}</div></div>
       </div>
+      {# فصل نضارة السعر عن نضارة التحليل: لو عُرض سعر لحظي أحدث بالأعلى، نوضّح أن الخطة
+         والمستويات محسوبة على «سعر التحليل» حتى لا تُفهم أرقام من توقيتين وكأنها لحظة واحدة. #}
+      {# سعر التحليل عبر الآلية الموحّدة (تعالج التقارير القديمة بلا حقل analysis_price:
+         fallback إلى price) — بدل الوصول المباشر report.analysis_price الذي يصبح Undefined
+         في Jinja على التقارير القديمة ويسبّب خطأ عند التنسيق. #}
+      {% set ap = analysis_price(report) %}
+      {% if ap is not none and report.price is not none and ap != report.price %}
+        <div class="muted" style="font-size:.82rem;margin-top:10px">ℹ️ الخطة والمستويات (الدخول/الوقف/الهدف) محسوبة على <b>سعر التحليل</b> <span dir="ltr">{{ "%.2f $"|format(ap) }}</span>. السعر بالأعلى <span dir="ltr">{{ "%.2f $"|format(report.price) }}</span> لحظي وقد يختلف — قارن المستويات بسعر التحليل.</div>
+      {% endif %}
       <a class="btn" style="margin-top:12px; display:inline-block" href="{{ url_for('calculator') }}?entry={{ '%.2f'|format(p.entry) }}&stop={{ '%.2f'|format(p.stop) }}">🧮 احسب كمية الشراء المناسبة لمخاطرتك</a>
     {% else %}
       <div class="soon">تعذّر حساب خطة التداول (بيانات الأسعار التاريخية غير كافية لهذا السهم).</div>
@@ -451,7 +466,7 @@
             <span class="rank-nm">{{ pr.name or '—' }}</span>
             {% set m = measures_met(pr) %}
             <span class="rank-mt" style="color:{% if m >= 10 %}var(--green){% elif m >= 6 %}var(--gold){% else %}var(--red){% endif %}">🎯 {{ m }}/16</span>
-            <span class="rank-pr" dir="ltr">{{ "%.2f $"|format(pr.price) if pr.price is not none else '—' }}</span>
+            <span class="rank-pr" dir="ltr">{% set _cp = current_price(pr) %}{{ "%.2f $"|format(_cp) if _cp is not none else '—' }}</span>
           </a>
         {% endfor %}
       </div>

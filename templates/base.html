@@ -20,13 +20,13 @@
         <div class="brand-phrases">نرصد الفرص<span class="sep">|</span>نحلل الاختراقات<span class="sep">|</span>نواكب الصعود</div>
       </div>
       {% if prices_live_ago is defined and prices_live_ago is not none and prices_live_ago <= 90 %}
-        <div title="الأسعار تُحدَّث كل ~5 دقائق من Finnhub أثناء ساعات السوق الأمريكي" style="text-align:center;font-size:12px;font-weight:800;color:var(--green);margin:10px 8px 0;padding:5px 6px;background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.35);border-radius:9px">🟢 أسعار حيّة · محدّثة قبل {{ prices_live_ago }} د</div>
+        <div title="السعر فقط يُحدَّث كل ~5 دقائق من Finnhub أثناء ساعات السوق الأمريكي. أمّا التحليل الفني والمؤشرات والدرجات وخطة التداول والترتيب فمن آخر فحص للماسح (ليست لحظية) — انظر «آخر تحديث» في كل صفحة." style="text-align:center;font-size:12px;font-weight:800;color:var(--green);margin:10px 8px 0;padding:5px 6px;background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.35);border-radius:9px">🟢 السعر حيّ · محدّث قبل {{ prices_live_ago }} د<br><span style="font-size:10.5px;font-weight:700;opacity:.85">التحليل الفني من آخر فحص (ليس لحظياً)</span></div>
       {% endif %}
       <nav class="nav">
         <div class="nav-group">اكتشاف</div>
         <a href="{{ url_for('index') }}" class="{{ 'active' if active=='home' else '' }}"><span class="ic">📊</span> الرئيسية</a>
         <a href="{{ url_for('index') }}#scanner"><span class="ic">🔍</span> الاستعداد للانطلاق<span class="nav-eye" data-tip="قائمة الماسح في الرئيسية: الأسهم المرشّحة للانطلاق مرتّبة بقوة التأكيد.">👁</span></a>
-        <a href="{{ url_for('leaders') }}" class="{{ 'active' if active=='leaders' else '' }}"><span class="ic">🚀</span> القادة المستقبليون<span class="nav-eye" data-tip="أعلى الأسهم حسب درجة النمو (Catalyst) — الشركات الأسرع نمواً.">👁</span></a>
+        <a href="{{ url_for('leaders') }}" class="{{ 'active' if active=='leaders' else '' }}"><span class="ic">🚀</span> قادة النمو<span class="nav-eye" data-tip="ترتيب بدرجة النمو (Catalyst) وحدها — «الأسرع نمواً». النمو ليس قوة شاملة؛ راجع الجودة وقوة التأكيد على كل بطاقة.">👁</span></a>
         <a href="{{ url_for('prelaunch') }}" class="{{ 'active' if active=='prelaunch' else '' }}"><span class="ic">🔎</span> قبل الانطلاق<span class="nav-eye" data-tip="أسهم في مرحلة مبكرة (انضغاط أو بداية اختراق) لم تصعد بعد — للاصطياد المبكر.">👁</span></a>
         <a href="{{ url_for('gems') }}" class="{{ 'active' if active=='gems' else '' }}"><span class="ic">💎</span> الجواهر المخفية<span class="nav-eye" data-tip="الأسهم ذات الجودة المالية العالية (Piotroski ≥ 8) — شركات متينة مالياً.">👁</span></a>
         <div class="nav-group">تحليل</div>

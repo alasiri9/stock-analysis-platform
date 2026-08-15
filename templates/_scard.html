@@ -1,18 +1,18 @@
-{# بطاقة سهم مشتركة — تُستخدم في الرئيسية والجواهر المخفية والقادة المستقبليون. تتوقّع r و rank من السياق المحيط. #}
+{# بطاقة سهم مشتركة — تُستخدم في الرئيسية والجواهر المخفية وقادة النمو. تتوقّع r و rank من السياق المحيط. #}
 {% from "_gauge.html" import gauge %}
 {% from "_techmeter.html" import techmeter %}
-{% set is_gem = r.piotroski is not none and r.piotroski >= 8 %}
+{% set gem = is_gem(r) %}{# تعريف الجوهرة الموحّد (Piotroski ≥ 8 والنقاط التسع قابلة للحساب) #}
 {% set mcount = measures_met(r) %}
-<a class="scard {{ 'gem' if is_gem }} {{ 'strong' if mcount >= 10 }}" href="{{ url_for('stock_report', ticker=r.ticker) }}">
+<a class="scard {{ 'gem' if gem }} {{ 'strong' if mcount >= 10 }}" href="{{ url_for('stock_report', ticker=r.ticker) }}">
   <div class="scard-inner">
   <div class="scard-lead">
   <div class="scard-rank">{{ rank }}</div>
 
   <div class="scard-info">
     <div class="scard-top">
-      {% if is_gem %}<span class="badge-gem">💎 جوهرة</span>{% endif %}
+      {% if gem %}<span class="badge-gem">💎 جوهرة</span>{% endif %}
       <span class="scard-ticker"{% if triple_up_tickers is defined and r.ticker in triple_up_tickers %} style="color:var(--green)"{% endif %}>{{ r.ticker }}</span>
-      <span class="scard-price" dir="ltr">{{ "%.2f $"|format(r.price) if r.price is not none else '—' }}</span>
+      <span class="scard-price" dir="ltr">{% set _cp = current_price(r) %}{{ "%.2f $"|format(_cp) if _cp is not none else '—' }}</span>
       {% set chp = r.get('change_percent') %}
       {% if chp is not none %}
         <span class="scard-chg {{ 'up' if chp >= 0 else 'down' }}" dir="ltr">{{ '▲' if chp >= 0 else '▼' }} {{ "%.1f"|format(chp) }}%</span>
@@ -21,11 +21,12 @@
     <div class="scard-name">{{ r.name or '—' }}</div>
     {% if r.sector %}<div class="scard-sector">🏷️ {{ r.sector | sector_ar }}</div>{% endif %}
     <div class="scard-scores">
-      <span class="measures-pill">🚀 نمو {{ r.catalyst | growth_icon }} <b>{{ "%.0f"|format(r.catalyst) if r.catalyst is not none else '—' }}</b></span>
-      <span class="help-q" data-tip="درجة النمو (Catalyst) من 100 — تقيس قوة نمو الشركة (نمو الإيرادات والأرباح والزخم). كلما زادت كان نمو الشركة أقوى. تعليمي.">👁</span>
+      {% set pcomp = piotroski_computable(r) %}{# مقام Piotroski الفعلي (9 عادةً؛ أقل لو تعذّر حساب بعض النقاط) #}
+      <span class="measures-pill">🚀 نمو {{ r.catalyst | growth_icon }} <b>{{ "%.0f"|format(r.catalyst) if r.catalyst is not none else '—' }}</b>{% if r.catalyst is not none and r.catalyst_complete is defined and r.catalyst_complete == false %}<span title="درجة نمو جزئية: بعض بيانات النمو غير متوفّرة — أقل ثقة من درجة مكتملة" style="color:var(--gold)">*</span>{% endif %}</span>
+      <span class="help-q" data-tip="درجة النمو (Catalyst) من 100 — تقيس قوة نمو الشركة (نمو الإيرادات والأرباح والزخم). كلما زادت كان نمو الشركة أقوى. علامة * تعني درجة جزئية (بيانات ناقصة، أقل ثقة). تعليمي.">👁</span>
       <span class="dot">·</span>
-      الجودة {{ r.piotroski | quality_icon }} <b>{{ r.piotroski if r.piotroski is not none else '—' }}</b>/9
-      <span class="help-q" data-tip="الجودة المالية (Piotroski) من 9 — تقيس متانة الشركة مالياً (ربحية، ديون، كفاءة). 8–9 ممتازة، 5–7 جيدة، أقل ضعيفة.">👁</span>
+      الجودة {{ r.piotroski | quality_icon(pcomp) }} <b>{{ r.piotroski if r.piotroski is not none else '—' }}</b>/{{ pcomp }}
+      <span class="help-q" data-tip="الجودة المالية (Piotroski) — تقيس متانة الشركة مالياً (ربحية، ديون، كفاءة). المقام هو عدد النقاط القابلة للحساب (9 عادةً)؛ لو ظهر أقل فبعض النقاط تعذّر حسابها. 8–9 ممتازة.">👁</span>
       {% set rs = r.get('rel_strength') %}
       {% if rs is not none %}
         <span class="rs-pill {{ 'pos' if rs >= 0 else 'neg' }}">{{ '↑' if rs >= 0 else '↓' }} vs السوق {{ "%+.0f"|format(rs) }}%</span>
@@ -58,7 +59,13 @@
     {% if is_golden(r) %}
       <div class="scard-golden">🥇 إشارة ذهبية — 3 عوامل مجتمعة <span class="help-q" data-tip="إشارة ذهبية: اجتمعت 3 عوامل قوية معاً (جودة مالية + سيولة داخلة + اختراق سعري). أقوى إشارات الماسح. تعليمي لا توصية.">👁</span></div>
     {% elif r.catalyst is not none and r.catalyst >= 80 %}
-      <div class="scard-ready">🎯 انفجار قوي — جاهز للانطلاق <span class="help-q" data-tip="جاهز للانطلاق: درجة النمو (Catalyst) عالية جداً (≥80) — السهم في وضع قوي مرشّح للحركة. تعليمي لا توصية شراء.">👁</span></div>
+      {# لا نعرض «جاهز للانطلاق» بناءً على النمو (Catalyst) وحده: نشترط ألّا يكون الميل الفني
+         سلبياً (نعيد استخدام tech_tilt الموجود بلا عتبة جديدة). فالنمو القوي مع اتجاه فني هابط
+         لا يوصف بأنه «جاهز للانطلاق». #}
+      {% set tilt = tech_tilt(r) %}
+      {% if tilt and tilt.kind not in ['neg1', 'neg2'] %}
+        <div class="scard-ready">🎯 انفجار قوي — جاهز للانطلاق <span class="help-q" data-tip="جاهز للانطلاق: درجة النمو (Catalyst) عالية جداً (≥80) مع ميل فني غير سلبي — السهم في وضع قوي مرشّح للحركة. لا يظهر إذا كان الاتجاه الفني سلبياً رغم النمو. تعليمي لا توصية شراء.">👁</span></div>
+      {% endif %}
     {% endif %}
     {% set bk = r.get('break_status') %}
     {% set sb = r.get('sustained') %}

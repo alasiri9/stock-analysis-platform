@@ -143,15 +143,19 @@ def smart_summary(report, scan=None):
     """
     strengths, cautions = [], []
 
-    # الجودة المالية (Piotroski)
-    p = (report.get("piotroski") or {}).get("score")
+    # الجودة المالية (Piotroski) — المقام = النقاط القابلة للحساب (9 عادةً؛ توافق خلفي: بلا
+    # الحقل → 9) حتى لا نعرض 8/9 مضلِّلاً حين كان 8/8 فقط قابلاً للحساب.
+    _pio = report.get("piotroski") or {}
+    p = _pio.get("score")
+    pc = _pio.get("computable")
+    pc = pc if pc is not None else 9
     if p is not None:
         if p >= 8:
-            strengths.append(f"جودة مالية ممتازة (Piotroski {p}/9)")
+            strengths.append(f"جودة مالية ممتازة (Piotroski {p}/{pc})")
         elif p >= 6:
-            strengths.append(f"جودة مالية جيدة (Piotroski {p}/9)")
+            strengths.append(f"جودة مالية جيدة (Piotroski {p}/{pc})")
         elif p <= 3:
-            cautions.append(f"جودة مالية ضعيفة (Piotroski {p}/9)")
+            cautions.append(f"جودة مالية ضعيفة (Piotroski {p}/{pc})")
 
     # النمو (Catalyst)
     c = (report.get("catalyst") or {}).get("score")
@@ -339,7 +343,10 @@ def build_stock_report(ticker):
         "name": (profile.get("name") if profile else None) or (quote.get("name") if quote else None),
         "sector": profile.get("sector") if profile else None,
         "industry": profile.get("industry") if profile else None,
-        "price": price,                                       # دولار
+        "price": price,                                       # دولار (سعر التحليل عند البناء)
+        # سعر التحليل: الأساس الذي حُسبت عليه خطة ATR والمستويات. يبقى ثابتاً حتى لو عُرض
+        # سعر لحظي أحدث في الترويسة (مشترك بمفتاح حيّ) — فتُفهَم الخطة على أساسها الصحيح.
+        "analysis_price": price,
         "change": quote.get("change") if quote else None,    # دولار
         "change_percent": quote.get("change_percent") if quote else None,  # % جاهزة
         "market_cap": (quote.get("market_cap") if quote else None) or (profile.get("market_cap") if profile else None),

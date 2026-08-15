@@ -167,10 +167,17 @@ def build_indicators(candles):
             status, val = "neutral", "عادي"
         badges.append({"label": "الحجم", "value": val, "status": status})
 
-    # --- ADX: قوة الاتجاه (كانت شارة شكلية — الآن محسوبة فعلياً) ---
-    adx = _adx(rows)
+    # --- ADX: قوة الاتجاه (يقيس القوة لا الاتجاه) — نُميّز اتجاهه من +DI/−DI ---
+    # اتجاه قوي صاعد (ADX≥25 و+DI>−DI) = صاعد؛ اتجاه قوي هابط (ADX≥25 و−DI>+DI) = هابط
+    # (لا يُحتسب صاعداً — تصحيح: القوة وحدها لا تعني صعوداً)؛ ADX ضعيف (<25) = عرضي/محايد.
+    adx, pdi, ndi = _adx_di(rows)
     if adx is not None:
-        status = "bull" if adx >= 25 else "neutral"
+        if adx >= 25 and pdi is not None and ndi is not None and pdi > ndi:
+            status = "bull"
+        elif adx >= 25 and pdi is not None and ndi is not None and ndi > pdi:
+            status = "bear"
+        else:
+            status = "neutral"
         badges.append({"label": "ADX", "value": f"{adx:.0f}", "status": status})
 
     # --- قرب القمة: السعر ضمن 5% من أعلى قمة بالفترة المتاحة ---
@@ -288,11 +295,16 @@ def golden_cross(closes, fast=50, slow=200, recent=5):
     return {"cross": cross, "above": above_now}
 
 
-def _adx(rows, period=14):
-    """ADX (متوسط مؤشر الاتجاه) بتمهيد Wilder. يُرجع القيمة أو None لو البيانات غير كافية."""
+def _adx_di(rows, period=14):
+    """ADX + آخر +DI/−DI بتمهيد Wilder. يُرجع (adx, plus_di, minus_di) أو (None, None, None).
+
+    ADX يقيس «قوة» الاتجاه فقط ولا يحدّد اتجاهه؛ الاتجاه يُقرأ من +DI مقابل −DI الأخيرين:
+    +DI > −DI = زخم اتجاه صاعد، −DI > +DI = زخم اتجاه هابط. (يُستعمَل لتمييز الاتجاه القوي
+    الهابط عن الصاعد فلا يُحتسب الهابط إشارة صاعدة.)
+    """
     rows = [r for r in rows if r["high"] is not None and r["low"] is not None]
     if len(rows) < period * 3:
-        return None
+        return None, None, None
     trs, pdms, ndms = [], [], []
     for i in range(1, len(rows)):
         h, l, prev = rows[i]["high"], rows[i]["low"], rows[i - 1]
@@ -306,6 +318,7 @@ def _adx(rows, period=14):
     pdm_s = sum(pdms[:period])
     ndm_s = sum(ndms[:period])
     dxs = []
+    pdi = ndi = None  # آخر قيمتين تعكسان الاتجاه الحالي
     for i in range(period, len(trs)):
         atr = atr - atr / period + trs[i]
         pdm_s = pdm_s - pdm_s / period + pdms[i]
@@ -318,11 +331,16 @@ def _adx(rows, period=14):
             continue
         dxs.append(100 * abs(pdi - ndi) / (pdi + ndi))
     if len(dxs) < period:
-        return None
+        return None, None, None
     adx = sum(dxs[:period]) / period
     for d in dxs[period:]:
         adx = (adx * (period - 1) + d) / period
-    return adx
+    return adx, pdi, ndi
+
+
+def _adx(rows, period=14):
+    """ADX (قوة الاتجاه) بتمهيد Wilder — غلاف رفيع حول _adx_di. يُرجع القيمة أو None."""
+    return _adx_di(rows, period)[0]
 
 
 def _bollinger_squeeze(closes, period=20, lookback=90):

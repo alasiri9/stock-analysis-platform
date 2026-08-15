@@ -562,6 +562,10 @@ def create_app():
     app.jinja_env.globals["measures_met"] = screener.measures_met
     app.jinja_env.globals["bullish_reasons"] = screener.bullish_reasons
     app.jinja_env.globals["tech_tilt"] = screener.tech_tilt
+    app.jinja_env.globals["current_price"] = screener.current_price      # السعر الحالي (حيّ إن توفّر)
+    app.jinja_env.globals["analysis_price"] = screener.analysis_price    # سعر التحليل (أساس الخطة)
+    app.jinja_env.globals["is_gem"] = screener.is_gem                    # تعريف الجوهرة الموحّد
+    app.jinja_env.globals["piotroski_computable"] = screener.piotroski_computable  # مقام Piotroski (توافق خلفي)
     app.jinja_env.globals["UNIVERSE"] = screener.UNIVERSE  # لاقتراح الرموز في البحث
 
     @app.template_filter("ts_ago")
@@ -609,14 +613,22 @@ def create_app():
         return f"قبل {days_ago} أيام"
 
     @app.template_filter("quality_icon")
-    def quality_icon(score):
-        """أيقونة مستوى الجودة المالية (Piotroski): جوهرة/أصفر/أحمر حسب الرقم."""
+    def quality_icon(score, computable=9):
+        """أيقونة مستوى الجودة المالية (Piotroski): جوهرة/أصفر/أحمر حسب الرقم.
+
+        💎 (جوهرة) لا تظهر إلا لسهم جوهرة فعلاً: score ≥ 8 **والنقاط التسع كلها قابلة للحساب**
+        (computable ≥ 9) — تطابق تعريف is_gem فلا تتعارض الأيقونة مع شارة الجوهرة. الأسهم
+        ذات الجودة العالية لكن الناقصة (مثل 8/8) تنزل للأيقونة التالية. سجلّات قديمة بلا
+        computable → 9 (توافق خلفي). بقية الأيقونات بسلوكها الحالي حسب الدرجة.
+        """
         if score is None:
             return ""
-        if score >= 8:
-            return "💎"   # قوية جداً (جوهرة)
+        if computable is None:
+            computable = 9
+        if score >= 8 and computable >= 9:
+            return "💎"   # قوية جداً (جوهرة مكتملة)
         if score >= 5:
-            return "🟡"   # متوسطة أو جيدة
+            return "🟡"   # متوسطة أو جيدة (يشمل العالية غير المكتملة)
         return "🔴"       # ضعيفة — احذر
 
     @app.template_filter("growth_icon")
@@ -773,7 +785,7 @@ def create_app():
         if sort == "growth":
             results.sort(key=lambda r: (r.get("catalyst") is not None, r.get("catalyst") or 0), reverse=True)
         elif sort == "price":
-            results.sort(key=lambda r: (r.get("price") is None, r.get("price") or 0))
+            results.sort(key=lambda r: (screener.current_price(r) is None, screener.current_price(r) or 0))
         else:  # confidence — عدد المقاييس المجتمعة
             sort = "confidence"
             results.sort(key=lambda r: screener.measures_met(r), reverse=True)
@@ -799,7 +811,7 @@ def create_app():
         # إحصائيات علوية (من كامل العيّنة، لا المُفلتر)
         stats = {
             "total": len(records),
-            "gems": sum(1 for r in records if r.get("piotroski") is not None and r["piotroski"] >= 8),
+            "gems": sum(1 for r in records if screener.is_gem(r)),  # تعريف موحّد
             "strong": sum(1 for r in records if r.get("catalyst") is not None and r["catalyst"] >= 80),
         }
         # عدّاد حيّ لكل فلتر سريع — بإعادة استخدام نفس دالة الفلترة (يطابق النتائج تماماً، بلا منطق جديد)
@@ -848,7 +860,8 @@ def create_app():
 
     @app.route("/leaders")
     def leaders():
-        # القادة المستقبليون = أعلى 10 أسهم حسب Catalyst (بيانات الماسح نفسها، ترتيب مختلف)
+        # قادة النمو = أعلى 10 أسهم حسب النمو (Catalyst) وحده — «الأسرع نمواً» (الاسم يطابق المنطق).
+        # الترتيب بالنمو فقط عرض مفيد؛ الجودة/التأكيد يظهران على كل بطاقة (لا يُقدَّم كقيادة شاملة).
         records, latest = screener.load_records()
         results = screener.filter_records(records)[:10]
         return render_template("leaders.html", results=results, latest=latest, total=len(records))
@@ -1099,7 +1112,7 @@ def create_app():
         # لوحة شخصية تجمع بيانات المستخدم الحالي في مكان واحد (من الكاش، بلا API)
         uid = current_user_id()
         records, _ = screener.load_records()
-        price_by = {r["ticker"]: r.get("price") for r in records}
+        price_by = {r["ticker"]: screener.current_price(r) for r in records}  # السعر الحالي
 
         # المحفظة — ملخص سريع
         holdings = PortfolioHolding.query.filter_by(user_id=uid).all()
@@ -1280,7 +1293,7 @@ def create_app():
             "ticker": r.get("ticker"),
             "name": r.get("name"),
             "sector": sector_ar(r.get("sector")),
-            "price": r.get("price"),
+            "price": screener.current_price(r),  # السعر الحالي (حيّ إن توفّر)
             "change": r.get("change_percent"),
             "piotroski": r.get("piotroski"),
             "catalyst": r.get("catalyst"),
@@ -1390,9 +1403,18 @@ def create_app():
                 "frames": r.get("frames"),             # قوة الفريمات (يومي/أسبوعي/شهري)
             })
 
-        # الترتيب: الأجود أولاً — درجة Algomatix الموزونة، ثم الاستراتيجيات المتحققة، ثم مجموع النقاط.
+        # الترتيب حسب قوة هيكل السوق أولاً (يطابق اسم الصفحة): نستعمل درجة مدرسة «هيكل السوق»
+        # الموجودة أصلاً ضمن مؤشر Algomatix (0..1، محسوبة بحتاً من BOS/CHOCH/إعادة الاختبار/
+        # الاتجاه) — بلا اختراع معادلة أو threshold جديد. كاسرات التعادل الموجودة: الدرجة الموزونة
+        # ثم الاستراتيجيات المتحققة ثم مجموع نقاطها.
+        def _structure_sub(item):
+            return next((b["sub"] for b in item["algx"]["breakdown"]
+                         if b["key"] == "structure"), 0.5)
+        for x in items:
+            x["struct_sub"] = _structure_sub(x)
         items.sort(key=lambda x: (
-            x["algx"]["score"],
+            x["struct_sub"],                              # قوة هيكل السوق (مقياس هيكلي موجود)
+            x["algx"]["score"],                           # كاسر تعادل موجود: الدرجة الموزونة
             x["plan"]["met_count"] if x["plan"] else 0,
             x["plan"]["total"] if x["plan"] else 0,
         ), reverse=True)
@@ -1461,7 +1483,7 @@ def create_app():
         records, latest = screener.load_records()
         stats = {
             "total": len(records),
-            "gems": sum(1 for r in records if r.get("piotroski") is not None and r["piotroski"] >= 8),
+            "gems": sum(1 for r in records if screener.is_gem(r)),  # تعريف موحّد
             "strong": sum(1 for r in records if r.get("catalyst") is not None and r["catalyst"] >= 80),
         }
         return render_template(
@@ -1607,6 +1629,10 @@ def create_app():
                         try:
                             q = fmp_client.get_quote(ticker, api_key=_sub_key)
                             if q and q.get("price") is not None:
+                                # نحفظ سعر التحليل قبل استبدال العرض بالسعر اللحظي — يضمن وجوده
+                                # حتى للتقارير القديمة (المخزّنة قبل إضافة analysis_price)، فتبقى
+                                # مستويات الخطة مفهومة على سعر التحليل ولا يظهر خطأ في القالب.
+                                report.setdefault("analysis_price", report.get("price"))
                                 report["price"] = q.get("price")
                                 report["change"] = q.get("change")
                                 report["change_percent"] = q.get("change_percent")
@@ -1745,10 +1771,11 @@ def create_app():
             r = _screen_by.get(t)
             if r:
                 return _finalize({
-                    "ticker": t, "name": r.get("name"), "price": r.get("price"),
+                    "ticker": t, "name": r.get("name"), "price": screener.current_price(r),
                     "change_percent": r.get("change_percent"),
                     "metrics": {**_NULL_METRICS, **(r.get("metrics") or {})},
-                    "piotroski": {"score": r.get("piotroski")},
+                    "piotroski": {"score": r.get("piotroski"),
+                                  "computable": r.get("piotroski_computable")},
                     "catalyst": {"score": r.get("catalyst")},
                 })
             # 3) جلب مباشر من FMP (نادراً) — فقط عند غياب الكاش نهائياً
@@ -1771,7 +1798,7 @@ def create_app():
         items = Watchlist.query.filter_by(user_id=current_user_id()).order_by(Watchlist.added_at.desc()).all()
         # السعر الحالي من كاش الماسح أولاً (فوري وبلا استهلاك حصة) — نفس نهج المحفظة
         records, _ = screener.load_records()
-        cache_prices = {r["ticker"]: r.get("price") for r in records}
+        cache_prices = {r["ticker"]: screener.current_price(r) for r in records}  # السعر الحالي
         sector_by = {r["ticker"]: r.get("sector") for r in records}
         rows = []
         for item in items:
@@ -1823,7 +1850,7 @@ def create_app():
             PriceAlert.active.desc(), PriceAlert.created_at.desc()).all()
         # السعر الحالي من كاش الماسح (فوري وبلا استهلاك حصة)
         records, _ = screener.load_records()
-        cache_prices = {r["ticker"]: r.get("price") for r in records}
+        cache_prices = {r["ticker"]: screener.current_price(r) for r in records}  # السعر الحالي
         rows = [{
             "id": a.id, "ticker": a.ticker, "direction": a.direction,
             "target_price": a.target_price, "active": a.active,
@@ -1905,7 +1932,7 @@ def create_app():
             .order_by(PortfolioHolding.added_at.desc()).all()
         )
         records, _ = screener.load_records()
-        cache_prices = {r["ticker"]: r.get("price") for r in records}
+        cache_prices = {r["ticker"]: screener.current_price(r) for r in records}  # السعر الحالي
         atr_by = {r["ticker"]: r.get("atr") for r in records}
         sector_by = {r["ticker"]: r.get("sector") for r in records}
 

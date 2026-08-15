@@ -82,19 +82,73 @@ def bullish_reasons(record):
     return _bullish_strategies(record)
 
 
+def current_price(record):
+    """السعر الحالي للعرض: الحيّ (live_price) إن توفّر، وإلا سعر التحليل (price).
+
+    يُستعمَل في كل عرض «السعر الحالي» (البطاقات، المحفظة، المتابعة، المقارنة، التنبيهات).
+    سجلّات قديمة بلا live_price ترجع لسعر التحليل تلقائياً (توافق خلفي).
+    """
+    if not record:
+        return None
+    lp = record.get("live_price")
+    return lp if lp is not None else record.get("price")
+
+
+def analysis_price(record):
+    """سعر التحليل: الذي بُنيت عليه الخطة/المستويات/المؤشرات — ثابت لا يتغيّر لحظياً.
+
+    سجلّات قديمة بلا analysis_price ترجع لـprice (توافق خلفي).
+    """
+    if not record:
+        return None
+    ap = record.get("analysis_price")
+    return ap if ap is not None else record.get("price")
+
+
+GEM_PIOTROSKI_MIN = 8  # حدّ «الجوهرة»: جودة مالية عالية (Piotroski ≥ 8 من 9) — تعريف موحّد
+
+
+def piotroski_computable(record):
+    """كم نقطة Piotroski أمكن حسابها (من 9). سجلّات قديمة بلا الحقل → 9 (توافق خلفي)."""
+    if not record:
+        return None
+    c = record.get("piotroski_computable")
+    return c if c is not None else 9
+
+
+def is_gem(record):
+    """تعريف «الجوهرة» الموحّد (مصدر واحد لكل الصفحات/الفلاتر/الشارات):
+
+    جودة مالية عالية = Piotroski ≥ 8، **بشرط أن تكون النقاط التسع كلها قابلة للحساب**
+    (لا يُحتسب 8/8 جوهرةً وكأنه 8/9 — تصنيف الجوهرة لا يستفيد من Piotroski ناقص).
+    سجلّات قديمة بلا piotroski_computable تُعامَل كمكتملة (9) للتوافق الخلفي.
+    """
+    if not record:
+        return False
+    p = record.get("piotroski")
+    return p is not None and p >= GEM_PIOTROSKI_MIN and piotroski_computable(record) >= 9
+
+
 def measures_met(record):
     """عدد المقاييس الإيجابية المجتمعة للسهم (تضافر الأدلة الصاعدة).
 
     يعدّ: كل شارة فنية حالتها صاعدة (حتى 12) + سيولة داخلة + أقوى من السوق
     + جودة مالية عالية (Piotroski≥8) + نمو قوي (Catalyst≥80). الأقصى ~16.
     كلما زاد العدد، زاد تضافر المقاييس الإيجابية على السهم.
+
+    ⚠️ ملاحظة تصميمية (بند معايرة مستقبلية): هذا عدّاد تضافر مسطّح، وبعض عوامله مترابطة
+    جزئياً (مثل RSI≥70 المشروط بالحجم + شارة الحجم؛ وتجمّع مؤشرات الاتجاه EMA/تقاطع/سوبرترند/
+    ADX) فقد تُحتسب ظاهرة واحدة عبر أكثر من نقطة. العوامل ليست مستقلّة تماماً. لم يُزَل هذا
+    التداخل هنا عمداً لأن إزالته تُغيّر توزيع الـ/16 وعتبة «قوي ≥10» وتستلزم إعادة معايرة
+    واسعة — فيُترك كمخاطرة معروفة مقبولة مؤقتاً (بخلاف Algomatix Score الذي يُمتوسِط المترابطات
+    في مدارس متمايزة بلا ازدواج). أي إعادة معايرة تُعالَج كبند مستقل لاحقاً.
     """
     count = sum(1 for b in (record.get("indicators") or []) if b.get("status") == "bull")
     if (record.get("money_flow") or {}).get("status") == "bull":
         count += 1
     if record.get("rel_strength") is not None and record["rel_strength"] > 0:
         count += 1
-    if record.get("piotroski") is not None and record["piotroski"] >= 8:
+    if is_gem(record):  # جودة مالية عالية بتعريف موحّد (لا يستفيد من Piotroski ناقص)
         count += 1
     if record.get("catalyst") is not None and record["catalyst"] >= 80:
         count += 1
@@ -199,11 +253,13 @@ def _plan_strategy_scores(record):
         else:
             add("القوة النسبية (RSI)", "bear", 3, "قوة نسبية أقل من 50")
 
-    # 5) قوة الاتجاه (ADX)
+    # 5) قوة الاتجاه (ADX) — يقيس القوة لا الاتجاه؛ الحالة من build_indicators تُميّز اتجاهه
     b = inds.get("ADX")
     if b:
         if b.get("status") == "bull":
-            add("قوة الاتجاه (ADX)", "bull", 8, f"ADX {b.get('value')} — اتجاه قوي واضح")
+            add("قوة الاتجاه (ADX)", "bull", 8, f"ADX {b.get('value')} — اتجاه صاعد قوي واضح")
+        elif b.get("status") == "bear":
+            add("قوة الاتجاه (ADX)", "bear", 2, f"ADX {b.get('value')} — اتجاه قوي لكنه هابط")
         else:
             add("قوة الاتجاه (ADX)", "neutral", 4, f"ADX {b.get('value')} — اتجاه ضعيف/عرضي")
 
@@ -401,7 +457,12 @@ def _status_val(status):
 
 
 def _algx_subscores(record):
-    """درجة كل مدرسة (0..1). القيم الغائبة تُعامل محايدةً (0.5) فلا تُخفّض ظلماً."""
+    """درجة كل مدرسة (0..1). القيم الغائبة تُعامل محايدةً (0.5) فلا تُخفّض ولا تُرفع ظلماً.
+
+    مبدأ المقام الثابت: داخل المدارس متعدّدة المكوّنات (الجودة/الاتجاه/الزخم/السيولة) المكوّن
+    المفقود يُحسب 0.5 (حياد) ولا يُحذف من المقام — فلا يمنح نقص البيانات أفضلية حسابية. القيمة
+    0/bear الفعلية تبقى قيمة حقيقية. الفريم اليومي مستبعَد من مدرسة الفريمات (له مدرسة هيكل
+    مستقلّة) فلا يُحتسب المصدر نفسه مرتين. (لا مؤشر واحد يظهر في مدرستين.)"""
     inds = {b.get("label"): b for b in (record.get("indicators") or [])}
 
     # 🧭 هيكل السوق
@@ -417,32 +478,27 @@ def _algx_subscores(record):
     else:
         s_structure = 0.42 if ms.get("trend") == "side" else 0.5
 
-    # 🏦 الجودة والنمو
-    fund = []
-    if record.get("piotroski") is not None:
-        fund.append(min(1.0, record["piotroski"] / 9.0))
-    if record.get("catalyst") is not None:
-        fund.append(min(1.0, record["catalyst"] / 100.0))
-    s_fund = sum(fund) / len(fund) if fund else 0.5
+    # 🏦 الجودة والنمو — مكوّنان ثابتان (Piotroski · Catalyst)؛ المكوّن المفقود = 0.5 (حياد)
+    # ولا يُحذف من المقام، فلا يرفع نقص أحدهما الدرجة (المقام يبقى 2). القيمة 0 الفعلية تبقى.
+    _fp = min(1.0, record["piotroski"] / 9.0) if record.get("piotroski") is not None else 0.5
+    _fc = min(1.0, record["catalyst"] / 100.0) if record.get("catalyst") is not None else 0.5
+    s_fund = (_fp + _fc) / 2.0
 
-    # 📈 الاتجاه
-    tr = [_status_val(inds[k]["status"]) for k in ("EMA", "تقاطع", "سوبرترند", "ADX") if k in inds]
-    s_trend = sum(tr) / len(tr) if tr else 0.5
+    # 📈 الاتجاه — أربعة مكوّنات ثابتة؛ المفقود = 0.5 (لا يُعاد توزيع وزنه؛ المقام يبقى 4)
+    tr = [_status_val(inds[k]["status"]) if k in inds else 0.5
+          for k in ("EMA", "تقاطع", "سوبرترند", "ADX")]
+    s_trend = sum(tr) / len(tr)
 
-    # ⚡ الزخم
-    mo = [_status_val(inds[k]["status"]) for k in ("MACD", "RSI") if k in inds]
-    s_mom = sum(mo) / len(mo) if mo else 0.5
+    # ⚡ الزخم — مكوّنان ثابتان (MACD · RSI)؛ المفقود = 0.5 (المقام يبقى 2)
+    mo = [_status_val(inds[k]["status"]) if k in inds else 0.5 for k in ("MACD", "RSI")]
+    s_mom = sum(mo) / len(mo)
 
-    # 💧 السيولة
-    liq = []
-    if record.get("money_flow"):
-        liq.append(_status_val(record["money_flow"].get("status")))
-    if "تراكم" in inds:
-        liq.append(_status_val(inds["تراكم"]["status"]))
-    vp = record.get("volume_profile")
-    if vp:
-        liq.append({"above": 0.70, "at": 0.55}.get(vp.get("position"), 0.30))
-    s_liq = sum(liq) / len(liq) if liq else 0.5
+    # 💧 السيولة — ثلاثة مكوّنات ثابتة (تدفق الأموال · تراكم/OBV · البروفايل الحجمي)؛ المفقود = 0.5
+    _lmf = _status_val(record["money_flow"].get("status")) if record.get("money_flow") else 0.5
+    _lobv = _status_val(inds["تراكم"]["status"]) if "تراكم" in inds else 0.5
+    _vp = record.get("volume_profile")
+    _lvp = {"above": 0.70, "at": 0.55}.get(_vp.get("position"), 0.30) if _vp else 0.5
+    s_liq = (_lmf + _lobv + _lvp) / 3.0
 
     # 📐 المستويات
     s_lev = 0.5
@@ -461,15 +517,17 @@ def _algx_subscores(record):
     rv = record.get("reversal")
     s_pa = 0.5 if not rv else (0.9 if rv.get("status") == "bull" else 0.1 if rv.get("status") == "bear" else 0.5)
 
-    # ⏱️ الفريمات الثلاثة (توافق يومي/أسبوعي/شهري)
+    # ⏱️ الفريمات — نستبعد الفريم اليومي من الدرجة: هيكله اليومي له مدرسة structure مستقلّة،
+    # فلا يؤثّر المصدر نفسه (daily structure) مرتين في Algomatix Score. نعتمد الأسبوعي والشهري
+    # (المستقلّين فعلاً): up=1 · side/na=0.5 · down=0، ثم المتوسط (نفس عرف الحياد، بلا عتبات
+    # جديدة). يبقى record["frames"] كما هو (daily/up_count/strength) للعرض وشارة الفريمات الثلاثة.
     frm = record.get("frames")
     if not frm:
         s_frames = 0.5
     else:
-        ups = frm.get("up_count", 0)
-        downs = frm.get("down_count", 0)
-        s_frames = {3: 1.0, 2: 0.72, 1: 0.5, 0: 0.35}.get(ups, 0.5)
-        s_frames = max(0.0, min(1.0, s_frames - 0.08 * downs))
+        def _fv(t):
+            return 1.0 if t == "up" else (0.0 if t == "down" else 0.5)
+        s_frames = (_fv(frm.get("weekly")) + _fv(frm.get("monthly"))) / 2.0
 
     return {
         "structure": s_structure, "fundamentals": s_fund, "trend": s_trend,
@@ -544,7 +602,7 @@ def early_launch_candidates(records=None, min_strategies=3):
             "ticker": r.get("ticker"),
             "name": r.get("name"),
             "sector": r.get("sector"),
-            "price": r.get("price"),
+            "price": current_price(r),  # السعر الحالي للعرض (الحيّ إن توفّر)
             "catalyst": r.get("catalyst"),
             "piotroski": r.get("piotroski"),
             "recent_gain": rg,
@@ -657,6 +715,7 @@ def _build_record(ticker):
         return None
 
     catalyst = scoring.catalyst_score(financials)
+    _pio = scoring.piotroski_score(financials)  # نحسبها مرة واحدة (score + computable)
 
     # مؤشرات فنية للكرت (جلب تاريخي إضافي؛ لا يكسر السجلّ لو فشل)
     # FMP يُرجع كل التاريخ المتاح (~5 سنوات) في طلب واحد؛ نأخذ آخر 250 يوماً لبقية المؤشرات
@@ -742,11 +801,17 @@ def _build_record(ticker):
         "_complete": _complete,
         "name": (quote.get("name") if quote else None) or (profile.get("name") if profile else None),
         "sector": profile.get("sector") if profile else None,
-        "price": quote.get("price") if quote else None,
+        # سعر التحليل: السعر الذي بُنيت عليه الخطة والمستويات والمؤشرات (atr_plan/break/مقاومة).
+        # يبقى ثابتاً لا يُستبدَل بالتحديث اللحظي (نُحدّث live_price منفصلاً) — فلا تختلط قيم من
+        # توقيتين. price == analysis_price عند البناء (سجلّات قديمة بلا analysis_price تُعامَل بـprice).
+        "price": _price,
+        "analysis_price": _price,
         "change_percent": quote.get("change_percent") if quote else None,  # التغيّر اليومي %
         "market_cap": quote.get("market_cap") if quote else None,
-        "piotroski": scoring.piotroski_score(financials)["score"],
+        "piotroski": _pio["score"],
+        "piotroski_computable": _pio["computable"],  # كم نقطة أمكن حسابها (من 9) — للعرض والتصنيف
         "catalyst": catalyst["score"],
+        "catalyst_complete": catalyst.get("complete"),  # هل درجة النمو مكتملة أم جزئية
         "metrics": metrics,
         "indicators": tech,
         "money_flow": flow,
@@ -895,7 +960,7 @@ def check_price_alerts():
     if not alerts:
         return 0
     records, _ = load_records()
-    price_by = {r["ticker"]: r.get("price") for r in records}
+    price_by = {r["ticker"]: current_price(r) for r in records}  # السعر الحالي (حيّ إن توفّر)
     fired = 0
     now = datetime.now(timezone.utc)
     for a in alerts:
@@ -1132,7 +1197,7 @@ def signals_performance():
     """
     sigs = Signal.query.order_by(Signal.triggered_at.desc()).all()
     records, _ = load_records()
-    price_by_ticker = {r["ticker"]: r.get("price") for r in records}
+    price_by_ticker = {r["ticker"]: current_price(r) for r in records}  # السعر الحالي (حيّ إن توفّر)
     name_by_ticker = {r["ticker"]: r.get("name") for r in records}
 
     # أسعار مؤشر السوق (SPY) من الكاش — لمقارنة كل إشارة بأداء السوق عن نفس الفترة
@@ -1269,7 +1334,7 @@ def launched_stocks(limit=6):
     # ثم نُبقي أحدث إشارة فقط لكل سهم حتى تظهر لوحة "انطلقت" بأسهم متنوّعة لا مكرّرة.
     sigs = Signal.query.order_by(Signal.triggered_at.desc()).limit(limit * 4).all()
     records, _ = load_records()
-    price_by_ticker = {r["ticker"]: r.get("price") for r in records}
+    price_by_ticker = {r["ticker"]: current_price(r) for r in records}  # السعر الحالي (حيّ إن توفّر)
     name_by_ticker = {r["ticker"]: r.get("name") for r in records}
     sector_by_ticker = {r["ticker"]: r.get("sector") for r in records}
 
@@ -1330,11 +1395,12 @@ def launched_stocks(limit=6):
 def refresh_prices_intraday():
     """تحديث «شبه لايف» خفيف للسعر الحالي فقط — من Finnhub /quote المجاني.
 
-    يحدّث حقلَي price و change_percent (ووسم price_live_at) لكل أسهم UNIVERSE دون
-    إعادة التحليل الثقيل (الفريمات/الدرجات/التاريخ تبقى من التحديث الليلي). كل سهم =
-    طلب واحد؛ 32 طلباً < حد Finnhub المجاني 60/دقيقة. لا يمسّ updated_at (يبقى وقت
-    التحليل الليلي). None ≠ 0: لو Finnhub لم يُرجع سعراً نُبقي القديم.
-    يُرجع عدد الأسهم التي حُدّث سعرها.
+    يكتب السعر الحيّ في حقل مستقل live_price (ووسم price_live_at) ولا يمسّ سعر التحليل
+    (price/analysis_price) الذي بُنيت عليه الخطة والمستويات والمؤشرات — فلا تختلط قيم من
+    توقيتين في سجل واحد. لا يُعيد التحليل الثقيل (الفريمات/الدرجات/التاريخ من التحديث الليلي).
+    كل سهم = طلب واحد؛ 32 طلباً < حد Finnhub المجاني 60/دقيقة (لا يمسّ حصّة FMP). لا يمسّ
+    updated_at (يبقى وقت التحليل). None ≠ 0: لو Finnhub لم يُرجع سعراً نُبقي القديم.
+    يُرجع عدد الأسهم التي حُدّث سعرها الحيّ.
     """
     updated = 0
     now = datetime.now(timezone.utc)
@@ -1352,9 +1418,10 @@ def refresh_prices_intraday():
             record = json.loads(row.data_json)
         except (ValueError, TypeError):
             continue
-        record["price"] = q["price"]
+        # السعر الحيّ في حقل مستقل — لا نستبدل price/analysis_price (أساس الخطة والمستويات).
+        record["live_price"] = q["price"]
         if q.get("change_percent") is not None:
-            record["change_percent"] = q["change_percent"]
+            record["change_percent"] = q["change_percent"]  # التغيّر اليومي % (عرضيّ، حيّ)
         record["price_live_at"] = now.isoformat()   # وسم آخر تحديث سعر «شبه لايف»
         row.data_json = json.dumps(record, ensure_ascii=False)
         updated += 1
@@ -1488,13 +1555,17 @@ def filter_records(records, piotroski_min=None, catalyst_min=None,
     out = []
     for r in records:
         if piotroski_min is not None:
-            if r.get("piotroski") is None or r["piotroski"] < piotroski_min:
+            # نشترط أن تكون النقاط التسع كلها قابلة للحساب: «≥8» لا معنى له إن لم يكن المقام 9
+            # (8/8 ليست 8/9). يوحّد فلتر الجودة/الجواهر مع تعريف is_gem ويمنع Piotroski ناقصاً.
+            if (r.get("piotroski") is None or r["piotroski"] < piotroski_min
+                    or piotroski_computable(r) < 9):
                 continue
         if catalyst_min is not None:
             if r.get("catalyst") is None or r["catalyst"] < catalyst_min:
                 continue
         if price_max is not None:
-            if r.get("price") is None or r["price"] > price_max:
+            _cp = current_price(r)
+            if _cp is None or _cp > price_max:
                 continue
         if market_cap_min is not None:
             if r.get("market_cap") is None or r["market_cap"] < market_cap_min:
