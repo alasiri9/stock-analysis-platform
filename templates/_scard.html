@@ -58,7 +58,13 @@
     {% if is_golden(r) %}
       <div class="scard-golden">🥇 إشارة ذهبية — 3 عوامل مجتمعة <span class="help-q" data-tip="إشارة ذهبية: اجتمعت 3 عوامل قوية معاً (جودة مالية + سيولة داخلة + اختراق سعري). أقوى إشارات الماسح. تعليمي لا توصية.">👁</span></div>
     {% elif r.catalyst is not none and r.catalyst >= 80 %}
-      <div class="scard-ready">🎯 انفجار قوي — جاهز للانطلاق <span class="help-q" data-tip="جاهز للانطلاق: درجة النمو (Catalyst) عالية جداً (≥80) — السهم في وضع قوي مرشّح للحركة. تعليمي لا توصية شراء.">👁</span></div>
+      {# لا نعرض «جاهز للانطلاق» بناءً على النمو (Catalyst) وحده: نشترط ألّا يكون الميل الفني
+         سلبياً (نعيد استخدام tech_tilt الموجود بلا عتبة جديدة). فالنمو القوي مع اتجاه فني هابط
+         لا يوصف بأنه «جاهز للانطلاق». #}
+      {% set tilt = tech_tilt(r) %}
+      {% if tilt and tilt.kind not in ['neg1', 'neg2'] %}
+        <div class="scard-ready">🎯 انفجار قوي — جاهز للانطلاق <span class="help-q" data-tip="جاهز للانطلاق: درجة النمو (Catalyst) عالية جداً (≥80) مع ميل فني غير سلبي — السهم في وضع قوي مرشّح للحركة. لا يظهر إذا كان الاتجاه الفني سلبياً رغم النمو. تعليمي لا توصية شراء.">👁</span></div>
+      {% endif %}
     {% endif %}
     {% set bk = r.get('break_status') %}
     {% set sb = r.get('sustained') %}

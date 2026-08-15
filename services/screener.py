@@ -199,11 +199,13 @@ def _plan_strategy_scores(record):
         else:
             add("القوة النسبية (RSI)", "bear", 3, "قوة نسبية أقل من 50")
 
-    # 5) قوة الاتجاه (ADX)
+    # 5) قوة الاتجاه (ADX) — يقيس القوة لا الاتجاه؛ الحالة من build_indicators تُميّز اتجاهه
     b = inds.get("ADX")
     if b:
         if b.get("status") == "bull":
-            add("قوة الاتجاه (ADX)", "bull", 8, f"ADX {b.get('value')} — اتجاه قوي واضح")
+            add("قوة الاتجاه (ADX)", "bull", 8, f"ADX {b.get('value')} — اتجاه صاعد قوي واضح")
+        elif b.get("status") == "bear":
+            add("قوة الاتجاه (ADX)", "bear", 2, f"ADX {b.get('value')} — اتجاه قوي لكنه هابط")
         else:
             add("قوة الاتجاه (ADX)", "neutral", 4, f"ADX {b.get('value')} — اتجاه ضعيف/عرضي")
 

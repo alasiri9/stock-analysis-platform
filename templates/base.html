@@ -20,7 +20,7 @@
         <div class="brand-phrases">نرصد الفرص<span class="sep">|</span>نحلل الاختراقات<span class="sep">|</span>نواكب الصعود</div>
       </div>
       {% if prices_live_ago is defined and prices_live_ago is not none and prices_live_ago <= 90 %}
-        <div title="الأسعار تُحدَّث كل ~5 دقائق من Finnhub أثناء ساعات السوق الأمريكي" style="text-align:center;font-size:12px;font-weight:800;color:var(--green);margin:10px 8px 0;padding:5px 6px;background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.35);border-radius:9px">🟢 أسعار حيّة · محدّثة قبل {{ prices_live_ago }} د</div>
+        <div title="السعر فقط يُحدَّث كل ~5 دقائق من Finnhub أثناء ساعات السوق الأمريكي. أمّا التحليل الفني والمؤشرات والدرجات وخطة التداول والترتيب فمن آخر فحص للماسح (ليست لحظية) — انظر «آخر تحديث» في كل صفحة." style="text-align:center;font-size:12px;font-weight:800;color:var(--green);margin:10px 8px 0;padding:5px 6px;background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.35);border-radius:9px">🟢 السعر حيّ · محدّث قبل {{ prices_live_ago }} د<br><span style="font-size:10.5px;font-weight:700;opacity:.85">التحليل الفني من آخر فحص (ليس لحظياً)</span></div>
       {% endif %}
       <nav class="nav">
         <div class="nav-group">اكتشاف</div>
