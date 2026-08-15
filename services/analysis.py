@@ -143,15 +143,19 @@ def smart_summary(report, scan=None):
     """
     strengths, cautions = [], []
 
-    # الجودة المالية (Piotroski)
-    p = (report.get("piotroski") or {}).get("score")
+    # الجودة المالية (Piotroski) — المقام = النقاط القابلة للحساب (9 عادةً؛ توافق خلفي: بلا
+    # الحقل → 9) حتى لا نعرض 8/9 مضلِّلاً حين كان 8/8 فقط قابلاً للحساب.
+    _pio = report.get("piotroski") or {}
+    p = _pio.get("score")
+    pc = _pio.get("computable")
+    pc = pc if pc is not None else 9
     if p is not None:
         if p >= 8:
-            strengths.append(f"جودة مالية ممتازة (Piotroski {p}/9)")
+            strengths.append(f"جودة مالية ممتازة (Piotroski {p}/{pc})")
         elif p >= 6:
-            strengths.append(f"جودة مالية جيدة (Piotroski {p}/9)")
+            strengths.append(f"جودة مالية جيدة (Piotroski {p}/{pc})")
         elif p <= 3:
-            cautions.append(f"جودة مالية ضعيفة (Piotroski {p}/9)")
+            cautions.append(f"جودة مالية ضعيفة (Piotroski {p}/{pc})")
 
     # النمو (Catalyst)
     c = (report.get("catalyst") or {}).get("score")

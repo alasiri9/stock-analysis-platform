@@ -613,14 +613,22 @@ def create_app():
         return f"قبل {days_ago} أيام"
 
     @app.template_filter("quality_icon")
-    def quality_icon(score):
-        """أيقونة مستوى الجودة المالية (Piotroski): جوهرة/أصفر/أحمر حسب الرقم."""
+    def quality_icon(score, computable=9):
+        """أيقونة مستوى الجودة المالية (Piotroski): جوهرة/أصفر/أحمر حسب الرقم.
+
+        💎 (جوهرة) لا تظهر إلا لسهم جوهرة فعلاً: score ≥ 8 **والنقاط التسع كلها قابلة للحساب**
+        (computable ≥ 9) — تطابق تعريف is_gem فلا تتعارض الأيقونة مع شارة الجوهرة. الأسهم
+        ذات الجودة العالية لكن الناقصة (مثل 8/8) تنزل للأيقونة التالية. سجلّات قديمة بلا
+        computable → 9 (توافق خلفي). بقية الأيقونات بسلوكها الحالي حسب الدرجة.
+        """
         if score is None:
             return ""
-        if score >= 8:
-            return "💎"   # قوية جداً (جوهرة)
+        if computable is None:
+            computable = 9
+        if score >= 8 and computable >= 9:
+            return "💎"   # قوية جداً (جوهرة مكتملة)
         if score >= 5:
-            return "🟡"   # متوسطة أو جيدة
+            return "🟡"   # متوسطة أو جيدة (يشمل العالية غير المكتملة)
         return "🔴"       # ضعيفة — احذر
 
     @app.template_filter("growth_icon")
@@ -1756,7 +1764,8 @@ def create_app():
                     "ticker": t, "name": r.get("name"), "price": screener.current_price(r),
                     "change_percent": r.get("change_percent"),
                     "metrics": {**_NULL_METRICS, **(r.get("metrics") or {})},
-                    "piotroski": {"score": r.get("piotroski")},
+                    "piotroski": {"score": r.get("piotroski"),
+                                  "computable": r.get("piotroski_computable")},
                     "catalyst": {"score": r.get("catalyst")},
                 })
             # 3) جلب مباشر من FMP (نادراً) — فقط عند غياب الكاش نهائياً

@@ -25,7 +25,7 @@
       <span class="measures-pill">🚀 نمو {{ r.catalyst | growth_icon }} <b>{{ "%.0f"|format(r.catalyst) if r.catalyst is not none else '—' }}</b>{% if r.catalyst is not none and r.catalyst_complete is defined and r.catalyst_complete == false %}<span title="درجة نمو جزئية: بعض بيانات النمو غير متوفّرة — أقل ثقة من درجة مكتملة" style="color:var(--gold)">*</span>{% endif %}</span>
       <span class="help-q" data-tip="درجة النمو (Catalyst) من 100 — تقيس قوة نمو الشركة (نمو الإيرادات والأرباح والزخم). كلما زادت كان نمو الشركة أقوى. علامة * تعني درجة جزئية (بيانات ناقصة، أقل ثقة). تعليمي.">👁</span>
       <span class="dot">·</span>
-      الجودة {{ r.piotroski | quality_icon }} <b>{{ r.piotroski if r.piotroski is not none else '—' }}</b>/{{ pcomp }}
+      الجودة {{ r.piotroski | quality_icon(pcomp) }} <b>{{ r.piotroski if r.piotroski is not none else '—' }}</b>/{{ pcomp }}
       <span class="help-q" data-tip="الجودة المالية (Piotroski) — تقيس متانة الشركة مالياً (ربحية، ديون، كفاءة). المقام هو عدد النقاط القابلة للحساب (9 عادةً)؛ لو ظهر أقل فبعض النقاط تعذّر حسابها. 8–9 ممتازة.">👁</span>
       {% set rs = r.get('rel_strength') %}
       {% if rs is not none %}

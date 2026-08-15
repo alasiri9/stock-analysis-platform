@@ -144,7 +144,9 @@
         </div>
         {% endif %}
         <div class="score-card">
-          {{ gauge(report.piotroski.score, 9, '', 'lg', '', 'الجودة المالية (Piotroski): درجة من 0 إلى 9 تقيس صحة الشركة المالية (ربحيتها وديونها وكفاءتها). 8 أو 9 تُعتبر قوية.') }}
+          {# المقام المرئي = عدد النقاط القابلة للحساب (9 عادةً؛ أقل لو تعذّر حساب بعضها) — لا نعرض /9 مضلِّلاً #}
+          {% set pmax = report.piotroski.computable if (report.piotroski.computable is defined and report.piotroski.computable) else 9 %}
+          {{ gauge(report.piotroski.score, pmax, '', 'lg', '', 'الجودة المالية (Piotroski): درجة تقيس صحة الشركة المالية (ربحيتها وديونها وكفاءتها). المقام هو عدد النقاط القابلة للحساب (9 عادةً). 8 أو 9 من 9 تُعتبر قوية.') }}
           <div class="cap">الجودة المالية</div>
           {# الجوهرة = Piotroski ≥ 8 والنقاط التسع كلها قابلة للحساب (لا يستفيد التصنيف من نقص) #}
           {% if report.piotroski.score >= 8 and (report.piotroski.computable is not defined or report.piotroski.computable >= 9) %}<div class="badge-gem">💎 جوهرة</div>{% endif %}
