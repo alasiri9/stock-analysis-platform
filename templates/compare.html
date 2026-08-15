@@ -37,8 +37,12 @@
         <div class="cg-card">
           <div class="cg-ticker"><a href="{{ url_for('stock_report', ticker=s.ticker) }}">{{ s.ticker }}</a></div>
           <div class="cg-gauges">
-            {{ gauge(s.piotroski.score, 9, 'الجودة', 'sm') }}
-            {{ gauge(s.catalyst.score, 100, 'النمو', 'sm') }}
+            {% if s.complete %}
+              {{ gauge(s.piotroski.score, 9, 'الجودة', 'sm') }}
+              {{ gauge(s.catalyst.score, 100, 'النمو', 'sm') }}
+            {% else %}
+              <div class="muted" style="padding:8px 4px;font-size:.85em;line-height:1.5">البيانات المالية غير مكتملة — لا تُعرض درجات الجودة/النمو</div>
+            {% endif %}
           </div>
         </div>
       {% endfor %}
@@ -56,8 +60,8 @@
         <tr><td class="muted">القطاع</td>{% for s in summaries %}<td>{% if s.sector %}<span style="color:var(--gold)">{{ s.sector | sector_ar }}</span>{% else %}—{% endif %}</td>{% endfor %}</tr>
         <tr><td class="muted">السعر</td>{% for s in summaries %}<td dir="ltr">{{ cell(s.price, ' $', 2) }}</td>{% endfor %}</tr>
         <tr><td class="muted">التغيّر %</td>{% for s in summaries %}<td dir="ltr">{{ cell(s.change_percent, '%', 2) }}</td>{% endfor %}</tr>
-        <tr><td class="muted">الجودة المالية (Piotroski)</td>{% for s in summaries %}<td><b>{{ s.piotroski.score }}</b> / 9</td>{% endfor %}</tr>
-        <tr><td class="muted">النمو (Catalyst)</td>{% for s in summaries %}<td><b>{{ cell(s.catalyst.score, '', 0) }}</b> / 100</td>{% endfor %}</tr>
+        <tr><td class="muted">الجودة المالية (Piotroski)</td>{% for s in summaries %}<td>{% if s.complete %}<b>{{ cell(s.piotroski.score, '', 0) }}</b> / 9{% else %}<span class="muted">—</span>{% endif %}</td>{% endfor %}</tr>
+        <tr><td class="muted">النمو (Catalyst)</td>{% for s in summaries %}<td>{% if s.complete %}<b>{{ cell(s.catalyst.score, '', 0) }}</b> / 100{% else %}<span class="muted">—</span>{% endif %}</td>{% endfor %}</tr>
         <tr><td class="muted">ROE</td>{% for s in summaries %}<td dir="ltr">{{ cell(s.metrics.roe, '%') }}</td>{% endfor %}</tr>
         <tr><td class="muted">ROA</td>{% for s in summaries %}<td dir="ltr">{{ cell(s.metrics.roa, '%') }}</td>{% endfor %}</tr>
         <tr><td class="muted">هامش التشغيل</td>{% for s in summaries %}<td dir="ltr">{{ cell(s.metrics.op_margin, '%') }}</td>{% endfor %}</tr>

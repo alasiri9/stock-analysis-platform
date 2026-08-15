@@ -35,6 +35,11 @@ def refresh_radar(time_budget=60):
 
         try:
             rows = edgar_client.get_insider_transactions(ticker, max_filings=6, max_rows=10)
+            # EDGAR يُميّز الآن الفشل (None) عن النجاح-الفارغ ([]):
+            # - None (فشل الجلب): لا نلمس الكاش السابق (نتخطّى، ويُعاد في دفعة/ليلة لاحقة).
+            # - [] (نجاح بلا معاملات): نخزّنها فعلاً (تعكس الواقع الصحيح).
+            if rows is None:
+                continue
             payload = json.dumps(rows, ensure_ascii=False)
             now = datetime.now(timezone.utc)
             if existing:

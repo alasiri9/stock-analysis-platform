@@ -82,11 +82,19 @@ def _parse_form4(xml_text):
     """يحلّل XML خام لنموذج Form 4 ويُرجع قائمة معاملات (غير مشتقّة).
 
     كل معاملة dict: owner, title, date, code, code_label, direction, shares, price.
+    يُرجع None لو كان المحتوى ليس Form 4 صحيحاً (XML غير صالح، أو HTML/صفحة خطأ، أو
+    جذر ليس ownershipDocument) — يُميَّز عن القائمة الفارغة (نموذج صحيح لكن بلا معاملات
+    غير مشتقّة). None هنا = فشل/محتوى غير صالح، [] = نجاح Form 4 صحيح بلا صفوف.
     """
     try:
         root = ET.fromstring(xml_text)
     except ET.ParseError:
-        return []
+        return None
+
+    # لا يكفي أن يكون XML سليماً: نتأكّد أنه نموذج Form 4 فعلاً (جذره ownershipDocument)
+    # حتى لا تتحوّل صفحة HTML/خطأ برد 200 (قد تكون XML سليمة الشكل) إلى «نجاح فارغ».
+    if root.tag.split("}")[-1] != "ownershipDocument":
+        return None
 
     owner_el = root.find(".//reportingOwner")
     owner_name = owner_el.findtext(".//rptOwnerName") if owner_el is not None else None
@@ -134,30 +142,60 @@ def _parse_form4(xml_text):
 
 
 def get_insider_transactions(ticker, max_filings=10, max_rows=15):
-    """يُرجع قائمة بأحدث معاملات المطلعين، أو [] لو لا شيء/فشل.
+    """يُرجع أحدث معاملات المطلعين. نُميّز الفشل عن النجاح-الفارغ صراحةً:
+
+    - None  = فشل الجلب (تعذّر تحديد CIK، أو سقط سجل الإيداعات، أو فشلت كل محاولات
+      تحميل النماذج بلا نتيجة). المتصل يُبقي كاش المطلعين السابق ولا يمسحه.
+    - []    = نجاح بلا معاملات (لا نماذج Form 4، أو نماذج بلا صفقات فعلية). حالة سليمة.
+    - قائمة غير فارغة = نجاح بمعاملات.
 
     max_filings: كم نموذج Form 4 نفحص. max_rows: حد أقصى للمعاملات المعروضة.
     """
     cik = get_cik(ticker)
     if not cik:
-        return []
+        return None  # تعذّر تحديد الشركة — فشل لا «لا-معاملات»
 
+    # سجل الإيداعات: نفحص نجاح HTTP صراحةً — 4xx/5xx فشل، لا «لا-معاملات».
     try:
-        sub = requests.get(
+        resp = requests.get(
             f"https://data.sec.gov/submissions/CIK{cik}.json",
             headers=HEADERS, timeout=TIMEOUT,
-        ).json()
-    except (requests.RequestException, ValueError) as e:
-        print(f"[EDGAR] فشل جلب سجل الإيداعات لـ {ticker}: {e}")
-        return []
+        )
+    except requests.RequestException as e:
+        print(f"[EDGAR] فشل الاتصال بسجل الإيداعات لـ {ticker}: {e}")
+        return None
+    if resp.status_code != 200:
+        print(f"[EDGAR] سجل الإيداعات لـ {ticker} رجّع حالة {resp.status_code} — فشل")
+        return None  # HTTP فاشل لا يجوز أن يصل لمسار «النجاح الفارغ»
+    try:
+        sub = resp.json()
+    except ValueError as e:
+        print(f"[EDGAR] استجابة سجل الإيداعات لـ {ticker} غير صالحة (ليست JSON): {e}")
+        return None
 
-    recent = sub.get("filings", {}).get("recent", {})
-    forms = recent.get("form", [])
-    accns = recent.get("accessionNumber", [])
-    docs = recent.get("primaryDocument", [])
+    # تحقّق دلالي من بنية استجابة SEC: رد 200 وJSON سليم نحوياً قد يكون رسالة خطأ
+    # ({"error": "..."}) أو بنية ناقصة. لا يجوز أن يتحوّل ذلك إلى forms=[] ثم «نجاح فارغ»
+    # يمسح الكاش السليم — نعدّه فشلاً (None) ما لم تكن البنية المتوقّعة سليمة فعلاً.
+    if not isinstance(sub, dict) or "error" in sub:
+        print(f"[EDGAR] استجابة سجل الإيداعات لـ {ticker} ليست بنية متوقّعة (خطأ/غير قاموس) — فشل")
+        return None
+    filings = sub.get("filings")
+    recent = filings.get("recent") if isinstance(filings, dict) else None
+    if not isinstance(recent, dict):
+        print(f"[EDGAR] سجل الإيداعات لـ {ticker} بلا بنية filings.recent — فشل")
+        return None
+    forms = recent.get("form")
+    accns = recent.get("accessionNumber")
+    docs = recent.get("primaryDocument")
+    # الحقول المتوازية يجب أن تكون قوائم متوافقة الطول (ثابت بنية SEC) — وإلا بنية غير صحيحة.
+    if not (isinstance(forms, list) and isinstance(accns, list) and isinstance(docs, list)
+            and len(forms) == len(accns) == len(docs)):
+        print(f"[EDGAR] حقول سجل الإيداعات لـ {ticker} غير متوافقة (form/accession/document) — فشل")
+        return None
 
     results = []
     checked = 0
+    fetch_failed = False  # سقطت محاولة تحميل/تحليل نموذج واحد على الأقل (HTTP/اتصال/XML)
     for i, form in enumerate(forms):
         if form != "4":
             continue
@@ -169,12 +207,26 @@ def get_insider_transactions(ticker, max_filings=10, max_rows=15):
         raw_doc = docs[i].split("/")[-1]  # نتجاهل بادئة xslF345X0N للحصول على XML الخام
         url = f"https://www.sec.gov/Archives/edgar/data/{int(cik)}/{acc}/{raw_doc}"
         try:
-            xml_text = requests.get(url, headers=HEADERS, timeout=TIMEOUT).text
+            doc_resp = requests.get(url, headers=HEADERS, timeout=TIMEOUT)
         except requests.RequestException:
+            fetch_failed = True  # فشل اتصال
             continue
-        results.extend(_parse_form4(xml_text))
+        if doc_resp.status_code != 200:
+            fetch_failed = True  # HTTP 4xx/5xx فشل — لا يُحسب «نجاحاً فارغاً»
+            continue
+        parsed = _parse_form4(doc_resp.text)
+        if parsed is None:
+            fetch_failed = True  # محتوى غير صالح (XML/ليس Form 4) = فشل، لا «لا-معاملات»
+            continue
+        results.extend(parsed)  # قائمة (قد تكون فارغة = نموذج Form 4 صحيح بلا صفوف)
         time.sleep(0.12)  # لطف مع خوادم SEC (أقل من 10 طلبات/ثانية)
 
+    # فشل جزئي في أي نموذج (HTTP/اتصال/XML/محتوى ليس Form 4) = نتيجة غير مكتملة → فشل:
+    # لا نرجع نتائج جزئية ولا نعدّها نجاحاً لمجرد نجاح نموذج آخر؛ نُعيد None فيُبقي المتصل
+    # (radar) الكاش السليم السابق بدل استبداله بجزء. [] لا تُرجَع إلا بعد نجاح كل النماذج
+    # المطلوبة (Form 4 صحيحة) بلا معاملات فعلية.
+    if fetch_failed:
+        return None
     return results[:max_rows]
 
 
@@ -184,7 +236,7 @@ def get_insider_transactions(ticker, max_filings=10, max_rows=15):
 if __name__ == "__main__":
     ticker = "AAPL"
     print(f"=== معاملات المطلعين لـ {ticker} (SEC EDGAR) ===\n")
-    rows = get_insider_transactions(ticker)
+    rows = get_insider_transactions(ticker) or []  # None (فشل) أو [] (لا معاملات)
     if not rows:
         print("لا توجد معاملات متاحة.")
     for r in rows:

@@ -103,20 +103,34 @@ def build_quick_summary(ticker):
     equity = bal[0].get("totalStockholdersEquity") if bal else None
     price = quote.get("price") if quote else None
 
+    # لا نبني مقاييس/درجات من قوائم مالية ناقصة (تُضلّل المقارنة): نعرضها فقط عند اكتمال
+    # كل الحقول المطلوبة فعلاً؛ وإلا «—». (السعر والاسم يبقيان من الاقتباس.)
+    _complete = fmp_client.financials_complete(financials)
+    if _complete:
+        metrics = {
+            # ROE: حقوق ملكية سالبة + خسارة تعطي نسبة موجبة خادعة → لا نعرضها (حرس equity>0)
+            "roe": (_pct(scoring._safe_div(net_income, equity)) if (equity or 0) > 0 else None),
+            "roa": _pct(scoring._safe_div(net_income, assets)),
+            "op_margin": _pct(scoring._safe_div(op_income, revenue)),
+            "gross_margin": _pct(scoring._safe_div(gross, revenue)),
+            "pe": scoring._safe_div(price, eps) if (eps not in (None, 0)) else None,
+        }
+        piotroski = scoring.piotroski_score(financials)
+        catalyst = scoring.catalyst_score(financials)
+    else:
+        metrics = {"roe": None, "roa": None, "op_margin": None, "gross_margin": None, "pe": None}
+        piotroski = {"score": None}
+        catalyst = {"score": None}
+
     return {
         "ticker": ticker,
         "name": quote.get("name") if quote else None,
         "price": price,
         "change_percent": quote.get("change_percent") if quote else None,
-        "metrics": {
-            "roe": _pct(scoring._safe_div(net_income, equity)),
-            "roa": _pct(scoring._safe_div(net_income, assets)),
-            "op_margin": _pct(scoring._safe_div(op_income, revenue)),
-            "gross_margin": _pct(scoring._safe_div(gross, revenue)),
-            "pe": scoring._safe_div(price, eps) if (eps not in (None, 0)) else None,
-        },
-        "piotroski": scoring.piotroski_score(financials),
-        "catalyst": scoring.catalyst_score(financials),
+        "metrics": metrics,
+        "piotroski": piotroski,
+        "catalyst": catalyst,
+        "complete": bool(_complete),  # حارس العرض: تُظهر المقارنة الدرجات فقط عند الاكتمال
     }
 
 
@@ -241,7 +255,9 @@ def build_stock_report(ticker):
         earnings_growth_pct = None
 
     # --- المقاييس (تُخزّن ككسر، نحوّلها % عند العرض) ---
-    roe = scoring._safe_div(net_income, equity)
+    # ROE: حقوق ملكية سالبة (شركة متعثّرة) + خسارة تعطي نسبة موجبة خادعة → لا نعرضها
+    # (نفس حرس Catalyst). None ⇒ «—».
+    roe = scoring._safe_div(net_income, equity) if (equity or 0) > 0 else None
     roa = scoring._safe_div(net_income, assets)
     op_margin = scoring._safe_div(op_income, revenue)
     gross_margin = scoring._safe_div(gross, revenue)
@@ -293,8 +309,9 @@ def build_stock_report(ticker):
         chart = None
 
     # --- معاملات المطلعين من SEC EDGAR (لا تكسر الصفحة لو فشلت) ---
+    # EDGAR يُرجع None عند الفشل و[] عند النجاح-الفارغ — كلاهما يُعرض كـ«لا معاملات».
     try:
-        insider_trades = edgar_client.get_insider_transactions(ticker)
+        insider_trades = edgar_client.get_insider_transactions(ticker) or []
     except Exception as e:  # noqa: BLE001 — أي خطأ هنا لا يجب أن يُسقط التقرير
         print(f"[analysis] تعذّر جلب معاملات المطلعين لـ {ticker}: {e}")
         insider_trades = []

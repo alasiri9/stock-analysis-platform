@@ -568,14 +568,17 @@ EARNINGS_LOOKAHEAD_DAYS = 21
 def _shares_float_map():
     """خريطة {رمز: {float_shares, free_float_pct}} لأسهم UNIVERSE — طلب FMP واحد (bulk).
 
-    يُرجع {} عند أي فشل (الميزة كماليّة ولا يجوز أن تُسقط التحديث).
+    نُميّز الفشل عن النجاح صراحةً:
+    - فشل الجلب → None (المتصل يُبقي قيم الأسهم الحرة السابقة بدل مسحها).
+    - نجاح الجلب → خريطة (قد تكون فارغة {} = المصدر رجع بلا بيانات لأسهمنا).
+    الميزة كماليّة ولا يجوز أن تُسقط التحديث.
     """
     try:
         data = fmp_client.get_shares_float_all()
     except Exception:  # noqa: BLE001
-        return {}
-    if not data:
-        return {}
+        return None
+    if data is None:  # فشل الجلب (لا «لا-بيانات») — نُميّزه بـ None
+        return None
     universe = set(UNIVERSE)
     out = {}
     for row in data:
@@ -592,16 +595,20 @@ def _shares_float_map():
 def _upcoming_earnings():
     """خريطة {رمز: تاريخ أقرب إعلان أرباح قادم} لأسهم UNIVERSE — طلب FMP واحد فقط.
 
-    يُرجع {} عند أي فشل (التنبيه كماليّ ولا يجوز أن يُسقط التحديث).
+    نُميّز الفشل عن النجاح صراحةً:
+    - فشل الجلب → None (المتصل يُبقي مواعيد الأرباح السابقة بدل مسحها).
+    - نجاح الجلب → خريطة (قد تكون فارغة {} = لا أرباح قادمة لأسهمنا في النافذة،
+      وهي حالة سليمة تُمسح عندها المواعيد القديمة المنتهية).
+    التنبيه كماليّ ولا يجوز أن يُسقط التحديث.
     """
     today = datetime.now(timezone.utc).date()
     to = today + timedelta(days=EARNINGS_LOOKAHEAD_DAYS)
     try:
         data = fmp_client.get_earnings_calendar(today.isoformat(), to.isoformat())
     except Exception:  # noqa: BLE001
-        return {}
-    if not data:
-        return {}
+        return None
+    if data is None:  # فشل الجلب (لا «لا-أرباح») — نُميّزه بـ None
+        return None
     universe = set(UNIVERSE)
     out = {}
     for row in data:
@@ -709,7 +716,9 @@ def _build_record(ticker):
     _equity = _bal[0].get("totalStockholdersEquity") if _bal else None
     _price = quote.get("price") if quote else None
     metrics = {
-        "roe": (None if scoring._safe_div(_ni, _equity) is None else scoring._safe_div(_ni, _equity) * 100.0),
+        # ROE: حقوق ملكية سالبة + خسارة تعطي نسبة موجبة خادعة → لا نعرضها (حرس equity>0)
+        "roe": (scoring._safe_div(_ni, _equity) * 100.0
+                if ((_equity or 0) > 0 and scoring._safe_div(_ni, _equity) is not None) else None),
         "roa": (None if scoring._safe_div(_ni, _assets) is None else scoring._safe_div(_ni, _assets) * 100.0),
         "op_margin": (None if scoring._safe_div(_op, _rev) is None else scoring._safe_div(_op, _rev) * 100.0),
         "gross_margin": (None if scoring._safe_div(_gross, _rev) is None else scoring._safe_div(_gross, _rev) * 100.0),
@@ -897,7 +906,10 @@ def check_price_alerts():
                or (a.direction == "above" and price >= a.target_price))
         if not hit:
             continue
-        telegram_client.notify_price_alert(a.ticker, a.direction, a.target_price, price)
+        # لا نطفئ التنبيه إلا إذا نجح إرسال تلغرام فعلاً — وإلا يبقى نشطاً ليُعاد المحاولة
+        # في الفحص التالي (فلا يفقد المستخدم تنبيهه عند فشل إرسال عابر).
+        if not telegram_client.notify_price_alert(a.ticker, a.direction, a.target_price, price):
+            continue
         a.active = False
         a.triggered_at = now
         fired += 1
@@ -973,6 +985,11 @@ def refresh_cache(time_budget=20):
     spy_mom = _benchmark_return(MOMENTUM_SESSIONS)  # زخم السوق لنفس الفترة (يُحسب مرة واحدة)
     earnings_map = _upcoming_earnings()  # مواعيد الأرباح القادمة (طلب FMP واحد لكل الأسهم)
     float_map = _shares_float_map()  # الأسهم الحرة (طلب FMP واحد لكل الأسهم)
+    # None = فشل الجلب الجماعي: عندها لا نُسقط القيم السليمة السابقة من السجل بل نحملها
+    # كما هي (تُعاد بالجلب الناجح لاحقاً). أمّا الخريطة الفارغة {} فهي «نجاح بلا نتائج»
+    # (لا أرباح قادمة/لا بيانات حرة) وعندها نُحدّث فعلاً (تُمسح المواعيد المنتهية).
+    earnings_ok = earnings_map is not None
+    float_ok = float_map is not None
     for ticker in UNIVERSE:
         if time.monotonic() - start > time_budget:
             break  # انتهى الحدّ الزمني — نرجع، وضغطة أخرى تُكمل الباقي
@@ -1009,17 +1026,35 @@ def refresh_cache(time_budget=20):
             else:
                 record["rel_strength"] = None
 
-            # موعد الأرباح القادم (لو ضمن نافذة التنبيه) — تحذير من التذبذب المرتفع
-            ed = earnings_map.get(ticker)
+            # موعد الأرباح القادم (لو ضمن نافذة التنبيه) — تحذير من التذبذب المرتفع.
+            # عند نجاح الجلب (earnings_ok) نضبط الحقول من الجديد؛ الغياب هنا = لا موعد قادم.
+            ed = earnings_map.get(ticker) if earnings_ok else None
             if ed:
                 record["earnings_date"] = ed.isoformat()
                 record["days_to_earnings"] = (ed - today).days
 
             # الأسهم الحرة (float) — كلما قلّت زاد احتمال الحركة السريعة
-            fl = float_map.get(ticker)
+            fl = float_map.get(ticker) if float_ok else None
             if fl:
                 record["float_shares"] = fl.get("float_shares")
                 record["free_float_pct"] = fl.get("free_float_pct")
+
+            # عند فشل الجلب الجماعي (خريطة فارغة) نحمل القيم السليمة السابقة بدل مسحها.
+            if (not earnings_ok or not float_ok) and existing:
+                try:
+                    _old = json.loads(existing.data_json)
+                except (ValueError, TypeError):
+                    _old = {}
+                if not earnings_ok and _old.get("earnings_date"):
+                    record["earnings_date"] = _old["earnings_date"]
+                    try:
+                        record["days_to_earnings"] = (date_cls.fromisoformat(_old["earnings_date"]) - today).days
+                    except (ValueError, TypeError):
+                        record["days_to_earnings"] = _old.get("days_to_earnings")
+                if not float_ok:
+                    for _k in ("float_shares", "free_float_pct"):
+                        if _old.get(_k) is not None:
+                            record[_k] = _old[_k]
 
             row = existing
             payload = json.dumps(record, ensure_ascii=False)
@@ -1067,6 +1102,21 @@ def refresh_cache(time_budget=20):
             fmp_client.release_operation()  # يُعيد أي حجز غير مستهلَك (نجاح/تخطٍّ/فشل)
 
     return updated
+
+
+def universe_fresh_today():
+    """يُرجع مجموعة رموز UNIVERSE التي كاشها محدَّث فعلاً اليوم (بيانات طازجة).
+
+    يعتمد على وجود سجل ماسح بمفتاح screen:TICKER وتاريخ تحديثه = تاريخ اليوم (UTC).
+    يستعمله المجدول ليتأكّد من اكتمال التحديث الليلي لكل الأسهم (لا يكتفي بعدّاد الدفعات).
+    """
+    today = datetime.now(timezone.utc).date()
+    fresh = set()
+    for ticker in UNIVERSE:
+        rec = db.session.get(StockCache, _PREFIX + ticker)
+        if rec and rec.updated_at and rec.updated_at.date() == today:
+            fresh.add(ticker)
+    return fresh
 
 
 def recent_signals(limit=12):

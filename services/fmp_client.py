@@ -320,13 +320,15 @@ def get_earnings_calendar(from_date, to_date):
     """تقويم الأرباح القادمة لكل الأسهم ضمن نطاق تواريخ — طلب FMP واحد فقط.
 
     endpoint: /stable/earnings-calendar?from=YYYY-MM-DD&to=YYYY-MM-DD
-    يُرجع قائمة عناصر فيها symbol و date (نص YYYY-MM-DD)، أو None عند الفشل.
+    نُميّز الفشل عن النجاح-الفارغ صراحةً:
+    - فشل الجلب (شبكة/حصة/رد غير متوقع) → None (المتصل يُبقي القيم السابقة).
+    - نجاح الجلب → قائمة (قد تكون فارغة [] = لا أرباح في النطاق، وهي حالة سليمة).
     نستعمله لتنبيه المستخدم قبل موعد إعلان الأرباح (أعلى أوقات التذبذب خطراً).
     """
     data = _get("earnings-calendar", {"from": from_date, "to": to_date})
-    if not isinstance(data, list) or not data:
+    if not isinstance(data, list):  # None (فشل) أو رد غير متوقع = فشل
         return None
-    return data
+    return data  # قائمة (وقد تكون فارغة = نجاح بلا أرباح)
 
 
 def get_shares_float_all():
@@ -334,13 +336,16 @@ def get_shares_float_all():
 
     endpoint: /stable/shares-float-all
     كل عنصر فيه: symbol, floatShares (عدد الأسهم الحرة), freeFloat (نسبة مئوية),
-    outstandingShares (إجمالي الأسهم). يُرجع قائمة أو None عند الفشل.
+    outstandingShares (إجمالي الأسهم).
+    نُميّز الفشل عن النجاح-الفارغ صراحةً:
+    - فشل الجلب (شبكة/حصة/رد غير متوقع) → None (المتصل يُبقي القيم السابقة).
+    - نجاح الجلب → قائمة (قد تكون فارغة [] = لا بيانات، وهي حالة سليمة).
     الأسهم الحرة = المتاحة فعلاً للتداول (تُستبعد حصص المؤسسين/الإدارة المحجوزة).
     """
     data = _get("shares-float-all")
-    if not isinstance(data, list) or not data:
+    if not isinstance(data, list):  # None (فشل) أو رد غير متوقع = فشل
         return None
-    return data
+    return data  # قائمة (وقد تكون فارغة = نجاح بلا بيانات)
 
 
 def get_financials(ticker, years=2):
