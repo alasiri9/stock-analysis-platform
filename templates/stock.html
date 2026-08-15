@@ -146,14 +146,18 @@
         <div class="score-card">
           {{ gauge(report.piotroski.score, 9, '', 'lg', '', 'الجودة المالية (Piotroski): درجة من 0 إلى 9 تقيس صحة الشركة المالية (ربحيتها وديونها وكفاءتها). 8 أو 9 تُعتبر قوية.') }}
           <div class="cap">الجودة المالية</div>
-          {% if report.piotroski.score >= 8 %}<div class="badge-gem">💎 جوهرة</div>{% endif %}
-          {% if report.piotroski.computable < 9 %}
-            <div class="cap">أمكن حساب {{ report.piotroski.computable }} نقاط فقط</div>
+          {# الجوهرة = Piotroski ≥ 8 والنقاط التسع كلها قابلة للحساب (لا يستفيد التصنيف من نقص) #}
+          {% if report.piotroski.score >= 8 and (report.piotroski.computable is not defined or report.piotroski.computable >= 9) %}<div class="badge-gem">💎 جوهرة</div>{% endif %}
+          {% if report.piotroski.computable is defined and report.piotroski.computable < 9 %}
+            <div class="cap">أمكن حساب {{ report.piotroski.computable }} نقاط فقط (من 9)</div>
           {% endif %}
         </div>
         <div class="score-card">
-          {{ gauge(report.catalyst.score, 100, '', 'lg', '', 'النمو (Catalyst): درجة من 0 إلى 100 تقيس نمو الشركة (مبيعات وأرباح) وقوة ربحيتها (العائد والهوامش) معاً. 🟢 قوي 80+ · 🟡 متوسط 40–79 · 🔴 ضعيف أقل من 40.') }}
+          {{ gauge(report.catalyst.score, 100, '', 'lg', '', 'النمو (Catalyst): درجة من 0 إلى 100 تقيس نمو الشركة (مبيعات وأرباح) وقوة ربحيتها (العائد والهوامش) معاً. المكوّن الناقص يُحسب صفراً على الوزن الكامل فلا يرفع نقص البيانات الدرجة. 🟢 قوي 80+ · 🟡 متوسط 40–79 · 🔴 ضعيف أقل من 40.') }}
           <div class="cap">النمو</div>
+          {% if report.catalyst.complete is defined and report.catalyst.complete == false %}
+            <div class="cap" style="color:var(--gold)">درجة جزئية — بعض مكوّنات النمو غير متوفّرة</div>
+          {% endif %}
         </div>
       </div>
       {% if meter %}

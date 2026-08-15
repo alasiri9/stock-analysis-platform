@@ -105,6 +105,30 @@ def analysis_price(record):
     return ap if ap is not None else record.get("price")
 
 
+GEM_PIOTROSKI_MIN = 8  # حدّ «الجوهرة»: جودة مالية عالية (Piotroski ≥ 8 من 9) — تعريف موحّد
+
+
+def piotroski_computable(record):
+    """كم نقطة Piotroski أمكن حسابها (من 9). سجلّات قديمة بلا الحقل → 9 (توافق خلفي)."""
+    if not record:
+        return None
+    c = record.get("piotroski_computable")
+    return c if c is not None else 9
+
+
+def is_gem(record):
+    """تعريف «الجوهرة» الموحّد (مصدر واحد لكل الصفحات/الفلاتر/الشارات):
+
+    جودة مالية عالية = Piotroski ≥ 8، **بشرط أن تكون النقاط التسع كلها قابلة للحساب**
+    (لا يُحتسب 8/8 جوهرةً وكأنه 8/9 — تصنيف الجوهرة لا يستفيد من Piotroski ناقص).
+    سجلّات قديمة بلا piotroski_computable تُعامَل كمكتملة (9) للتوافق الخلفي.
+    """
+    if not record:
+        return False
+    p = record.get("piotroski")
+    return p is not None and p >= GEM_PIOTROSKI_MIN and piotroski_computable(record) >= 9
+
+
 def measures_met(record):
     """عدد المقاييس الإيجابية المجتمعة للسهم (تضافر الأدلة الصاعدة).
 
@@ -117,7 +141,7 @@ def measures_met(record):
         count += 1
     if record.get("rel_strength") is not None and record["rel_strength"] > 0:
         count += 1
-    if record.get("piotroski") is not None and record["piotroski"] >= 8:
+    if is_gem(record):  # جودة مالية عالية بتعريف موحّد (لا يستفيد من Piotroski ناقص)
         count += 1
     if record.get("catalyst") is not None and record["catalyst"] >= 80:
         count += 1
@@ -682,6 +706,7 @@ def _build_record(ticker):
         return None
 
     catalyst = scoring.catalyst_score(financials)
+    _pio = scoring.piotroski_score(financials)  # نحسبها مرة واحدة (score + computable)
 
     # مؤشرات فنية للكرت (جلب تاريخي إضافي؛ لا يكسر السجلّ لو فشل)
     # FMP يُرجع كل التاريخ المتاح (~5 سنوات) في طلب واحد؛ نأخذ آخر 250 يوماً لبقية المؤشرات
@@ -774,8 +799,10 @@ def _build_record(ticker):
         "analysis_price": _price,
         "change_percent": quote.get("change_percent") if quote else None,  # التغيّر اليومي %
         "market_cap": quote.get("market_cap") if quote else None,
-        "piotroski": scoring.piotroski_score(financials)["score"],
+        "piotroski": _pio["score"],
+        "piotroski_computable": _pio["computable"],  # كم نقطة أمكن حسابها (من 9) — للعرض والتصنيف
         "catalyst": catalyst["score"],
+        "catalyst_complete": catalyst.get("complete"),  # هل درجة النمو مكتملة أم جزئية
         "metrics": metrics,
         "indicators": tech,
         "money_flow": flow,
@@ -1519,7 +1546,10 @@ def filter_records(records, piotroski_min=None, catalyst_min=None,
     out = []
     for r in records:
         if piotroski_min is not None:
-            if r.get("piotroski") is None or r["piotroski"] < piotroski_min:
+            # نشترط أن تكون النقاط التسع كلها قابلة للحساب: «≥8» لا معنى له إن لم يكن المقام 9
+            # (8/8 ليست 8/9). يوحّد فلتر الجودة/الجواهر مع تعريف is_gem ويمنع Piotroski ناقصاً.
+            if (r.get("piotroski") is None or r["piotroski"] < piotroski_min
+                    or piotroski_computable(r) < 9):
                 continue
         if catalyst_min is not None:
             if r.get("catalyst") is None or r["catalyst"] < catalyst_min:

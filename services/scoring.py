@@ -186,9 +186,13 @@ def catalyst_score(financials):
     - هامش التشغيل         (15%) : 0→0% ، 100→25%
     - ROA                 (15%) : 0→0% ، 100→15%
 
-    None ≠ 0 : أي مكوّن بياناته ناقصة يُستبعد، ونعيد توزيع وزنه على المتوفّر.
-    يُرجع dict: {score, components:[{name, weight, points, detail}], computable_weight}.
-    score = None لو لا يمكن حساب أي مكوّن.
+    None ≠ 0 : أي مكوّن بياناته غير متوفّرة يُحسب صفراً على **الوزن الكامل** (لا يُعاد توزيع
+    وزنه) — فنقص البيانات يخفض الدرجة ولا يرفعها (يمنع أفضلية حسابية لنقص البيانات). القيمة 0
+    الفعلية تبقى بياناً صالحاً (تُحسب بوزنها). الأسهم كاملة البيانات لا تتغيّر درجتها إطلاقاً.
+    يُرجع dict: {score, components:[{name, weight, points, detail}], computable_weight, complete}.
+    - computable_weight: مجموع أوزان المكوّنات القابلة للحساب (شفافية جودة البيانات).
+    - complete: هل كل المكوّنات قابلة للحساب (درجة مكتملة الثقة) أم جزئية.
+    - score = None فقط لو لا يمكن حساب أي مكوّن إطلاقاً (لا نخترع صفراً من لا بيانات).
     """
     inc = financials.get("income") if financials else None
     bal = financials.get("balance") if financials else None
@@ -230,7 +234,9 @@ def catalyst_score(financials):
     components = []
     weighted_sum = 0.0
     computable_weight = 0.0
+    total_weight = 0.0  # مجموع كل الأوزان (المقام الثابت) — لا يتغيّر بنقص البيانات
     for name, weight, points, raw, kind in specs:
+        total_weight += weight
         if raw is not None:
             detail = f"{raw * 100:.1f}%"
         else:
@@ -240,11 +246,16 @@ def catalyst_score(financials):
             weighted_sum += weight * points
             computable_weight += weight
 
-    score = (weighted_sum / computable_weight) if computable_weight > 0 else None
+    # القسمة على الوزن الكامل (لا على المتوفّر): المكوّن الناقص يساهم بصفر بوزنه، فلا يرفع
+    # نقص البيانات الدرجة. المكتمل (computable_weight == total_weight) يعطي نفس الرقم السابق.
+    # None فقط عند غياب كل المكوّنات (لا نُنزل درجة صفر على سهم بلا أي بيانات).
+    score = (weighted_sum / total_weight) if computable_weight > 0 else None
+    complete = computable_weight >= total_weight - 1e-9
 
     return {
         "score": score,
         "computable_weight": computable_weight,
+        "complete": complete,
         "components": components,
     }
 

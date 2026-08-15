@@ -564,6 +564,8 @@ def create_app():
     app.jinja_env.globals["tech_tilt"] = screener.tech_tilt
     app.jinja_env.globals["current_price"] = screener.current_price      # السعر الحالي (حيّ إن توفّر)
     app.jinja_env.globals["analysis_price"] = screener.analysis_price    # سعر التحليل (أساس الخطة)
+    app.jinja_env.globals["is_gem"] = screener.is_gem                    # تعريف الجوهرة الموحّد
+    app.jinja_env.globals["piotroski_computable"] = screener.piotroski_computable  # مقام Piotroski (توافق خلفي)
     app.jinja_env.globals["UNIVERSE"] = screener.UNIVERSE  # لاقتراح الرموز في البحث
 
     @app.template_filter("ts_ago")
@@ -801,7 +803,7 @@ def create_app():
         # إحصائيات علوية (من كامل العيّنة، لا المُفلتر)
         stats = {
             "total": len(records),
-            "gems": sum(1 for r in records if r.get("piotroski") is not None and r["piotroski"] >= 8),
+            "gems": sum(1 for r in records if screener.is_gem(r)),  # تعريف موحّد
             "strong": sum(1 for r in records if r.get("catalyst") is not None and r["catalyst"] >= 80),
         }
         # عدّاد حيّ لكل فلتر سريع — بإعادة استخدام نفس دالة الفلترة (يطابق النتائج تماماً، بلا منطق جديد)
@@ -1463,7 +1465,7 @@ def create_app():
         records, latest = screener.load_records()
         stats = {
             "total": len(records),
-            "gems": sum(1 for r in records if r.get("piotroski") is not None and r["piotroski"] >= 8),
+            "gems": sum(1 for r in records if screener.is_gem(r)),  # تعريف موحّد
             "strong": sum(1 for r in records if r.get("catalyst") is not None and r["catalyst"] >= 80),
         }
         return render_template(
