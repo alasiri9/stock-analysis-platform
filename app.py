@@ -860,7 +860,8 @@ def create_app():
 
     @app.route("/leaders")
     def leaders():
-        # القادة المستقبليون = أعلى 10 أسهم حسب Catalyst (بيانات الماسح نفسها، ترتيب مختلف)
+        # قادة النمو = أعلى 10 أسهم حسب النمو (Catalyst) وحده — «الأسرع نمواً» (الاسم يطابق المنطق).
+        # الترتيب بالنمو فقط عرض مفيد؛ الجودة/التأكيد يظهران على كل بطاقة (لا يُقدَّم كقيادة شاملة).
         records, latest = screener.load_records()
         results = screener.filter_records(records)[:10]
         return render_template("leaders.html", results=results, latest=latest, total=len(records))

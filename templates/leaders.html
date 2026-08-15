@@ -1,18 +1,20 @@
 {% extends "base.html" %}
 {% set active = 'leaders' %}
-{% block title %}القادة المستقبليون — Algomatix{% endblock %}
+{% block title %}قادة النمو — Algomatix{% endblock %}
 
 {% block content %}
   <section class="panel">
     <div class="panel-head">
-      <h2>🚀 <span class="brand-ink">القادة المستقبليون</span>
-        <span class="help-q" data-tip="معايير الترشيح: أعلى 10 أسهم حسب درجة النمو (Catalyst) من أصل 32 سهماً مفحوصاً، وعند التساوي يُرجّح الأعلى في الجودة المالية (Piotroski). الفكرة: الأسرع نمواً مرشّحة لقيادة السوق مستقبلاً. ترتيب نسبي داخل عيّنة المنصة — تعليمي، ليس تنبؤاً ولا توصية.">👁</span>
+      <h2>🚀 <span class="brand-ink">قادة النمو</span> <span class="muted" style="font-size:.6em;font-weight:600">(الأسرع نمواً)</span>
+        <span class="help-q" data-tip="الترتيب هنا بدرجة النمو (Catalyst) وحدها: أعلى 10 أسهم نمواً من أصل 32 مفحوصاً، وعند التساوي يُرجّح الأعلى جودةً مالية (Piotroski). النمو وحده ليس قوة شاملة — راجع الجودة المالية وقوة التأكيد الفني والميل على كل بطاقة قبل أي حكم. ترتيب نسبي داخل عيّنة المنصة — تعليمي، ليس تنبؤاً ولا توصية.">👁</span>
       </h2>
     </div>
 
+    <div class="note" style="margin-bottom:12px">📈 مرتّبة بدرجة <b>النمو (Catalyst)</b> وحدها — «الأسرع نمواً». النمو القوي لا يعني قوة شاملة؛ قد يكون سهم عالي النمو ضعيفَ الجودة المالية أو التأكيد الفني. راجع الجودة وقوة التأكيد على كل بطاقة.</div>
+
     <div class="confidence" style="margin-bottom:14px">
       {% if latest %}
-        أعلى <b>{{ results|length }}</b> من أصل <b>{{ total }}</b> سهم مفحوص · آخر تحديث <span dir="ltr">{{ latest | ksa_time }}</span> بتوقيت السعودية
+        أعلى <b>{{ results|length }}</b> نمواً من أصل <b>{{ total }}</b> سهم مفحوص · آخر تحديث <span dir="ltr">{{ latest | ksa_time }}</span> بتوقيت السعودية
       {% else %}
         لا توجد بيانات بعد — حدّث الماسح من الرئيسية أولاً.
       {% endif %}
