@@ -135,6 +135,13 @@ def measures_met(record):
     يعدّ: كل شارة فنية حالتها صاعدة (حتى 12) + سيولة داخلة + أقوى من السوق
     + جودة مالية عالية (Piotroski≥8) + نمو قوي (Catalyst≥80). الأقصى ~16.
     كلما زاد العدد، زاد تضافر المقاييس الإيجابية على السهم.
+
+    ⚠️ ملاحظة تصميمية (بند معايرة مستقبلية): هذا عدّاد تضافر مسطّح، وبعض عوامله مترابطة
+    جزئياً (مثل RSI≥70 المشروط بالحجم + شارة الحجم؛ وتجمّع مؤشرات الاتجاه EMA/تقاطع/سوبرترند/
+    ADX) فقد تُحتسب ظاهرة واحدة عبر أكثر من نقطة. العوامل ليست مستقلّة تماماً. لم يُزَل هذا
+    التداخل هنا عمداً لأن إزالته تُغيّر توزيع الـ/16 وعتبة «قوي ≥10» وتستلزم إعادة معايرة
+    واسعة — فيُترك كمخاطرة معروفة مقبولة مؤقتاً (بخلاف Algomatix Score الذي يُمتوسِط المترابطات
+    في مدارس متمايزة بلا ازدواج). أي إعادة معايرة تُعالَج كبند مستقل لاحقاً.
     """
     count = sum(1 for b in (record.get("indicators") or []) if b.get("status") == "bull")
     if (record.get("money_flow") or {}).get("status") == "bull":
@@ -450,7 +457,12 @@ def _status_val(status):
 
 
 def _algx_subscores(record):
-    """درجة كل مدرسة (0..1). القيم الغائبة تُعامل محايدةً (0.5) فلا تُخفّض ظلماً."""
+    """درجة كل مدرسة (0..1). القيم الغائبة تُعامل محايدةً (0.5) فلا تُخفّض ولا تُرفع ظلماً.
+
+    مبدأ المقام الثابت: داخل المدارس متعدّدة المكوّنات (الجودة/الاتجاه/الزخم/السيولة) المكوّن
+    المفقود يُحسب 0.5 (حياد) ولا يُحذف من المقام — فلا يمنح نقص البيانات أفضلية حسابية. القيمة
+    0/bear الفعلية تبقى قيمة حقيقية. الفريم اليومي مستبعَد من مدرسة الفريمات (له مدرسة هيكل
+    مستقلّة) فلا يُحتسب المصدر نفسه مرتين. (لا مؤشر واحد يظهر في مدرستين.)"""
     inds = {b.get("label"): b for b in (record.get("indicators") or [])}
 
     # 🧭 هيكل السوق
@@ -466,32 +478,27 @@ def _algx_subscores(record):
     else:
         s_structure = 0.42 if ms.get("trend") == "side" else 0.5
 
-    # 🏦 الجودة والنمو
-    fund = []
-    if record.get("piotroski") is not None:
-        fund.append(min(1.0, record["piotroski"] / 9.0))
-    if record.get("catalyst") is not None:
-        fund.append(min(1.0, record["catalyst"] / 100.0))
-    s_fund = sum(fund) / len(fund) if fund else 0.5
+    # 🏦 الجودة والنمو — مكوّنان ثابتان (Piotroski · Catalyst)؛ المكوّن المفقود = 0.5 (حياد)
+    # ولا يُحذف من المقام، فلا يرفع نقص أحدهما الدرجة (المقام يبقى 2). القيمة 0 الفعلية تبقى.
+    _fp = min(1.0, record["piotroski"] / 9.0) if record.get("piotroski") is not None else 0.5
+    _fc = min(1.0, record["catalyst"] / 100.0) if record.get("catalyst") is not None else 0.5
+    s_fund = (_fp + _fc) / 2.0
 
-    # 📈 الاتجاه
-    tr = [_status_val(inds[k]["status"]) for k in ("EMA", "تقاطع", "سوبرترند", "ADX") if k in inds]
-    s_trend = sum(tr) / len(tr) if tr else 0.5
+    # 📈 الاتجاه — أربعة مكوّنات ثابتة؛ المفقود = 0.5 (لا يُعاد توزيع وزنه؛ المقام يبقى 4)
+    tr = [_status_val(inds[k]["status"]) if k in inds else 0.5
+          for k in ("EMA", "تقاطع", "سوبرترند", "ADX")]
+    s_trend = sum(tr) / len(tr)
 
-    # ⚡ الزخم
-    mo = [_status_val(inds[k]["status"]) for k in ("MACD", "RSI") if k in inds]
-    s_mom = sum(mo) / len(mo) if mo else 0.5
+    # ⚡ الزخم — مكوّنان ثابتان (MACD · RSI)؛ المفقود = 0.5 (المقام يبقى 2)
+    mo = [_status_val(inds[k]["status"]) if k in inds else 0.5 for k in ("MACD", "RSI")]
+    s_mom = sum(mo) / len(mo)
 
-    # 💧 السيولة
-    liq = []
-    if record.get("money_flow"):
-        liq.append(_status_val(record["money_flow"].get("status")))
-    if "تراكم" in inds:
-        liq.append(_status_val(inds["تراكم"]["status"]))
-    vp = record.get("volume_profile")
-    if vp:
-        liq.append({"above": 0.70, "at": 0.55}.get(vp.get("position"), 0.30))
-    s_liq = sum(liq) / len(liq) if liq else 0.5
+    # 💧 السيولة — ثلاثة مكوّنات ثابتة (تدفق الأموال · تراكم/OBV · البروفايل الحجمي)؛ المفقود = 0.5
+    _lmf = _status_val(record["money_flow"].get("status")) if record.get("money_flow") else 0.5
+    _lobv = _status_val(inds["تراكم"]["status"]) if "تراكم" in inds else 0.5
+    _vp = record.get("volume_profile")
+    _lvp = {"above": 0.70, "at": 0.55}.get(_vp.get("position"), 0.30) if _vp else 0.5
+    s_liq = (_lmf + _lobv + _lvp) / 3.0
 
     # 📐 المستويات
     s_lev = 0.5
@@ -510,15 +517,17 @@ def _algx_subscores(record):
     rv = record.get("reversal")
     s_pa = 0.5 if not rv else (0.9 if rv.get("status") == "bull" else 0.1 if rv.get("status") == "bear" else 0.5)
 
-    # ⏱️ الفريمات الثلاثة (توافق يومي/أسبوعي/شهري)
+    # ⏱️ الفريمات — نستبعد الفريم اليومي من الدرجة: هيكله اليومي له مدرسة structure مستقلّة،
+    # فلا يؤثّر المصدر نفسه (daily structure) مرتين في Algomatix Score. نعتمد الأسبوعي والشهري
+    # (المستقلّين فعلاً): up=1 · side/na=0.5 · down=0، ثم المتوسط (نفس عرف الحياد، بلا عتبات
+    # جديدة). يبقى record["frames"] كما هو (daily/up_count/strength) للعرض وشارة الفريمات الثلاثة.
     frm = record.get("frames")
     if not frm:
         s_frames = 0.5
     else:
-        ups = frm.get("up_count", 0)
-        downs = frm.get("down_count", 0)
-        s_frames = {3: 1.0, 2: 0.72, 1: 0.5, 0: 0.35}.get(ups, 0.5)
-        s_frames = max(0.0, min(1.0, s_frames - 0.08 * downs))
+        def _fv(t):
+            return 1.0 if t == "up" else (0.0 if t == "down" else 0.5)
+        s_frames = (_fv(frm.get("weekly")) + _fv(frm.get("monthly"))) / 2.0
 
     return {
         "structure": s_structure, "fundamentals": s_fund, "trend": s_trend,

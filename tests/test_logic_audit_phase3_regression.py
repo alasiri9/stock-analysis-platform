@@ -112,19 +112,19 @@ def test_leaders_ranking_still_by_growth():
 
 # ==================== #8 قفل تصميم Algomatix (بلا ازدواج) ====================
 def _sub(record, key):
-    bd = screener.algomatix_score(record)["breakdown"]
-    return next(x["sub"] for x in bd if x["key"] == key)
+    # القيم الخام غير المدوّرة (breakdown يدوّر لخانتين)
+    return screener._algx_subscores(record)[key]
 
 
 def test_algomatix_trend_school_averages_not_sums():
-    print("\n[#8] مدرسة الاتجاه تُمتوسِط مؤشراتها (لا تُحسب أربع مرات):")
+    print("\n[#8] مدرسة الاتجاه: متوسط بمقام ثابت (لا جمع، والمفقود محايد لا متضخّم):")
     r4 = {"indicators": [{"label": k, "status": "bull"}
                          for k in ("EMA", "تقاطع", "سوبرترند", "ADX")]}
     check(abs(_sub(r4, "trend") - 1.0) < 1e-9,
-          "4 مؤشرات اتجاه صاعدة → درجة المدرسة 1.0 (متوسط لا مجموع)")
+          "4 مؤشرات اتجاه صاعدة → 1.0 (سقف، لا مجموع 4)")
     r1 = {"indicators": [{"label": "EMA", "status": "bull"}]}
-    check(abs(_sub(r1, "trend") - 1.0) < 1e-9,
-          "مؤشر اتجاه واحد صاعد → 1.0 (نفس السقف — لا مضاعفة بعدد المؤشرات)")
+    check(abs(_sub(r1, "trend") - 0.625) < 1e-9,
+          "EMA صاعد + 3 مفقودة → 0.625 (المفقود = 0.5، لا يتضخّم إلى 1.0)")
 
 
 def test_algomatix_fundamentals_averaged_once():
@@ -145,11 +145,13 @@ def test_algomatix_missing_data_no_advantage():
 
 
 def test_algomatix_high2_adx_respected():
-    print("\n[#8/HIGH#2] ADX الهابط القوي لا يرفع مدرسة الاتجاه:")
+    print("\n[#8/HIGH#2] ADX صاعد يرفع الاتجاه والهابط يخفضه (البقية محايدة):")
     up = {"indicators": [{"label": "ADX", "status": "bull"}]}
     down = {"indicators": [{"label": "ADX", "status": "bear"}]}
-    check(_sub(up, "trend") == 1.0, "ADX صاعد → مدرسة الاتجاه 1.0")
-    check(_sub(down, "trend") == 0.0, "ADX هابط (bear) → مدرسة الاتجاه 0.0 (لا يُحتسب صاعداً)")
+    su, sd = _sub(up, "trend"), _sub(down, "trend")
+    check(abs(su - 0.625) < 1e-9, "ADX صاعد + 3 محايدة → 0.625")
+    check(abs(sd - 0.375) < 1e-9, "ADX هابط + 3 محايدة → 0.375 (لا يُحتسب صاعداً)")
+    check(su > sd, "ADX صاعد > ADX هابط (اتجاه ADX محترم — HIGH#2)")
 
 
 def main():
