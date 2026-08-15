@@ -82,6 +82,29 @@ def bullish_reasons(record):
     return _bullish_strategies(record)
 
 
+def current_price(record):
+    """السعر الحالي للعرض: الحيّ (live_price) إن توفّر، وإلا سعر التحليل (price).
+
+    يُستعمَل في كل عرض «السعر الحالي» (البطاقات، المحفظة، المتابعة، المقارنة، التنبيهات).
+    سجلّات قديمة بلا live_price ترجع لسعر التحليل تلقائياً (توافق خلفي).
+    """
+    if not record:
+        return None
+    lp = record.get("live_price")
+    return lp if lp is not None else record.get("price")
+
+
+def analysis_price(record):
+    """سعر التحليل: الذي بُنيت عليه الخطة/المستويات/المؤشرات — ثابت لا يتغيّر لحظياً.
+
+    سجلّات قديمة بلا analysis_price ترجع لـprice (توافق خلفي).
+    """
+    if not record:
+        return None
+    ap = record.get("analysis_price")
+    return ap if ap is not None else record.get("price")
+
+
 def measures_met(record):
     """عدد المقاييس الإيجابية المجتمعة للسهم (تضافر الأدلة الصاعدة).
 
@@ -546,7 +569,7 @@ def early_launch_candidates(records=None, min_strategies=3):
             "ticker": r.get("ticker"),
             "name": r.get("name"),
             "sector": r.get("sector"),
-            "price": r.get("price"),
+            "price": current_price(r),  # السعر الحالي للعرض (الحيّ إن توفّر)
             "catalyst": r.get("catalyst"),
             "piotroski": r.get("piotroski"),
             "recent_gain": rg,
@@ -744,7 +767,11 @@ def _build_record(ticker):
         "_complete": _complete,
         "name": (quote.get("name") if quote else None) or (profile.get("name") if profile else None),
         "sector": profile.get("sector") if profile else None,
-        "price": quote.get("price") if quote else None,
+        # سعر التحليل: السعر الذي بُنيت عليه الخطة والمستويات والمؤشرات (atr_plan/break/مقاومة).
+        # يبقى ثابتاً لا يُستبدَل بالتحديث اللحظي (نُحدّث live_price منفصلاً) — فلا تختلط قيم من
+        # توقيتين. price == analysis_price عند البناء (سجلّات قديمة بلا analysis_price تُعامَل بـprice).
+        "price": _price,
+        "analysis_price": _price,
         "change_percent": quote.get("change_percent") if quote else None,  # التغيّر اليومي %
         "market_cap": quote.get("market_cap") if quote else None,
         "piotroski": scoring.piotroski_score(financials)["score"],
@@ -897,7 +924,7 @@ def check_price_alerts():
     if not alerts:
         return 0
     records, _ = load_records()
-    price_by = {r["ticker"]: r.get("price") for r in records}
+    price_by = {r["ticker"]: current_price(r) for r in records}  # السعر الحالي (حيّ إن توفّر)
     fired = 0
     now = datetime.now(timezone.utc)
     for a in alerts:
@@ -1134,7 +1161,7 @@ def signals_performance():
     """
     sigs = Signal.query.order_by(Signal.triggered_at.desc()).all()
     records, _ = load_records()
-    price_by_ticker = {r["ticker"]: r.get("price") for r in records}
+    price_by_ticker = {r["ticker"]: current_price(r) for r in records}  # السعر الحالي (حيّ إن توفّر)
     name_by_ticker = {r["ticker"]: r.get("name") for r in records}
 
     # أسعار مؤشر السوق (SPY) من الكاش — لمقارنة كل إشارة بأداء السوق عن نفس الفترة
@@ -1271,7 +1298,7 @@ def launched_stocks(limit=6):
     # ثم نُبقي أحدث إشارة فقط لكل سهم حتى تظهر لوحة "انطلقت" بأسهم متنوّعة لا مكرّرة.
     sigs = Signal.query.order_by(Signal.triggered_at.desc()).limit(limit * 4).all()
     records, _ = load_records()
-    price_by_ticker = {r["ticker"]: r.get("price") for r in records}
+    price_by_ticker = {r["ticker"]: current_price(r) for r in records}  # السعر الحالي (حيّ إن توفّر)
     name_by_ticker = {r["ticker"]: r.get("name") for r in records}
     sector_by_ticker = {r["ticker"]: r.get("sector") for r in records}
 
@@ -1332,11 +1359,12 @@ def launched_stocks(limit=6):
 def refresh_prices_intraday():
     """تحديث «شبه لايف» خفيف للسعر الحالي فقط — من Finnhub /quote المجاني.
 
-    يحدّث حقلَي price و change_percent (ووسم price_live_at) لكل أسهم UNIVERSE دون
-    إعادة التحليل الثقيل (الفريمات/الدرجات/التاريخ تبقى من التحديث الليلي). كل سهم =
-    طلب واحد؛ 32 طلباً < حد Finnhub المجاني 60/دقيقة. لا يمسّ updated_at (يبقى وقت
-    التحليل الليلي). None ≠ 0: لو Finnhub لم يُرجع سعراً نُبقي القديم.
-    يُرجع عدد الأسهم التي حُدّث سعرها.
+    يكتب السعر الحيّ في حقل مستقل live_price (ووسم price_live_at) ولا يمسّ سعر التحليل
+    (price/analysis_price) الذي بُنيت عليه الخطة والمستويات والمؤشرات — فلا تختلط قيم من
+    توقيتين في سجل واحد. لا يُعيد التحليل الثقيل (الفريمات/الدرجات/التاريخ من التحديث الليلي).
+    كل سهم = طلب واحد؛ 32 طلباً < حد Finnhub المجاني 60/دقيقة (لا يمسّ حصّة FMP). لا يمسّ
+    updated_at (يبقى وقت التحليل). None ≠ 0: لو Finnhub لم يُرجع سعراً نُبقي القديم.
+    يُرجع عدد الأسهم التي حُدّث سعرها الحيّ.
     """
     updated = 0
     now = datetime.now(timezone.utc)
@@ -1354,9 +1382,10 @@ def refresh_prices_intraday():
             record = json.loads(row.data_json)
         except (ValueError, TypeError):
             continue
-        record["price"] = q["price"]
+        # السعر الحيّ في حقل مستقل — لا نستبدل price/analysis_price (أساس الخطة والمستويات).
+        record["live_price"] = q["price"]
         if q.get("change_percent") is not None:
-            record["change_percent"] = q["change_percent"]
+            record["change_percent"] = q["change_percent"]  # التغيّر اليومي % (عرضيّ، حيّ)
         record["price_live_at"] = now.isoformat()   # وسم آخر تحديث سعر «شبه لايف»
         row.data_json = json.dumps(record, ensure_ascii=False)
         updated += 1
@@ -1496,7 +1525,8 @@ def filter_records(records, piotroski_min=None, catalyst_min=None,
             if r.get("catalyst") is None or r["catalyst"] < catalyst_min:
                 continue
         if price_max is not None:
-            if r.get("price") is None or r["price"] > price_max:
+            _cp = current_price(r)
+            if _cp is None or _cp > price_max:
                 continue
         if market_cap_min is not None:
             if r.get("market_cap") is None or r["market_cap"] < market_cap_min:

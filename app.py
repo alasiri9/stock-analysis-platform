@@ -562,6 +562,8 @@ def create_app():
     app.jinja_env.globals["measures_met"] = screener.measures_met
     app.jinja_env.globals["bullish_reasons"] = screener.bullish_reasons
     app.jinja_env.globals["tech_tilt"] = screener.tech_tilt
+    app.jinja_env.globals["current_price"] = screener.current_price      # السعر الحالي (حيّ إن توفّر)
+    app.jinja_env.globals["analysis_price"] = screener.analysis_price    # سعر التحليل (أساس الخطة)
     app.jinja_env.globals["UNIVERSE"] = screener.UNIVERSE  # لاقتراح الرموز في البحث
 
     @app.template_filter("ts_ago")
@@ -773,7 +775,7 @@ def create_app():
         if sort == "growth":
             results.sort(key=lambda r: (r.get("catalyst") is not None, r.get("catalyst") or 0), reverse=True)
         elif sort == "price":
-            results.sort(key=lambda r: (r.get("price") is None, r.get("price") or 0))
+            results.sort(key=lambda r: (screener.current_price(r) is None, screener.current_price(r) or 0))
         else:  # confidence — عدد المقاييس المجتمعة
             sort = "confidence"
             results.sort(key=lambda r: screener.measures_met(r), reverse=True)
@@ -1099,7 +1101,7 @@ def create_app():
         # لوحة شخصية تجمع بيانات المستخدم الحالي في مكان واحد (من الكاش، بلا API)
         uid = current_user_id()
         records, _ = screener.load_records()
-        price_by = {r["ticker"]: r.get("price") for r in records}
+        price_by = {r["ticker"]: screener.current_price(r) for r in records}  # السعر الحالي
 
         # المحفظة — ملخص سريع
         holdings = PortfolioHolding.query.filter_by(user_id=uid).all()
@@ -1280,7 +1282,7 @@ def create_app():
             "ticker": r.get("ticker"),
             "name": r.get("name"),
             "sector": sector_ar(r.get("sector")),
-            "price": r.get("price"),
+            "price": screener.current_price(r),  # السعر الحالي (حيّ إن توفّر)
             "change": r.get("change_percent"),
             "piotroski": r.get("piotroski"),
             "catalyst": r.get("catalyst"),
@@ -1745,7 +1747,7 @@ def create_app():
             r = _screen_by.get(t)
             if r:
                 return _finalize({
-                    "ticker": t, "name": r.get("name"), "price": r.get("price"),
+                    "ticker": t, "name": r.get("name"), "price": screener.current_price(r),
                     "change_percent": r.get("change_percent"),
                     "metrics": {**_NULL_METRICS, **(r.get("metrics") or {})},
                     "piotroski": {"score": r.get("piotroski")},
@@ -1771,7 +1773,7 @@ def create_app():
         items = Watchlist.query.filter_by(user_id=current_user_id()).order_by(Watchlist.added_at.desc()).all()
         # السعر الحالي من كاش الماسح أولاً (فوري وبلا استهلاك حصة) — نفس نهج المحفظة
         records, _ = screener.load_records()
-        cache_prices = {r["ticker"]: r.get("price") for r in records}
+        cache_prices = {r["ticker"]: screener.current_price(r) for r in records}  # السعر الحالي
         sector_by = {r["ticker"]: r.get("sector") for r in records}
         rows = []
         for item in items:
@@ -1823,7 +1825,7 @@ def create_app():
             PriceAlert.active.desc(), PriceAlert.created_at.desc()).all()
         # السعر الحالي من كاش الماسح (فوري وبلا استهلاك حصة)
         records, _ = screener.load_records()
-        cache_prices = {r["ticker"]: r.get("price") for r in records}
+        cache_prices = {r["ticker"]: screener.current_price(r) for r in records}  # السعر الحالي
         rows = [{
             "id": a.id, "ticker": a.ticker, "direction": a.direction,
             "target_price": a.target_price, "active": a.active,
@@ -1905,7 +1907,7 @@ def create_app():
             .order_by(PortfolioHolding.added_at.desc()).all()
         )
         records, _ = screener.load_records()
-        cache_prices = {r["ticker"]: r.get("price") for r in records}
+        cache_prices = {r["ticker"]: screener.current_price(r) for r in records}  # السعر الحالي
         atr_by = {r["ticker"]: r.get("atr") for r in records}
         sector_by = {r["ticker"]: r.get("sector") for r in records}
 

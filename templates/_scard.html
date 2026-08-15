@@ -12,7 +12,7 @@
     <div class="scard-top">
       {% if is_gem %}<span class="badge-gem">💎 جوهرة</span>{% endif %}
       <span class="scard-ticker"{% if triple_up_tickers is defined and r.ticker in triple_up_tickers %} style="color:var(--green)"{% endif %}>{{ r.ticker }}</span>
-      <span class="scard-price" dir="ltr">{{ "%.2f $"|format(r.price) if r.price is not none else '—' }}</span>
+      <span class="scard-price" dir="ltr">{% set _cp = current_price(r) %}{{ "%.2f $"|format(_cp) if _cp is not none else '—' }}</span>
       {% set chp = r.get('change_percent') %}
       {% if chp is not none %}
         <span class="scard-chg {{ 'up' if chp >= 0 else 'down' }}" dir="ltr">{{ '▲' if chp >= 0 else '▼' }} {{ "%.1f"|format(chp) }}%</span>

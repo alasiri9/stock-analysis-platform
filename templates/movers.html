@@ -9,7 +9,7 @@
       <span class="mover-ticker">{{ r.ticker }}</span>
       {% if r.sector %}<span class="mover-sector">🏷️ {{ r.sector | sector_ar }}</span>{% endif %}
     </span>
-    <span class="mover-price" dir="ltr">{{ "%.2f $"|format(r.price) if r.price is not none else '—' }}</span>
+    <span class="mover-price" dir="ltr">{% set _cp = current_price(r) %}{{ "%.2f $"|format(_cp) if _cp is not none else '—' }}</span>
     <span class="mover-chg {{ 'up' if chp >= 0 else 'down' }}" dir="ltr">{{ '▲' if chp >= 0 else '▼' }} {{ "%.2f"|format(chp) }}%</span>
   </a>
 {% endmacro %}

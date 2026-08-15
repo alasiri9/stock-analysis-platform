@@ -339,7 +339,10 @@ def build_stock_report(ticker):
         "name": (profile.get("name") if profile else None) or (quote.get("name") if quote else None),
         "sector": profile.get("sector") if profile else None,
         "industry": profile.get("industry") if profile else None,
-        "price": price,                                       # دولار
+        "price": price,                                       # دولار (سعر التحليل عند البناء)
+        # سعر التحليل: الأساس الذي حُسبت عليه خطة ATR والمستويات. يبقى ثابتاً حتى لو عُرض
+        # سعر لحظي أحدث في الترويسة (مشترك بمفتاح حيّ) — فتُفهَم الخطة على أساسها الصحيح.
+        "analysis_price": price,
         "change": quote.get("change") if quote else None,    # دولار
         "change_percent": quote.get("change_percent") if quote else None,  # % جاهزة
         "market_cap": (quote.get("market_cap") if quote else None) or (profile.get("market_cap") if profile else None),
