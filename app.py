@@ -1403,9 +1403,18 @@ def create_app():
                 "frames": r.get("frames"),             # قوة الفريمات (يومي/أسبوعي/شهري)
             })
 
-        # الترتيب: الأجود أولاً — درجة Algomatix الموزونة، ثم الاستراتيجيات المتحققة، ثم مجموع النقاط.
+        # الترتيب حسب قوة هيكل السوق أولاً (يطابق اسم الصفحة): نستعمل درجة مدرسة «هيكل السوق»
+        # الموجودة أصلاً ضمن مؤشر Algomatix (0..1، محسوبة بحتاً من BOS/CHOCH/إعادة الاختبار/
+        # الاتجاه) — بلا اختراع معادلة أو threshold جديد. كاسرات التعادل الموجودة: الدرجة الموزونة
+        # ثم الاستراتيجيات المتحققة ثم مجموع نقاطها.
+        def _structure_sub(item):
+            return next((b["sub"] for b in item["algx"]["breakdown"]
+                         if b["key"] == "structure"), 0.5)
+        for x in items:
+            x["struct_sub"] = _structure_sub(x)
         items.sort(key=lambda x: (
-            x["algx"]["score"],
+            x["struct_sub"],                              # قوة هيكل السوق (مقياس هيكلي موجود)
+            x["algx"]["score"],                           # كاسر تعادل موجود: الدرجة الموزونة
             x["plan"]["met_count"] if x["plan"] else 0,
             x["plan"]["total"] if x["plan"] else 0,
         ), reverse=True)
