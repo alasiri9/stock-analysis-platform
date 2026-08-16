@@ -159,6 +159,42 @@ def _confidence(record):
     return "high"
 
 
+def _build_gate_tristate(record):
+    """يقيّم بوابة «بداية البناء الصاعد» (WATCH→FORMING) بدلالة ثلاثية: 'true'/'false'/'unknown'.
+
+    مصادر OR (حقول موجودة فقط، بلا شرط جديد):
+      - structure: هيكل صاعد (trend=up) أو BOS صاعد   → مصدره record["structure"]
+      - squeeze_breakout (إشارة انضغاط)               → مصدره record["squeeze_breakout"]
+      - break_status: بداية اختراق (breakout غير مؤكّد) → مصدره record["break_status"]
+    منطق OR ثلاثي: أي مسار TRUE ⇒ true؛ وإلا أي مسار UNKNOWN (مصدره None/غائب) ⇒ unknown؛
+    وإلا (كلها معروفة False) ⇒ false. (المجهول لا يتحوّل إلى False.)
+    """
+    st = record.get("structure") if record else None
+    sq = record.get("squeeze_breakout") if record else None
+    brk = record.get("break_status") if record else None
+
+    members = []  # كل عنصر: True / False / None(unknown)
+    # structure يغطّي مساري «هيكل صاعد» و«BOS صاعد» (نفس المصدر)
+    if st is None:
+        members.append(None)
+    else:
+        members.append(bool(st.get("trend") == "up"
+                            or (st.get("event") == "BOS" and st.get("event_dir") == "up")))
+    # إشارة الانضغاط
+    members.append(None if sq is None else bool(sq))
+    # بداية اختراق غير مؤكّد
+    if brk is None:
+        members.append(None)
+    else:
+        members.append(bool(brk.get("dir") == "breakout" and not brk.get("confirmed")))
+
+    if any(m is True for m in members):
+        return "true"
+    if any(m is None for m in members):
+        return "unknown"
+    return "false"
+
+
 def conditions_for_next_state(record, code):
     """(قائمة الشروط، العدد) اللازمة فعلاً للوصول إلى next_state المعروض لهذه الحالة — لا قائمة عامة
     بكل بوابات READY. مركزي في محرّك الحالة (لا يُكرَّر في القوالب)، ويعيد استخدام نفس predicates التصنيف.
@@ -186,12 +222,18 @@ def conditions_for_next_state(record, code):
 
     if code == "WATCH":
         # → FORMING = (ميل غير سلبي) AND (بناء صاعد: هيكل صاعد أو BOS أو انضغاط أو بداية اختراق)
+        # بوابة الميل (ثلاثية: مفقود=مجهول، سلبي=غير متحقّق معروف)
         if not s["tilt_present"]:
             out.append("بيانات المؤشرات الفنية غير متوفّرة"); unknown = True
         elif s["tilt_negative"]:
             out.append("يحتاج الميل الفني للعودة إلى محايد أو إيجابي")
-        if not (s["struct_up"] or s["bos_up"] or s["squeeze_on"] or s["brk_forming"]):
+        # بوابة البناء الصاعد بدلالة ثلاثية (المجهول ≠ غير متحقّق)
+        gate = _build_gate_tristate(record)
+        if gate == "false":
             out.append("بداية بناء صاعد (هيكل صاعد أو انضغاط أو بداية اختراق)")
+        elif gate == "unknown":
+            out.append("بيانات بناء الاتجاه غير مكتملة"); unknown = True
+        # gate == "true" ⇒ متحقّق، لا يُضاف
 
     elif code == "FORMING":
         # → NEAR_READY: المسار القابل للتحقّق يحتاج تأكيداً فنياً بنيوياً فقط

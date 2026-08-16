@@ -98,9 +98,11 @@ def test_watch_next_forming_not_ready_gates():
 
 
 def test_or_paths_not_summed():
-    print("\n[6] مسارات OR لا تُجمع كأنها AND (بوابة البناء = شرط واحد):")
-    # ميل إيجابي لكن بلا أي إشارة بناء (لا هيكل صاعد/BOS/انضغاط/بداية اختراق) ⇒ WATCH
-    rec = {"ticker": "W6", "catalyst": 50, "indicators": _tilt("pos1")}
+    print("\n[6] مسارات OR لا تُجمع كأنها AND (بوابة البناء المعروفة False = شرط واحد):")
+    # ميل إيجابي + كل مصادر البناء موجودة ومعروفة False (لا هيكل صاعد/BOS/انضغاط/بداية اختراق) ⇒ WATCH
+    rec = {"ticker": "W6", "catalyst": 50, "indicators": _tilt("pos1"),
+           "structure": {"trend": "side", "event": None}, "squeeze_breakout": False,
+           "break_status": {"dir": "range", "confirmed": False}}
     check(classify_setup(rec) == "WATCH", "التصنيف WATCH")
     st = stock_state(rec)
     check(st["missing_conditions_count"] == 1, "بوابة البناء (OR من أربعة) = شرط واحد لا أربعة")
