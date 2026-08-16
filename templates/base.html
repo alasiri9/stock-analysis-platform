@@ -66,6 +66,23 @@
       </div>
     </aside>
     <main class="content">
+      {# ختم «آخر تحديث للصفحة»: يُضبط بلحظة تحميل الصفحة (يتحدّث تلقائياً مع كل فتح/F5/تحديث
+         بيانات — محصّن ضد كاش المتصفح لأنه يقرأ ساعة الجهاز عند كل تحميل). بتوقيت السعودية
+         (UTC+3، بلا توقيت صيفي) مطابقةً لفلتر ksa_time. #}
+      <div class="page-updated" style="text-align:center;font-size:12px;color:#9aa4b2;margin:2px 0 12px;opacity:.92">
+        🕐 آخر تحديث للصفحة: <b id="pageStamp" dir="ltr">—</b> <span style="opacity:.8">بتوقيت السعودية</span>
+      </div>
+      <script>
+        (function () {
+          var el = document.getElementById('pageStamp');
+          if (!el) return;
+          var k = new Date(Date.now() + 3 * 3600000); // السعودية = UTC+3 (بلا توقيت صيفي)
+          function p(n) { return (n < 10 ? '0' : '') + n; }
+          var H = k.getUTCHours(), ap = H < 12 ? 'ص' : 'م', h = H % 12 || 12;
+          el.textContent = k.getUTCFullYear() + '-' + p(k.getUTCMonth() + 1) + '-' + p(k.getUTCDate())
+            + ' ' + p(h) + ':' + p(k.getUTCMinutes()) + ':' + p(k.getUTCSeconds()) + ' ' + ap;
+        })();
+      </script>
       {% block content %}{% endblock %}
     </main>
   </div>
