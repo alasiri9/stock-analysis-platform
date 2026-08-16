@@ -721,9 +721,18 @@ def _build_record(ticker):
     # FMP يُرجع كل التاريخ المتاح (~5 سنوات) في طلب واحد؛ نأخذ آخر 250 يوماً لبقية المؤشرات
     # (كما كان) ونمرّر التاريخ الكامل للفريمات الثلاثة (يحتاجه الشهري للقمم والقيعان) — بلا طلب إضافي.
     full_candles = None  # يبقى None لو فشل جلب التاريخ (فشل/قاطع FMP) — إشارة «تحليل ناقص» أدناه
+    # جلسة التحليل EOD (PHASE 5): تاريخ وإغلاق أحدث شمعة يومية فعلية (candles newest-first).
+    # analysis_date/analysis_close مرساة الأداء التاريخي Close-to-Close — منفصلان عن analysis_price
+    # (سعر الاقتباس الذي تراه المنصة/الخطة). يبقيان None لو فشل جلب التاريخ (لا حدث أداء بلا أساس موثوق).
+    analysis_date = None
+    analysis_close = None
     try:
         full_candles = fmp_client.get_historical_prices(ticker, limit=5000)
         candles = full_candles[:250] if full_candles else None
+        if candles:
+            _c0 = candles[0]  # أحدث جلسة (الترتيب newest-first)
+            analysis_date = (_c0.get("date") or "")[:10] or None
+            analysis_close = _c0.get("close")
         tech = indicators.build_indicators(candles)
         flow = indicators.money_flow(candles)  # تدفق السيولة — من نفس الشموع، بلا استدعاء إضافي
         reversal = indicators.reversal_pattern(candles)  # شمعة انعكاس على آخر جلسة (تنبيه معرفي)
@@ -806,6 +815,8 @@ def _build_record(ticker):
         # توقيتين. price == analysis_price عند البناء (سجلّات قديمة بلا analysis_price تُعامَل بـprice).
         "price": _price,
         "analysis_price": _price,
+        "analysis_date": analysis_date,    # PHASE 5: جلسة EOD المرساة (candles[0].date) — للأداء التاريخي
+        "analysis_close": analysis_close,  # PHASE 5: إغلاق EOD (candles[0].close) = أساس الأداء Close-to-Close
         "change_percent": quote.get("change_percent") if quote else None,  # التغيّر اليومي %
         "market_cap": quote.get("market_cap") if quote else None,
         "piotroski": _pio["score"],

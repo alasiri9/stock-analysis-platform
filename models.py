@@ -259,3 +259,97 @@ class Signal(db.Model):
 
     def __repr__(self):
         return f"<Signal {self.ticker} {self.signal_type}>"
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# PHASE 5 — تتبّع تطوّر الفرصة عبر الزمن (State / Change / Events / Performance)
+# جداول جديدة فقط (تُنشأ تلقائياً عبر create_all — بلا ALTER لجداول قائمة، بلا Alembic).
+# ═══════════════════════════════════════════════════════════════════════════
+
+
+class StockSnapshot(db.Model):
+    """لقطة تاريخية مختصرة لسهم بعد كل تحديث ليلي مكتمل — أساس «ماذا تغيّر اليوم؟».
+
+    مفتاح أساسي مركّب (ticker, snap_date): لقطة واحدة لكل سهم في كل يوم (UPSERT عبر merge).
+    نخزّن قيماً مفردة مختصرة فقط (لا blob كامل من StockCache). القيم الغائبة تبقى NULL (None ≠ 0).
+    """
+
+    __tablename__ = "stock_snapshot"
+
+    ticker = db.Column(db.String(16), primary_key=True)
+    snap_date = db.Column(db.Date, primary_key=True)
+    analysis_price = db.Column(db.Float, nullable=True)
+    catalyst = db.Column(db.Float, nullable=True)
+    catalyst_complete = db.Column(db.Boolean, nullable=True)
+    piotroski = db.Column(db.Integer, nullable=True)
+    piotroski_computable = db.Column(db.Integer, nullable=True)
+    measures_met = db.Column(db.Integer, nullable=True)
+    tech_tilt_kind = db.Column(db.String(8), nullable=True)   # pos2/pos1/neu/neg1/neg2
+    algomatix_score = db.Column(db.Float, nullable=True)
+    structure_status = db.Column(db.String(8), nullable=True)  # bull/bear/neutral
+    state_code = db.Column(db.String(20), nullable=True)       # الحالة المُحلّة (واعية بدورة الحياة)
+    is_gem = db.Column(db.Boolean, nullable=True)
+    is_ready = db.Column(db.Boolean, nullable=True)
+    extra_json = db.Column(db.Text, nullable=True)             # محجوز للتوافق المستقبلي (بلا ALTER لاحقاً)
+
+    def __repr__(self):
+        return f"<StockSnapshot {self.ticker} {self.snap_date} {self.state_code}>"
+
+
+class StockStateEvent(db.Model):
+    """حدث انتقال حالة قابل للتتبّع (READY / LAUNCHED / INVALIDATED) — قائم على الانتقال.
+
+    قاعدة عدم التكرار على مستوى القاعدة: UNIQUE(ticker, lifecycle_id, state_code) — حدث واحد
+    لكل حالة داخل كل دورة حياة. lifecycle_id = 1 + عدد أحداث INVALIDATED السابقة للسهم.
+    baseline_date/performance_baseline_price هما أساس حساب الأداء (Close-to-Close، مجمّدان).
+    analysis_price للتدقيق فقط (السعر الذي رآه النظام لحظة الإشارة). live_price لا يمسّها أبداً.
+    """
+
+    __tablename__ = "stock_state_event"
+
+    id = db.Column(db.Integer, primary_key=True)
+    ticker = db.Column(db.String(16), nullable=False, index=True)
+    lifecycle_id = db.Column(db.Integer, nullable=False)
+    state_code = db.Column(db.String(20), nullable=False)
+    prev_state = db.Column(db.String(20), nullable=True)
+    created_at = db.Column(db.DateTime(timezone=True), nullable=False, default=_utcnow)  # لحظة الاكتشاف
+    event_date = db.Column(db.Date, nullable=True)          # تاريخ الإنشاء (توثيق فقط)
+    baseline_date = db.Column(db.Date, nullable=True)       # جلسة EOD للتحليل (مرساة الآفاق)
+    analysis_price = db.Column(db.Float, nullable=True)     # السعر الذي رآه النظام (تدقيق فقط)
+    performance_baseline_price = db.Column(db.Float, nullable=True)  # إغلاق EOD = أساس الأداء الوحيد
+    algomatix_score = db.Column(db.Float, nullable=True)
+    catalyst = db.Column(db.Float, nullable=True)
+    piotroski = db.Column(db.Integer, nullable=True)
+    measures_met = db.Column(db.Integer, nullable=True)
+    tech_tilt_kind = db.Column(db.String(8), nullable=True)
+    structure_status = db.Column(db.String(8), nullable=True)
+    stop = db.Column(db.Float, nullable=True)
+    target = db.Column(db.Float, nullable=True)
+
+    __table_args__ = (
+        db.UniqueConstraint("ticker", "lifecycle_id", "state_code", name="uq_event_ticker_lid_state"),
+    )
+
+    def __repr__(self):
+        return f"<StockStateEvent {self.ticker} lc{self.lifecycle_id} {self.state_code}>"
+
+
+class StockStateOutcome(db.Model):
+    """نتيجة أداء حدث عند أفق زمني (1/5/10/20 جلسة تداول) — Close-to-Close من PricePoint.
+
+    مفتاح أساسي مركّب (event_id, horizon_days): نتيجة واحدة لكل أفق لكل حدث (UPSERT عبر merge).
+    القيم تبقى None (pending) حتى تنضج الجلسة المطلوبة — pending ليست Fail. لا live_price إطلاقاً.
+    """
+
+    __tablename__ = "stock_state_outcome"
+
+    event_id = db.Column(db.Integer, primary_key=True)
+    horizon_days = db.Column(db.Integer, primary_key=True)   # 1 / 5 / 10 / 20 (جلسات تداول)
+    exit_date = db.Column(db.Date, nullable=True)
+    close_price = db.Column(db.Float, nullable=True)
+    return_pct = db.Column(db.Float, nullable=True)          # (exit - performance_baseline)/baseline ×100
+    spy_return_pct = db.Column(db.Float, nullable=True)      # نفس الأفق، Close-to-Close
+    alpha_pct = db.Column(db.Float, nullable=True)           # return_pct - spy_return_pct (مستقل عن النجاح)
+
+    def __repr__(self):
+        return f"<StockStateOutcome ev{self.event_id} {self.horizon_days}d>"
