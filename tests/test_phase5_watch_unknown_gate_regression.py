@@ -139,7 +139,8 @@ def test_template_none_vs_known():
     unk["state"] = stock_state(unk)
     # FORMING known ⇒ count 1
     kn = {"ticker": "T2", "name": "T", "catalyst": 79, "piotroski": 6,
-          "indicators": _tilt("pos1"), "structure": {"trend": "up"}}
+          "indicators": _tilt("pos1"), "structure": {"trend": "up"},
+          "break_status": {"dir": "range", "confirmed": False}}
     kn["state"] = stock_state(kn)
     with app.test_request_context("/"):
         h_unk = app.jinja_env.get_template("_scard.html").render(r=unk, rank=1)

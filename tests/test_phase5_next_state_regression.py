@@ -49,7 +49,9 @@ def _tilt(kind):
 
 def test_forming_next_is_one_technical():
     print("\n[1] FORMING (catalyst=79, ميل إيجابي, هيكل صاعد, بلا تأكيد) → NEAR_READY، شرط واحد:")
-    rec = {"ticker": "F1", "catalyst": 79, "indicators": _tilt("pos1"), "structure": {"trend": "up"}}
+    # بيانات التأكيد الفني كاملة ومعروفة False (structure ليس retest/BOS، break_status ليس اختراقاً مؤكّداً)
+    rec = {"ticker": "F1", "catalyst": 79, "indicators": _tilt("pos1"), "structure": {"trend": "up"},
+           "break_status": {"dir": "range", "confirmed": False}}
     check(classify_setup(rec) == "FORMING", "التصنيف FORMING")
     st = stock_state(rec)
     check(st["next_state"] == "NEAR_READY", "next_state = NEAR_READY")
@@ -120,7 +122,8 @@ def test_unknown_in_required_path_count_none():
 def test_template_number_matches():
     print("\n[8] القالب: الرقم الظاهر = conditions_for_next_state:")
     rec = {"ticker": "T8", "name": "T", "catalyst": 79, "piotroski": 6,
-           "indicators": _tilt("pos1"), "structure": {"trend": "up"}}
+           "indicators": _tilt("pos1"), "structure": {"trend": "up"},
+           "break_status": {"dir": "range", "confirmed": False}}
     _, count = conditions_for_next_state(rec, classify_setup(rec))
     rec["state"] = stock_state(rec)
     with app.test_request_context("/"):

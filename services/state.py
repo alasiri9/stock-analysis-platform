@@ -195,6 +195,37 @@ def _build_gate_tristate(record):
     return "false"
 
 
+def _confirmation_gate_tristate(record):
+    """يقيّم بوابة التأكيد الفني (FORMING→NEAR_READY) بدلالة ثلاثية: 'true'/'false'/'unknown'.
+
+    مسارات OR (حقول موجودة فقط): brk_up_confirmed (مصدره break_status) ·
+    retest_ok / bos_up (مصدرهما structure). المصدر الغائب None ⇒ ذلك المسار UNKNOWN.
+    منطق OR ثلاثي: أي مسار TRUE ⇒ true؛ وإلا أي مسار UNKNOWN ⇒ unknown؛ وإلا (كلها False) ⇒ false.
+    (المجهول لا يتحوّل إلى False.)
+    """
+    st = record.get("structure") if record else None
+    brk = record.get("break_status") if record else None
+
+    members = []  # كل عنصر: True / False / None(unknown)
+    # structure يغطّي retest_ok و bos_up (نفس المصدر)
+    if st is None:
+        members.append(None)
+    else:
+        members.append(bool(st.get("retest_state") == "confirmed"
+                            or (st.get("event") == "BOS" and st.get("event_dir") == "up")))
+    # break_status يغطّي brk_up_confirmed
+    if brk is None:
+        members.append(None)
+    else:
+        members.append(bool(brk.get("confirmed") and brk.get("dir") == "breakout"))
+
+    if any(m is True for m in members):
+        return "true"
+    if any(m is None for m in members):
+        return "unknown"
+    return "false"
+
+
 def conditions_for_next_state(record, code):
     """(قائمة الشروط، العدد) اللازمة فعلاً للوصول إلى next_state المعروض لهذه الحالة — لا قائمة عامة
     بكل بوابات READY. مركزي في محرّك الحالة (لا يُكرَّر في القوالب)، ويعيد استخدام نفس predicates التصنيف.
@@ -236,11 +267,14 @@ def conditions_for_next_state(record, code):
         # gate == "true" ⇒ متحقّق، لا يُضاف
 
     elif code == "FORMING":
-        # → NEAR_READY: المسار القابل للتحقّق يحتاج تأكيداً فنياً بنيوياً فقط
-        # (إعادة اختبار مؤكّدة أو BOS صاعد؛ الاختراق المؤكّد بحجم ينقل مباشرةً إلى «منطلق»).
+        # → NEAR_READY: يحتاج تأكيداً فنياً (بدلالة ثلاثية — المجهول ≠ غير متحقّق).
         # Catalyst دون العتبة/مجهول جزء من تعريف NEAR_READY نفسه على هذا المسار ⇒ ليس حاجزاً.
-        if not (s["retest_ok"] or s["bos_up"]):
+        gate = _confirmation_gate_tristate(record)
+        if gate == "false":
             out.append("تأكيد فني بنيوي (إعادة اختبار مؤكّدة أو BOS صاعد)")
+        elif gate == "unknown":
+            out.append("بيانات التأكيد الفني غير مكتملة"); unknown = True
+        # gate == "true" ⇒ متحقّق، لا يُضاف
 
     elif code == "NEAR_READY":
         # → READY = catalyst≥80 AND الميل غير سلبي. نحسب فقط البوابة غير المتحققة فعلاً.

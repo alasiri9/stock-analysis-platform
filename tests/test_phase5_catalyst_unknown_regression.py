@@ -89,7 +89,7 @@ def test_forming_catalyst_not_a_barrier():
     print("\n[FORMING→NEAR_READY] Catalyst ليس بوابة (لا يظهر مهما كان None/<80):")
     for cat in (None, 79):
         rec = {"ticker": "FRM", "catalyst": cat, "indicators": _tilt("pos1"),
-               "structure": {"trend": "up"}}
+               "structure": {"trend": "up"}, "break_status": {"dir": "range", "confirmed": False}}
         check(classify_setup(rec) == "FORMING", f"التصنيف FORMING (catalyst={cat})")
         st = stock_state(rec)
         check(_BELOW not in st["missing_conditions"] and _UNAVAIL not in st["missing_conditions"],
