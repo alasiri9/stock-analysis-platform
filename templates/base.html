@@ -8,7 +8,7 @@
   <link rel="apple-touch-icon" href="{{ url_for('static', filename='icon-192.png') }}">
   <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
   <meta name="theme-color" content="#0d1830">
-  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=20260816a">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=20260816b">
 </head>
 <body>
   <div class="layout">
@@ -37,6 +37,7 @@
         <a href="{{ url_for('flow_page') }}" class="{{ 'active' if active=='flow' else '' }}"><span class="ic">📡</span> التدفق الذكي<span class="nav-eye" data-tip="ترتيب الأسهم حسب تدفّق السيولة — أين تدخل الأموال وأين تخرج.">👁</span></a>
         <a href="{{ url_for('radar_page') }}" class="{{ 'active' if active=='radar' else '' }}"><span class="ic">🎯</span> رادار المحفزات<span class="nav-eye" data-tip="معاملات المطّلعين (شراء/بيع كبار المسؤولين لأسهم شركتهم) من هيئة SEC.">👁</span></a>
         <div class="nav-group">نظرة السوق</div>
+        <a href="{{ url_for('changes') }}" class="{{ 'active' if active=='changes' else '' }}"><span class="ic">🔄</span> ماذا تغيّر اليوم؟<span class="nav-eye" data-tip="مقارنة آخر لقطتين لكل سهم: ما الذي تحسّن أو تراجع (نمو/جودة/تأكيد/ميل/هيكل/حالة). تغيّر السعر وحده لا يُحتسب تحسّناً.">👁</span></a>
         <a href="{{ url_for('daily_report') }}" class="{{ 'active' if active=='daily_report' else '' }}"><span class="ic">📅</span> التقرير اليومي<span class="nav-eye" data-tip="ملخّص يومي: حالة السوق، أقوى الأسهم، وأحدث الإشارات.">👁</span></a>
         <a href="{{ url_for('movers') }}" class="{{ 'active' if active=='movers' else '' }}"><span class="ic">📊</span> الرابحون والخاسرون<span class="nav-eye" data-tip="أعلى 5 ارتفاعاً وأعلى 5 انخفاضاً اليوم من أسهم المنصة.">👁</span></a>
         <a href="{{ url_for('pulse') }}" class="{{ 'active' if active=='pulse' else '' }}"><span class="ic">💓</span> نبض السوق<span class="nav-eye" data-tip="نسبة الأسهم الصاعدة عبر الأيام — اتجاه السوق (يتحسّن/يضعف) كرسم بياني.">👁</span></a>
@@ -52,6 +53,7 @@
         <a href="{{ url_for('calculator') }}" class="{{ 'active' if active=='calculator' else '' }}"><span class="ic">🧮</span> حاسبة المخاطرة<span class="nav-eye" data-tip="احسب عدد الأسهم المناسب حسب رأس مالك ونسبة المخاطرة والدخول/الوقف.">👁</span></a>
         <a href="{{ url_for('news_page') }}" class="{{ 'active' if active=='news' else '' }}"><span class="ic">📰</span> أخبار السوق<span class="nav-eye" data-tip="آخر أخبار السوق الأمريكي العامة من Finnhub.">👁</span></a>
         <a href="{{ url_for('performance') }}" class="{{ 'active' if active=='performance' else '' }}"><span class="ic">📈</span> اختبار الأداء<span class="nav-eye" data-tip="اختبار أداء كل إشارة منذ صدورها: نسبة نجاح كل نوع ومتوسط عائده — الأنجح أولاً. تعليمي لا توصية.">👁</span></a>
+        <a href="{{ url_for('signal_performance') }}" class="{{ 'active' if active=='signal_performance' else '' }}"><span class="ic">📊</span> أداء الإشارات<span class="nav-eye" data-tip="أداء أحداث الحالة (جاهز/منطلق) عبر آفاق جلسات التداول (1/5/10/20) — نسبة النجاح والعائد وalpha مقابل السوق. Close-to-Close بلا API.">👁</span></a>
         <div class="nav-group">النظام</div>
         <a href="{{ url_for('messages') }}" class="{{ 'active' if active=='messages' else '' }}"><span class="ic">📨</span> الرسائل<span class="msg-badge" id="msg-badge" style="display:none"></span><span class="nav-eye" data-tip="صندوق رسائل المدير — تجد فيه ما أغلقته أو فاتك من الرسائل.">👁</span></a>
         <a href="{{ url_for('learn') }}" class="{{ 'active' if active=='learn' else '' }}"><span class="ic">📚</span> تعلّم<span class="nav-eye" data-tip="شرح أقسام وتفاصيل المنصة.">👁</span></a>

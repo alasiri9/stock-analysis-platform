@@ -568,6 +568,15 @@ def create_app():
     app.jinja_env.globals["piotroski_computable"] = screener.piotroski_computable  # مقام Piotroski (توافق خلفي)
     app.jinja_env.globals["UNIVERSE"] = screener.UNIVERSE  # لاقتراح الرموز في البحث
 
+    # PHASE 5: حالة السهم محسوبة مركزياً ومخزّنة في record["state"] (القوالب تقرأها بلا إعادة حساب).
+    from services import state as _state_engine
+    app.jinja_env.globals["STATE_LABELS"] = _state_engine.STATE_LABELS
+
+    @app.template_filter("state_label")
+    def state_label(code):
+        """يعرّب رمز الحالة (WATCH/READY/...) — مصدر التسمية الوحيد services.state.STATE_LABELS."""
+        return _state_engine.STATE_LABELS.get(code, code or "—")
+
     @app.template_filter("ts_ago")
     def ts_ago(unix_ts):
         """يحوّل طابع unix الزمني لصيغة نسبية عربية (قبل ساعتين...). None ≠ 0."""
@@ -1561,6 +1570,21 @@ def create_app():
             "performance.html", rows=rows, overall=overall, type_stats=type_stats,
             mature_days=screener.MATURE_MIN_DAYS, min_type_sample=screener.MIN_TYPE_SAMPLE,
         )
+
+    @app.route("/changes")
+    def changes():
+        # PHASE 5: «ماذا تغيّر اليوم؟» — مقارنة آخر لقطتين لكل سهم (من stock_snapshot، بلا API).
+        from services import tracking
+        items, counters = tracking.latest_changes()
+        _, latest = screener.load_records()
+        return render_template("changes.html", items=items, counters=counters, latest=latest)
+
+    @app.route("/signal-performance")
+    def signal_performance():
+        # PHASE 5: «أداء الإشارات» — أداء أحداث الحالة (READY/LAUNCHED) عبر آفاق جلسات التداول.
+        from services import tracking
+        summary = tracking.performance_summary()
+        return render_template("signal_performance.html", summary=summary)
 
     @app.route("/screener/refresh", methods=["POST"])
     def screener_refresh():

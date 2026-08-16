@@ -11,6 +11,7 @@
   <div class="scard-info">
     <div class="scard-top">
       {% if gem %}<span class="badge-gem">💎 جوهرة</span>{% endif %}
+      {% if r.state and r.state.code and r.state.code != 'WATCH' %}<span class="state-pill s-{{ r.state.code }}"{% if r.state.missing_conditions_count %} title="ينقصه {{ r.state.missing_conditions_count }} شرط للانتقال إلى {{ r.state.next_state_label }}"{% endif %}>{{ r.state.label }}</span>{% endif %}
       <span class="scard-ticker"{% if triple_up_tickers is defined and r.ticker in triple_up_tickers %} style="color:var(--green)"{% endif %}>{{ r.ticker }}</span>
       <span class="scard-price" dir="ltr">{% set _cp = current_price(r) %}{{ "%.2f $"|format(_cp) if _cp is not none else '—' }}</span>
       {% set chp = r.get('change_percent') %}
@@ -94,6 +95,9 @@
     {% set reasons = bullish_reasons(r) %}
     {% if reasons %}
       <div class="scard-why">💡 {{ reasons[:3] | join(' + ') }} <span class="help-q" data-tip="سبب الترشّح: أقوى 3 عوامل جعلت الماسح يرشّح هذا السهم. لمحة عن نقاط قوته.">👁</span></div>
+    {% endif %}
+    {% if r.state and r.state.missing_conditions_count and r.state.code in ['NEAR_READY', 'FORMING'] %}
+      <div class="scard-why" style="color:var(--gold)">⏳ ينقصه {{ r.state.missing_conditions_count }} شرط → {{ r.state.next_state_label }} <span class="help-q" data-tip="الشروط المتبقية للانتقال للمرحلة التالية (من محرّك الحالة نفسه): {{ r.state.missing_conditions | join('؛ ') }}. تعليمي لا توصية.">👁</span></div>
     {% endif %}
   </div>
 

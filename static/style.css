@@ -746,6 +746,15 @@ table.framed-table th, table.framed-table td {
   align-self: center; margin-top: 7px;
 }
 
+/* ---------- شارة حالة السهم (PHASE 5 State Engine) ---------- */
+.state-pill { font-size: 11px; font-weight: 800; padding: 2px 8px; border-radius: 20px;
+  border: 1px solid var(--border); white-space: nowrap; line-height: 1.5; }
+.state-pill.s-READY { color: var(--gold); border-color: rgba(245,196,81,.6); background: rgba(245,196,81,.12); }
+.state-pill.s-LAUNCHED, .state-pill.s-EXTENDED { color: var(--green); border-color: rgba(34,197,94,.5); background: rgba(34,197,94,.10); }
+.state-pill.s-NEAR_READY, .state-pill.s-FORMING { color: #a7c0e8; border-color: rgba(124,111,230,.5); background: rgba(124,111,230,.12); }
+.state-pill.s-LOSING_MOMENTUM { color: var(--gold); border-color: rgba(245,196,81,.45); background: rgba(245,196,81,.08); }
+.state-pill.s-INVALIDATED { color: var(--red); border-color: rgba(239,68,68,.5); background: rgba(239,68,68,.10); }
+
 /* ---------- مقابل السوق (SPY benchmark) ---------- */
 .stat-box.beat-box { border-color: rgba(245,196,81,.45); background: rgba(245,196,81,.08); }
 

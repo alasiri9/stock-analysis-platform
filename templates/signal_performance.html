@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% set active = 'signal_performance' %}
+{% block title %}أداء الإشارات — Algomatix{% endblock %}
+
+{% block content %}
+  <section class="panel">
+    <div class="panel-head">
+      <h2>📊 <span class="brand-ink">أداء الإشارات</span>
+        <span class="help-q" data-tip="أداء أحداث الحالة (جاهز/منطلق) عبر آفاق جلسات التداول (1/5/10/20). النجاح الأساسي لكل أفق = العائد موجب. التفوّق على السوق (SPY) مقياس مستقل منفصل. يُحسب Close-to-Close من الأسعار التاريخية بلا استدعاء API. تعليمي لا توصية.">👁</span>
+      </h2>
+    </div>
+
+    <div class="confidence" style="margin-bottom:14px">
+      أحداث مسجّلة: <b>جاهز {{ summary.ready_count }}</b> · <b>منطلق {{ summary.launched_count }}</b>
+      · فقد السيناريو {{ summary.invalidated_count }} · الإجمالي {{ summary.total_events }}
+    </div>
+
+    {% if not summary.has_mature %}
+      <div class="note">⏳ البيانات التاريخية ما زالت تتجمع — تظهر نسب النجاح والعوائد بعد نضج الآفاق (1/5/10/20 جلسة تداول بعد كل إشارة). لا نعرض نسباً وهمية قبل توفّر بيانات كافية.</div>
+    {% else %}
+      <div style="overflow-x:auto">
+        <table class="insider" style="min-width:640px;text-align:center">
+          <thead>
+            <tr>
+              <th>الأفق (جلسات تداول)</th>
+              <th>عدد الإشارات الناضجة</th>
+              <th>نسبة النجاح<br><span class="muted" style="font-size:11px">(عائد موجب)</span></th>
+              <th>متوسط العائد %</th>
+              <th>متوسط alpha مقابل SPY %<br><span class="muted" style="font-size:11px">(مقياس مستقل)</span></th>
+              <th>الأفضل %</th>
+              <th>الأسوأ %</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for h in [1, 5, 10, 20] %}
+              {% set st = summary.horizons.get(h) %}
+              <tr>
+                <td dir="ltr" style="font-weight:800">{{ h }}D</td>
+                {% if st %}
+                  <td>{{ st.n }}</td>
+                  <td style="font-weight:800;color:{{ 'var(--green)' if st.win_rate >= 50 else 'var(--red)' }}">{{ "%.0f"|format(st.win_rate) }}%</td>
+                  <td dir="ltr" style="color:{{ 'var(--green)' if st.avg >= 0 else 'var(--red)' }}">{{ "%+.1f"|format(st.avg) }}</td>
+                  <td dir="ltr">{% if st.avg_alpha is not none %}<span style="color:{{ 'var(--green)' if st.avg_alpha >= 0 else 'var(--red)' }}">{{ "%+.1f"|format(st.avg_alpha) }}</span>{% else %}<span class="muted">—</span>{% endif %}</td>
+                  <td dir="ltr" style="color:var(--green)">{{ "%+.1f"|format(st.best) }}</td>
+                  <td dir="ltr" style="color:var(--red)">{{ "%+.1f"|format(st.worst) }}</td>
+                {% else %}
+                  <td colspan="6" class="muted">لا توجد إشارات ناضجة بعد لهذا الأفق (pending)</td>
+                {% endif %}
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <div class="muted" style="font-size:11.5px;margin-top:10px">النجاح الأساسي = العائد موجب لكل أفق. التفوّق على SPY (alpha) مقياس مستقل ولا يدخل تعريف النجاح. الأساس سعر إغلاق EOD لجلسة التحليل (Close-to-Close)، لا السعر اللحظي.</div>
+    {% endif %}
+  </section>
+{% endblock %}
