@@ -77,10 +77,10 @@
           var el = document.getElementById('pageStamp');
           if (!el) return;
           var k = new Date(Date.now() + 3 * 3600000); // السعودية = UTC+3 (بلا توقيت صيفي)
-          function p(n) { return (n < 10 ? '0' : '') + n; }
           var H = k.getUTCHours(), ap = H < 12 ? 'ص' : 'م', h = H % 12 || 12;
-          el.textContent = k.getUTCFullYear() + '-' + p(k.getUTCMonth() + 1) + '-' + p(k.getUTCDate())
-            + ' ' + p(h) + ':' + p(k.getUTCMinutes()) + ':' + p(k.getUTCSeconds()) + ' ' + ap;
+          // بلا أصفار بادئة (9 لا 09)؛ التاريخ قبل الوقت؛ ‎ علامة يسار→يمين لتثبيت الترتيب
+          el.textContent = '‎' + k.getUTCFullYear() + '-' + (k.getUTCMonth() + 1) + '-' + k.getUTCDate()
+            + '  ' + h + ':' + k.getUTCMinutes() + ':' + k.getUTCSeconds() + ' ' + ap;
         })();
       </script>
       {% block content %}{% endblock %}
