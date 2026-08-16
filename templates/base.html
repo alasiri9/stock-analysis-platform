@@ -80,7 +80,7 @@
           var H = k.getUTCHours(), ap = H < 12 ? 'ص' : 'م', h = H % 12 || 12;
           // بلا أصفار بادئة (9 لا 09)؛ التاريخ قبل الوقت؛ ‎ علامة يسار→يمين لتثبيت الترتيب
           el.textContent = '‎' + k.getUTCFullYear() + '-' + (k.getUTCMonth() + 1) + '-' + k.getUTCDate()
-            + '  ' + h + ':' + k.getUTCMinutes() + ':' + k.getUTCSeconds() + ' ' + ap;
+            + ' - ' + h + ':' + k.getUTCMinutes() + ':' + k.getUTCSeconds() + ' ' + ap;
         })();
       </script>
       {% block content %}{% endblock %}
