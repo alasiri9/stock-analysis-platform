@@ -70,17 +70,17 @@
          بيانات — محصّن ضد كاش المتصفح لأنه يقرأ ساعة الجهاز عند كل تحميل). بتوقيت السعودية
          (UTC+3، بلا توقيت صيفي) مطابقةً لفلتر ksa_time. #}
       <div class="page-updated" style="text-align:right;margin:2px 0 14px">
-        <span style="display:inline-block;font-size:12px;padding:6px 14px;border-radius:999px;color:#e8edf6;background:linear-gradient(90deg,rgba(34,197,94,.10),rgba(124,111,230,.18));border:1px solid rgba(124,111,230,.5);box-shadow:0 0 13px 1px rgba(124,111,230,.22)">🕐 آخر تحديث للصفحة: <b id="pageStamp" dir="ltr" style="direction:ltr;unicode-bidi:isolate-override;display:inline-block;color:var(--gold,#f5c451);font-weight:800">—</b> <span style="opacity:.85">بتوقيت السعودية</span></span>
+        <span style="display:inline-block;font-size:12px;padding:6px 14px;border-radius:999px;color:#e8edf6;background:linear-gradient(90deg,rgba(34,197,94,.10),rgba(124,111,230,.18));border:1px solid rgba(124,111,230,.5);box-shadow:0 0 13px 1px rgba(124,111,230,.22)">🕐 آخر تحديث للصفحة: <b id="psDate" dir="ltr" style="unicode-bidi:isolate;color:var(--gold,#f5c451);font-weight:800">—</b> <span style="opacity:.7;font-weight:700">-</span> <b id="psTime" dir="ltr" style="unicode-bidi:isolate;color:var(--gold,#f5c451);font-weight:800">—</b> <span style="opacity:.85">بتوقيت السعودية</span></span>
       </div>
       <script>
         (function () {
-          var el = document.getElementById('pageStamp');
-          if (!el) return;
+          var d = document.getElementById('psDate'), t = document.getElementById('psTime');
+          if (!d || !t) return;
           var k = new Date(Date.now() + 3 * 3600000); // السعودية = UTC+3 (بلا توقيت صيفي)
           var H = k.getUTCHours(), ap = H < 12 ? 'ص' : 'م', h = H % 12 || 12;
-          // بلا أصفار بادئة (9 لا 09)؛ التاريخ قبل الوقت؛ ‎ علامة يسار→يمين لتثبيت الترتيب
-          el.textContent = '‎' + k.getUTCFullYear() + '-' + (k.getUTCMonth() + 1) + '-' + k.getUTCDate()
-            + ' - ' + h + ':' + k.getUTCMinutes() + ':' + k.getUTCSeconds() + ' ' + ap;
+          // كل جزء معزول LTR (أرقامه لا تنقلب)، ويتدفّقان مع اتجاه الصفحة RTL فيُقرأ التاريخ أولاً ثم الوقت. بلا أصفار بادئة.
+          d.textContent = k.getUTCFullYear() + '-' + (k.getUTCMonth() + 1) + '-' + k.getUTCDate();
+          t.textContent = h + ':' + k.getUTCMinutes() + ':' + k.getUTCSeconds() + ' ' + ap;
         })();
       </script>
       {% block content %}{% endblock %}
