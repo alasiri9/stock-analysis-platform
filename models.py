@@ -343,7 +343,11 @@ class StockStateOutcome(db.Model):
 
     __tablename__ = "stock_state_outcome"
 
-    event_id = db.Column(db.Integer, primary_key=True)
+    # مفتاح خارجي حقيقي على حدث موجود، مع حذف تعاقبي: حذف الحدث يحذف نتائجه (لا نتائج يتيمة).
+    # (جدول جديد لم يُنشر بعد ⇒ يُعرَّف ضمن create_all بلا ALTER/migration على الإنتاج.)
+    event_id = db.Column(db.Integer,
+                         db.ForeignKey("stock_state_event.id", ondelete="CASCADE"),
+                         primary_key=True)
     horizon_days = db.Column(db.Integer, primary_key=True)   # 1 / 5 / 10 / 20 (جلسات تداول)
     exit_date = db.Column(db.Date, nullable=True)
     close_price = db.Column(db.Float, nullable=True)

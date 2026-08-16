@@ -21,7 +21,7 @@ from datetime import date, datetime
 from sqlalchemy.exc import IntegrityError
 
 from services import screener
-from services.state import stock_state, TRACKED_EVENT_STATES
+from services.state import stock_state, TRACKED_EVENT_STATES, PERFORMANCE_EVENT_TYPES
 from models import (db, StockCache, StockSnapshot, StockStateEvent, StockStateOutcome,
                     PricePoint)
 
@@ -199,7 +199,9 @@ def fill_outcomes():
     filled = 0
     spy_rows = PricePoint.query.filter_by(ticker=_SPY).all()
     spy_map = {p.date: p.price for p in spy_rows if p.price is not None}
-    events = StockStateEvent.query.all()
+    # أحداث الأداء الصاعد فقط (READY/LAUNCHED) — لا نبني نتائج لأحداث INVALIDATED (لا تدخل الإحصاءات).
+    events = StockStateEvent.query.filter(
+        StockStateEvent.state_code.in_(PERFORMANCE_EVENT_TYPES)).all()
     for ev in events:
         base = ev.performance_baseline_price
         if not ev.baseline_date or base in (None, 0):
@@ -251,13 +253,24 @@ def _stats(returns, alphas):
 
 
 def performance_summary():
-    """تجميع أداء الإشارات للوحة «أداء الإشارات». Primary Success = return_Nd>0 (alpha منفصل)."""
+    """تجميع أداء الإشارات الصاعدة (READY/LAUNCHED فقط). Primary Success = return_Nd>0 (alpha منفصل).
+
+    يعمل JOIN صريحاً مع StockStateEvent ويصفّي state_code ∈ PERFORMANCE_EVENT_TYPES — فلا يمكن لأي
+    Outcome لحدث INVALIDATED (أو يتيم) أن يدخل الإحصاءات حتى لو بقي في الجدول (لا نفترض نظافته).
+    """
     by_h = {h: {"ret": [], "alpha": []} for h in HORIZONS}
-    for o in StockStateOutcome.query.filter(StockStateOutcome.return_pct.isnot(None)).all():
-        if o.horizon_days in by_h:
-            by_h[o.horizon_days]["ret"].append(o.return_pct)
-            if o.alpha_pct is not None:
-                by_h[o.horizon_days]["alpha"].append(o.alpha_pct)
+    rows = (db.session.query(StockStateOutcome.horizon_days,
+                             StockStateOutcome.return_pct,
+                             StockStateOutcome.alpha_pct)
+            .join(StockStateEvent, StockStateOutcome.event_id == StockStateEvent.id)
+            .filter(StockStateEvent.state_code.in_(PERFORMANCE_EVENT_TYPES),
+                    StockStateOutcome.return_pct.isnot(None))
+            .all())
+    for horizon, ret, alpha in rows:
+        if horizon in by_h:
+            by_h[horizon]["ret"].append(ret)
+            if alpha is not None:
+                by_h[horizon]["alpha"].append(alpha)
     horizons = {h: _stats(v["ret"], v["alpha"]) for h, v in by_h.items()}
     has_mature = any(horizons.get(h) for h in HORIZONS)
     return {

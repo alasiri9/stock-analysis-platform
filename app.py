@@ -30,6 +30,23 @@ from models import (db, Watchlist, PortfolioHolding, PriceAlert,
                     Subscriber, StockCache, Signal, PricePoint, MarketMoodSnapshot,
                     AppSetting, Message, MessageTrash)
 
+from sqlalchemy import event as _sa_event
+from sqlalchemy.engine import Engine as _SAEngine
+
+
+@_sa_event.listens_for(_SAEngine, "connect")
+def _enable_sqlite_fk(dbapi_conn, _rec):
+    """تفعيل فرض المفاتيح الخارجية على SQLite (بيئة الاختبارات) — PostgreSQL يفرضها أصلاً.
+
+    آمن ومحمول: يعمل فقط على اتصالات sqlite3 (يُتجاهل على أي محرّك آخر). يضمن أن FK الجديد
+    (StockStateOutcome.event_id → stock_state_event.id, ON DELETE CASCADE) مُنفَّذ فعلياً في الاختبارات.
+    """
+    import sqlite3
+    if isinstance(dbapi_conn, sqlite3.Connection):
+        cur = dbapi_conn.cursor()
+        cur.execute("PRAGMA foreign_keys=ON")
+        cur.close()
+
 
 def _upsert_setting(key, value):
     """يحفظ/يحدّث إعداداً في جدول AppSetting (لا يعمل commit — المتصل يلتزم)."""

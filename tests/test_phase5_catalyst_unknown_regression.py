@@ -1,11 +1,13 @@
 """
-test_phase5_catalyst_unknown_regression.py — PHASE 5 (إصلاح MEDIUM: Catalyst UNKNOWN ≠ BELOW).
+test_phase5_catalyst_unknown_regression.py — PHASE 5 (Catalyst UNKNOWN ≠ BELOW).
 
-يقفل التمييز الصريح بين ثلاث حالات في missing_conditions:
-  - catalyst is None  ⇒ UNKNOWN: «بيانات النمو (Catalyst) غير متوفّرة» + count=None (لا «دون العتبة»).
-  - catalyst < 80     ⇒ KNOWN-BELOW: «درجة النمو (Catalyst) دون العتبة» ويُحتسب.
-  - catalyst >= 80    ⇒ متحقّق، لا يُضاف.
-وواجهة صادقة: عند count=None لا تظهر «ينقصه X شروط» بل «بعض الشروط غير قابلة للتقييم».
+بعد إصلاح ISSUE #2 صارت شروط النقص مرتبطة بمسار الانتقال الفعلي (next_state):
+- في مسار NEAR_READY → READY يكون Catalyst هو البوابة، فيظهر تمييزه:
+    * catalyst None  ⇒ «بيانات النمو (Catalyst) غير متوفّرة» + count=None (لا «دون العتبة»).
+    * catalyst < 80  ⇒ «درجة النمو (Catalyst) دون العتبة» ويُحتسب.
+    * catalyst >= 80 مع ميل سلبي ⇒ الناقص الميل فقط.
+- في مسار FORMING → NEAR_READY لا يكون Catalyst بوابة (دون العتبة/مجهول جزء من تعريف NEAR_READY)،
+  فلا يظهر أي نص عن Catalyst.
 
 التشغيل:  python tests/test_phase5_catalyst_unknown_regression.py
 """
@@ -14,7 +16,7 @@ import os
 import sys
 import tempfile
 
-os.environ.pop("APP_PASSWORD", None)  # وضع مفتوح لعرض البطاقات
+os.environ.pop("APP_PASSWORD", None)
 _fd, _dbp = tempfile.mkstemp(suffix=".db")
 os.close(_fd)
 os.environ["DATABASE_URL"] = f"sqlite:///{_dbp}"
@@ -50,64 +52,66 @@ def _tilt(kind):
     return out
 
 
-def test_forming_catalyst_none():
-    print("\n[A] FORMING + catalyst=None ⇒ UNKNOWN لا BELOW:")
-    rec = {"ticker": "FRM", "catalyst": None, "indicators": _tilt("pos1"),
-           "structure": {"trend": "up"}}
-    check(classify_setup(rec) == "FORMING", "التصنيف FORMING")
-    st = stock_state(rec)
-    check(_BELOW not in st["missing_conditions"], "لا يظهر «Catalyst دون العتبة»")
-    check(_UNAVAIL in st["missing_conditions"], "يظهر «بيانات Catalyst غير متوفّرة»")
-    check(st["missing_conditions_count"] is None, "missing_conditions_count = None")
+_BOS = {"event": "BOS", "event_dir": "up", "trend": "up"}  # يحقّق تأكيد NEAR_READY
 
 
 def test_near_ready_catalyst_none():
-    print("\n[B] NEAR_READY + catalyst=None ⇒ UNKNOWN لا BELOW:")
-    rec = {"ticker": "NR", "catalyst": None, "indicators": _tilt("pos1"),
-           "structure": {"event": "BOS", "event_dir": "up", "trend": "up"}}
-    check(classify_setup(rec) == "NEAR_READY", "التصنيف NEAR_READY (بلا اختراع Catalyst منخفض)")
+    print("\n[NEAR_READY→READY] catalyst=None ⇒ UNKNOWN لا BELOW:")
+    rec = {"ticker": "NRN", "catalyst": None, "indicators": _tilt("pos1"), "structure": _BOS}
+    check(classify_setup(rec) == "NEAR_READY", "التصنيف NEAR_READY")
     st = stock_state(rec)
-    check(_BELOW not in st["missing_conditions"], "لا يظهر «Catalyst دون العتبة»")
+    check(_BELOW not in st["missing_conditions"], "لا «دون العتبة»")
     check(_UNAVAIL in st["missing_conditions"], "يظهر «بيانات Catalyst غير متوفّرة»")
-    check(st["missing_conditions_count"] is None, "missing_conditions_count = None (غير موثوق)")
+    check(st["missing_conditions_count"] is None, "count=None (بوابة Catalyst مجهولة)")
 
 
-def test_catalyst_79_known_below():
-    print("\n[C] catalyst=79 ⇒ KNOWN BELOW (يظهر ويُحتسب):")
-    rec = {"ticker": "C79", "catalyst": 79, "indicators": _tilt("pos1"),
-           "structure": {"trend": "up"}}
+def test_near_ready_catalyst_79_below():
+    print("\n[NEAR_READY→READY] catalyst=79 ⇒ KNOWN BELOW (يُحتسب):")
+    rec = {"ticker": "NR79", "catalyst": 79, "indicators": _tilt("pos1"), "structure": _BOS}
+    check(classify_setup(rec) == "NEAR_READY", "التصنيف NEAR_READY")
     st = stock_state(rec)
-    check(_BELOW in st["missing_conditions"], "يظهر «Catalyst دون العتبة» (معروف)")
-    check(_UNAVAIL not in st["missing_conditions"], "لا يظهر وصف «غير متوفّرة»")
-    check(isinstance(st["missing_conditions_count"], int) and st["missing_conditions_count"] >= 1,
-          f"العدد رقم صحيح ويُحتسب ({st['missing_conditions_count']})")
+    check(_BELOW in st["missing_conditions"], "يظهر «دون العتبة»")
+    check(_UNAVAIL not in st["missing_conditions"], "لا «غير متوفّرة»")
+    check(st["missing_conditions_count"] == 1, "count=1 (Catalyst البوابة الوحيدة)")
 
 
-def test_catalyst_80_met():
-    print("\n[D] catalyst=80 ⇒ متحقّق (لا يُضاف شرط Catalyst):")
-    rec = {"ticker": "C80", "catalyst": 80, "indicators": _tilt("neg1")}  # tilt سلبي ⇒ NEAR_READY
-    check(classify_setup(rec) == "NEAR_READY", "التصنيف NEAR_READY (catalyst≥80 + neg1)")
+def test_near_ready_catalyst_80_neg1():
+    print("\n[NEAR_READY→READY] catalyst≥80 + neg1 ⇒ الناقص الميل فقط:")
+    rec = {"ticker": "NR80", "catalyst": 80, "indicators": _tilt("neg1")}
+    check(classify_setup(rec) == "NEAR_READY", "التصنيف NEAR_READY")
     st = stock_state(rec)
     check(_BELOW not in st["missing_conditions"] and _UNAVAIL not in st["missing_conditions"],
           "لا شرط Catalyst (متحقّق ≥80)")
-    check(st["missing_conditions_count"] == 1, "العدّ يشمل الميل فقط (1)")
+    check(st["missing_conditions_count"] == 1, "count=1 (الميل فقط)")
+
+
+def test_forming_catalyst_not_a_barrier():
+    print("\n[FORMING→NEAR_READY] Catalyst ليس بوابة (لا يظهر مهما كان None/<80):")
+    for cat in (None, 79):
+        rec = {"ticker": "FRM", "catalyst": cat, "indicators": _tilt("pos1"),
+               "structure": {"trend": "up"}}
+        check(classify_setup(rec) == "FORMING", f"التصنيف FORMING (catalyst={cat})")
+        st = stock_state(rec)
+        check(_BELOW not in st["missing_conditions"] and _UNAVAIL not in st["missing_conditions"],
+              f"لا نص عن Catalyst في مسار FORMING→NEAR_READY (catalyst={cat})")
+        check(st["missing_conditions_count"] == 1, f"count=1 (تأكيد فني فقط) (catalyst={cat})")
 
 
 def test_ui_count_none_no_number():
-    print("\n[E] الواجهة: count=None ⇒ لا «ينقصه X شروط» بل وصف غياب البيانات:")
+    print("\n[UI] count=None ⇒ لا رقم بل «غير قابلة للتقييم»:")
     rec = {"ticker": "UI1", "name": "UI", "catalyst": None, "piotroski": None,
-           "indicators": _tilt("pos1"), "structure": {"trend": "up"}}
-    rec["state"] = stock_state(rec)  # كما يُخزَّن ليلياً
+           "indicators": _tilt("pos1"), "structure": _BOS}
+    rec["state"] = stock_state(rec)
     with app.test_request_context("/"):
         html = app.jinja_env.get_template("_scard.html").render(r=rec, rank=1)
-    check("ينقصه" not in html, "لا يظهر «ينقصه X شرط» عند count=None")
+    check("ينقصه" not in html, "لا «ينقصه X شرط» عند count=None")
     check("غير قابلة للتقييم" in html, "يظهر «بعض الشروط غير قابلة للتقييم»")
 
 
 def test_ui_count_known_shows_number():
-    print("\n[E] الواجهة: count معروف ⇒ يظهر الرقم:")
+    print("\n[UI] count معروف ⇒ يظهر الرقم:")
     rec = {"ticker": "UI2", "name": "UI", "catalyst": 79, "piotroski": 6,
-           "indicators": _tilt("pos1"), "structure": {"trend": "up"}}
+           "indicators": _tilt("pos1"), "structure": _BOS}
     rec["state"] = stock_state(rec)
     with app.test_request_context("/"):
         html = app.jinja_env.get_template("_scard.html").render(r=rec, rank=1)
@@ -115,8 +119,8 @@ def test_ui_count_known_shows_number():
 
 
 def test_backcompat_no_catalyst_key():
-    print("\n[F] توافق خلفي: record بلا مفتاح catalyst ⇒ بلا انهيار وبلا تفسير زائف:")
-    rec = {"ticker": "NOKEY", "indicators": _tilt("pos1"), "structure": {"trend": "up"}}
+    print("\n[توافق خلفي] NEAR_READY بلا مفتاح catalyst ⇒ UNKNOWN، count=None:")
+    rec = {"ticker": "NOKEY", "indicators": _tilt("pos1"), "structure": _BOS}
     st = stock_state(rec)  # لا يرفع استثناء
     check(_BELOW not in st["missing_conditions"], "لا «دون العتبة» بلا بيانات نمو")
     check(_UNAVAIL in st["missing_conditions"], "يوصف النقص بصدق (غير متوفّرة)")
@@ -125,18 +129,18 @@ def test_backcompat_no_catalyst_key():
 
 def main():
     print("=" * 60)
-    print("PHASE 5 — Catalyst UNKNOWN ≠ BELOW (MEDIUM fix)")
+    print("PHASE 5 — Catalyst UNKNOWN ≠ BELOW (مسار الانتقال)")
     print("=" * 60)
-    test_forming_catalyst_none()
     test_near_ready_catalyst_none()
-    test_catalyst_79_known_below()
-    test_catalyst_80_met()
+    test_near_ready_catalyst_79_below()
+    test_near_ready_catalyst_80_neg1()
+    test_forming_catalyst_not_a_barrier()
     test_ui_count_none_no_number()
     test_ui_count_known_shows_number()
     test_backcompat_no_catalyst_key()
     print("\n" + "-" * 60)
     if _failed == 0:
-        print(f"كل اختبارات إصلاح Catalyst UNKNOWN نجحت ✓ ({_passed} تحقّقاً).")
+        print(f"كل اختبارات Catalyst UNKNOWN نجحت ✓ ({_passed} تحقّقاً).")
         return 0
     print(f"✗ فشل {_failed} (نجح {_passed}).")
     return 1

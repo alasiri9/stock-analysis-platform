@@ -48,8 +48,10 @@ _NEXT_STATE = {
 
 # الحالات الصاعدة «المتقدّمة» (تعافٍ بلا فقدان زخم)
 _ADVANCED = ("READY", "LAUNCHED", "EXTENDED")
-# الحالات القابلة للتتبّع كأحداث أداء
+# الحالات القابلة للتتبّع كأحداث دورة حياة (تُسجَّل كأحداث)
 TRACKED_EVENT_STATES = ("READY", "LAUNCHED", "INVALIDATED")
+# أحداث الأداء الصاعد فقط — INVALIDATED حدث دورة حياة مهم لكنه لا يدخل إحصاءات الأداء الصاعد.
+PERFORMANCE_EVENT_TYPES = ("READY", "LAUNCHED")
 
 
 def _signals(record):
@@ -157,59 +159,66 @@ def _confidence(record):
     return "high"
 
 
-def _missing_and_count(record, code):
-    """يبني (قائمة الشروط الناقصة، عددها) معاً بشكل حتمي.
+def conditions_for_next_state(record, code):
+    """(قائمة الشروط، العدد) اللازمة فعلاً للوصول إلى next_state المعروض لهذه الحالة — لا قائمة عامة
+    بكل بوابات READY. مركزي في محرّك الحالة (لا يُكرَّر في القوالب)، ويعيد استخدام نفس predicates التصنيف.
 
-    يميّز صراحةً بين ثلاث حالات لكل بوابة تعتمد بيانات قد تغيب:
-      - UNKNOWN (القيمة None): وصف «البيانات غير متوفّرة»، ويجعل العدّ الكلي None (غير موثوق).
-      - KNOWN-BELOW (قيمة موجودة دون العتبة): شرط فعلي يُعرض ويُحتسب.
-      - MET (قيمة ≥ العتبة): لا يُضاف.
-    لا threshold رقمي جديد — يعيد استخدام catalyst≥80 وحالة tech_tilt كما هما.
+    قواعد التمييز:
+      - UNKNOWN (حقل جوهري في المسار المطلوب = None): count=None ووصف «البيانات غير متوفّرة».
+      - KNOWN-BELOW: شرط فعلي يُعرض ويُحتسب.
+      - لا يُحتسب حقل ليس على مسار الانتقال المعروض (مثل Catalyst في مسار FORMING→NEAR_READY).
+      - عند مسارات OR متعدّدة: نحسب أقلّ مسار صالح فعلاً، لا جمع المسارات كأنها AND.
+    لا threshold رقمي جديد — يعيد استخدام catalyst≥80 وحالة tech_tilt وأحداث structure كما هي.
     """
     s = _signals(record)
+    catalyst = record.get("catalyst") if record else None
 
-    if code in ("READY", "LAUNCHED", "EXTENDED"):
-        return [], 0  # متحقّقة/متقدّمة — لا شروط ناقصة
+    # حالات لا تُعرض لها شروط انتقال على البطاقة (متحقّقة/متقدّمة/نهائية)
+    if code in ("READY", "LAUNCHED", "EXTENDED", "INVALIDATED"):
+        return [], 0
 
-    if code == "INVALIDATED":
-        return [], 0  # حالة نهائية — لا شروط انتقال تُعرض
-
-    if code == "LOSING_MOMENTUM":
+    if code == "LOSING_MOMENTUM":   # → READY (تعافٍ): عودة الميل + سلامة الهيكل
         return (["يحتاج الميل الفني للعودة إلى محايد أو إيجابي",
                  "تأكيد عدم كسر الهيكل الصاعد"], 2)
 
-    # WATCH / FORMING / NEAR_READY — نعدّد بوابات READY غير المحقّقة فعلياً
     out = []
     unknown = False
 
-    # بوابة الميل الفني
-    if not s["tilt_present"]:                       # UNKNOWN — لا مؤشرات
-        out.append("بيانات المؤشرات الفنية غير متوفّرة")
-        unknown = True
-    elif s["tilt_negative"]:                        # KNOWN-BELOW — ميل سلبي فعلي
-        out.append("يحتاج الميل الفني للعودة إلى محايد أو إيجابي")
+    if code == "WATCH":
+        # → FORMING = (ميل غير سلبي) AND (بناء صاعد: هيكل صاعد أو BOS أو انضغاط أو بداية اختراق)
+        if not s["tilt_present"]:
+            out.append("بيانات المؤشرات الفنية غير متوفّرة"); unknown = True
+        elif s["tilt_negative"]:
+            out.append("يحتاج الميل الفني للعودة إلى محايد أو إيجابي")
+        if not (s["struct_up"] or s["bos_up"] or s["squeeze_on"] or s["brk_forming"]):
+            out.append("بداية بناء صاعد (هيكل صاعد أو انضغاط أو بداية اختراق)")
 
-    # بوابة النمو (Catalyst) — تمييز صريح: None = مجهول ≠ دون العتبة
-    catalyst = record.get("catalyst") if record else None
-    if catalyst is None:                            # UNKNOWN — لا بيانات نمو
-        out.append("بيانات النمو (Catalyst) غير متوفّرة")
-        unknown = True
-    elif catalyst < 80:                             # KNOWN-BELOW — نمو دون العتبة فعلاً
-        out.append("درجة النمو (Catalyst) دون العتبة")
-    # catalyst >= 80 ⇒ متحقّق، لا يُضاف
+    elif code == "FORMING":
+        # → NEAR_READY: المسار القابل للتحقّق يحتاج تأكيداً فنياً بنيوياً فقط
+        # (إعادة اختبار مؤكّدة أو BOS صاعد؛ الاختراق المؤكّد بحجم ينقل مباشرةً إلى «منطلق»).
+        # Catalyst دون العتبة/مجهول جزء من تعريف NEAR_READY نفسه على هذا المسار ⇒ ليس حاجزاً.
+        if not (s["retest_ok"] or s["bos_up"]):
+            out.append("تأكيد فني بنيوي (إعادة اختبار مؤكّدة أو BOS صاعد)")
 
-    # بوابة تأكيد الاختراق (لحالتي البناء المبكّر)
-    if code in ("FORMING", "WATCH") and not (s["brk_up_confirmed"] or s["retest_ok"]):
-        out.append("تأكيد الاختراق بحجم")
+    elif code == "NEAR_READY":
+        # → READY = catalyst≥80 AND الميل غير سلبي. نحسب فقط البوابة غير المتحققة فعلاً.
+        if s["catalyst_high"]:
+            # هذا المسار: catalyst مرتفع + الميل سلبي (neg1) ⇒ الناقص الميل فقط
+            out.append("يحتاج الميل الفني للعودة إلى محايد أو إيجابي")
+        else:
+            # المسار الآخر: الفني محقّق + Catalyst دون العتبة/مجهول ⇒ الناقص Catalyst
+            if catalyst is None:
+                out.append("بيانات النمو (Catalyst) غير متوفّرة"); unknown = True
+            else:
+                out.append("درجة النمو (Catalyst) دون العتبة")
 
-    # عدد الشروط الناقصة: None لو أي بوابة مجهولة (لا نعطي رقماً غير موثوق)
     count = None if unknown else len(out)
     return out, count
 
 
 def missing_conditions(record, code):
-    """الشروط الفعلية الناقصة للانتقال — من نفس المحرك (لا منطق مستقل في القوالب)."""
-    return _missing_and_count(record, code)[0]
+    """الشروط الفعلية الناقصة للوصول إلى next_state — من نفس المحرك (لا منطق مستقل في القوالب)."""
+    return conditions_for_next_state(record, code)[0]
 
 
 def stock_state(record, context=None):
@@ -224,9 +233,9 @@ def stock_state(record, context=None):
     else:
         code = resolve_lifecycle_state(setup, record, context)
 
-    miss, count = _missing_and_count(record, code)
+    miss, count = conditions_for_next_state(record, code)
     conf = _confidence(record)
-    # count = None لو أي بوابة مجهولة (بيانات مفقودة) — لا نعطي عدداً غير موثوق.
+    # count = None لو حقل جوهري في مسار الانتقال مجهول — لا نعطي عدداً غير موثوق.
 
     return {
         "code": code,
