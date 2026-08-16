@@ -96,8 +96,12 @@
     {% if reasons %}
       <div class="scard-why">💡 {{ reasons[:3] | join(' + ') }} <span class="help-q" data-tip="سبب الترشّح: أقوى 3 عوامل جعلت الماسح يرشّح هذا السهم. لمحة عن نقاط قوته.">👁</span></div>
     {% endif %}
-    {% if r.state and r.state.missing_conditions_count and r.state.code in ['NEAR_READY', 'FORMING'] %}
-      <div class="scard-why" style="color:var(--gold)">⏳ ينقصه {{ r.state.missing_conditions_count }} شرط → {{ r.state.next_state_label }} <span class="help-q" data-tip="الشروط المتبقية للانتقال للمرحلة التالية (من محرّك الحالة نفسه): {{ r.state.missing_conditions | join('؛ ') }}. تعليمي لا توصية.">👁</span></div>
+    {% if r.state and r.state.code in ['NEAR_READY', 'FORMING'] %}
+      {% if r.state.missing_conditions_count %}
+        <div class="scard-why" style="color:var(--gold)">⏳ ينقصه {{ r.state.missing_conditions_count }} شرط → {{ r.state.next_state_label }} <span class="help-q" data-tip="الشروط المتبقية للانتقال للمرحلة التالية (من محرّك الحالة نفسه): {{ r.state.missing_conditions | join('؛ ') }}. تعليمي لا توصية.">👁</span></div>
+      {% elif r.state.missing_conditions_count is none and r.state.missing_conditions %}
+        <div class="scard-why" style="color:var(--muted)">⏳ بعض الشروط غير قابلة للتقييم (بيانات ناقصة) <span class="help-q" data-tip="{{ r.state.missing_conditions | join('؛ ') }}. بعض البيانات غير متوفّرة فلا يمكن إعطاء عدد دقيق. تعليمي لا توصية.">👁</span></div>
+      {% endif %}
     {% endif %}
   </div>
 

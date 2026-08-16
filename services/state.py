@@ -157,36 +157,59 @@ def _confidence(record):
     return "high"
 
 
-def missing_conditions(record, code):
-    """الشروط الفعلية التي تنقص السهم للانتقال — من نفس المحرك (لا منطق مستقل).
+def _missing_and_count(record, code):
+    """يبني (قائمة الشروط الناقصة، عددها) معاً بشكل حتمي.
 
-    لغة neg1/neg2: «يحتاج الميل الفني للعودة إلى محايد أو إيجابي» (لأن المحايد كافٍ في HIGH #1).
-    نقص بيانات جوهرية ⇒ «غير معروف» بلا عدد زائف.
+    يميّز صراحةً بين ثلاث حالات لكل بوابة تعتمد بيانات قد تغيب:
+      - UNKNOWN (القيمة None): وصف «البيانات غير متوفّرة»، ويجعل العدّ الكلي None (غير موثوق).
+      - KNOWN-BELOW (قيمة موجودة دون العتبة): شرط فعلي يُعرض ويُحتسب.
+      - MET (قيمة ≥ العتبة): لا يُضاف.
+    لا threshold رقمي جديد — يعيد استخدام catalyst≥80 وحالة tech_tilt كما هما.
     """
     s = _signals(record)
-    out = []
+
     if code in ("READY", "LAUNCHED", "EXTENDED"):
-        return out  # لا شروط ناقصة (متحقّقة/متقدّمة)
+        return [], 0  # متحقّقة/متقدّمة — لا شروط ناقصة
 
     if code == "INVALIDATED":
-        return out  # حالة نهائية — لا شروط انتقال تُعرض
+        return [], 0  # حالة نهائية — لا شروط انتقال تُعرض
 
     if code == "LOSING_MOMENTUM":
-        out.append("يحتاج الميل الفني للعودة إلى محايد أو إيجابي")
-        out.append("تأكيد عدم كسر الهيكل الصاعد")
-        return out
+        return (["يحتاج الميل الفني للعودة إلى محايد أو إيجابي",
+                 "تأكيد عدم كسر الهيكل الصاعد"], 2)
 
     # WATCH / FORMING / NEAR_READY — نعدّد بوابات READY غير المحقّقة فعلياً
-    if not s["tilt_present"]:
-        out.append("المؤشرات الفنية غير متوفّرة بعد (غير معروف)")
-    elif s["tilt_negative"]:
+    out = []
+    unknown = False
+
+    # بوابة الميل الفني
+    if not s["tilt_present"]:                       # UNKNOWN — لا مؤشرات
+        out.append("بيانات المؤشرات الفنية غير متوفّرة")
+        unknown = True
+    elif s["tilt_negative"]:                        # KNOWN-BELOW — ميل سلبي فعلي
         out.append("يحتاج الميل الفني للعودة إلى محايد أو إيجابي")
-    if not s["catalyst_high"]:
+
+    # بوابة النمو (Catalyst) — تمييز صريح: None = مجهول ≠ دون العتبة
+    catalyst = record.get("catalyst") if record else None
+    if catalyst is None:                            # UNKNOWN — لا بيانات نمو
+        out.append("بيانات النمو (Catalyst) غير متوفّرة")
+        unknown = True
+    elif catalyst < 80:                             # KNOWN-BELOW — نمو دون العتبة فعلاً
         out.append("درجة النمو (Catalyst) دون العتبة")
-    if code == "FORMING" or code == "WATCH":
-        if not (s["brk_up_confirmed"] or s["retest_ok"]):
-            out.append("تأكيد الاختراق بحجم")
-    return out
+    # catalyst >= 80 ⇒ متحقّق، لا يُضاف
+
+    # بوابة تأكيد الاختراق (لحالتي البناء المبكّر)
+    if code in ("FORMING", "WATCH") and not (s["brk_up_confirmed"] or s["retest_ok"]):
+        out.append("تأكيد الاختراق بحجم")
+
+    # عدد الشروط الناقصة: None لو أي بوابة مجهولة (لا نعطي رقماً غير موثوق)
+    count = None if unknown else len(out)
+    return out, count
+
+
+def missing_conditions(record, code):
+    """الشروط الفعلية الناقصة للانتقال — من نفس المحرك (لا منطق مستقل في القوالب)."""
+    return _missing_and_count(record, code)[0]
 
 
 def stock_state(record, context=None):
@@ -201,11 +224,9 @@ def stock_state(record, context=None):
     else:
         code = resolve_lifecycle_state(setup, record, context)
 
-    miss = missing_conditions(record, code)
+    miss, count = _missing_and_count(record, code)
     conf = _confidence(record)
-    # عدد الشروط: حتمي إن كانت كلها معروفة؛ إن كان أحدها «غير معروف» لا نعطي عدداً زائفاً
-    unknown = any("غير معروف" in m for m in miss)
-    count = None if unknown else len(miss)
+    # count = None لو أي بوابة مجهولة (بيانات مفقودة) — لا نعطي عدداً غير موثوق.
 
     return {
         "code": code,
