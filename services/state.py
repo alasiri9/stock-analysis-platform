@@ -226,6 +226,34 @@ def _confirmation_gate_tristate(record):
     return "false"
 
 
+def _ready_gate_conditions(record):
+    """(قائمة، عدد) الشروط الناقصة للوصول إلى READY — مصدر الحقيقة الوحيد لبوابتَي READY.
+
+    READY = catalyst≥80 (نفس عتبة classify_setup عبر _signals.catalyst_high) AND tech_tilt غير سلبي
+    (neu/pos1/pos2). structure ليست بوابة READY فلا تدخل هنا إطلاقاً. دلالة ثلاثية لكل بوابة:
+      - متحقّقة ⇒ لا تُضاف.
+      - معروفة غير متحقّقة (tilt سلبي · catalyst<80) ⇒ شرط يُعرض ويُحتسب.
+      - مجهولة (tilt=None · catalyst=None/غائب) ⇒ وصف نقص البيانات + count=None.
+    تُستخدم من فرعَي NEAR_READY وLOSING_MOMENTUM معاً (لا نسخة يدوية منفصلة قد تنحرف عن READY).
+    """
+    s = _signals(record)
+    out = []
+    unknown = False
+    # بوابة الميل الفني
+    if not s["tilt_present"]:
+        out.append("بيانات المؤشرات الفنية غير متوفّرة"); unknown = True
+    elif s["tilt_negative"]:
+        out.append("يحتاج الميل الفني للعودة إلى محايد أو إيجابي")
+    # بوابة النمو (Catalyst)
+    cat = record.get("catalyst") if record else None
+    if cat is None:
+        out.append("بيانات النمو (Catalyst) غير متوفّرة"); unknown = True
+    elif not s["catalyst_high"]:   # cat < 80 معروف
+        out.append("درجة النمو (Catalyst) دون العتبة")
+    count = None if unknown else len(out)
+    return out, count
+
+
 def conditions_for_next_state(record, code):
     """(قائمة الشروط، العدد) اللازمة فعلاً للوصول إلى next_state المعروض لهذه الحالة — لا قائمة عامة
     بكل بوابات READY. مركزي في محرّك الحالة (لا يُكرَّر في القوالب)، ويعيد استخدام نفس predicates التصنيف.
@@ -238,15 +266,13 @@ def conditions_for_next_state(record, code):
     لا threshold رقمي جديد — يعيد استخدام catalyst≥80 وحالة tech_tilt وأحداث structure كما هي.
     """
     s = _signals(record)
-    catalyst = record.get("catalyst") if record else None
 
     # حالات لا تُعرض لها شروط انتقال على البطاقة (متحقّقة/متقدّمة/نهائية)
     if code in ("READY", "LAUNCHED", "EXTENDED", "INVALIDATED"):
         return [], 0
 
-    if code == "LOSING_MOMENTUM":   # → READY (تعافٍ): عودة الميل + سلامة الهيكل
-        return (["يحتاج الميل الفني للعودة إلى محايد أو إيجابي",
-                 "تأكيد عدم كسر الهيكل الصاعد"], 2)
+    if code == "LOSING_MOMENTUM":   # → READY: بوابات READY فقط (Catalyst + الميل)، بلا structure
+        return _ready_gate_conditions(record)
 
     out = []
     unknown = False
@@ -277,16 +303,9 @@ def conditions_for_next_state(record, code):
         # gate == "true" ⇒ متحقّق، لا يُضاف
 
     elif code == "NEAR_READY":
-        # → READY = catalyst≥80 AND الميل غير سلبي. نحسب فقط البوابة غير المتحققة فعلاً.
-        if s["catalyst_high"]:
-            # هذا المسار: catalyst مرتفع + الميل سلبي (neg1) ⇒ الناقص الميل فقط
-            out.append("يحتاج الميل الفني للعودة إلى محايد أو إيجابي")
-        else:
-            # المسار الآخر: الفني محقّق + Catalyst دون العتبة/مجهول ⇒ الناقص Catalyst
-            if catalyst is None:
-                out.append("بيانات النمو (Catalyst) غير متوفّرة"); unknown = True
-            else:
-                out.append("درجة النمو (Catalyst) دون العتبة")
+        # → READY: نفس مصدر الحقيقة لبوابات READY (Catalyst + الميل). NEAR_READY يضمن أن
+        # بوابة واحدة فقط ناقصة، فيرجع الشرط الوحيد المعروف/المجهول بلا تكرار لتعريف READY.
+        return _ready_gate_conditions(record)
 
     count = None if unknown else len(out)
     return out, count
