@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% set active = 'changes' %}
+{% block title %}ماذا تغيّر اليوم؟ — Algomatix{% endblock %}
+
+{% block content %}
+  <section class="panel">
+    <div class="panel-head">
+      <h2>🔄 <span class="brand-ink">ماذا تغيّر اليوم؟</span>
+        <span class="help-q" data-tip="مقارنة آخر لقطتين ليليتين لكل سهم. تغيّر السعر وحده لا يُحتسب تحسّناً في الجودة — نتتبّع النمو (Catalyst) والجودة (Piotroski) وقوة التأكيد والميل الفني وهيكل السوق والحالة والجاهزية. تعليمي وصفي لا توصية.">👁</span>
+      </h2>
+    </div>
+
+    <div class="stat-row tight" style="flex-wrap:wrap;gap:16px">
+      <div class="stat-box"><div class="label" style="color:var(--green)">↑ تحسّنت</div><div class="value">{{ counters.improved }}</div></div>
+      <div class="stat-box"><div class="label" style="color:var(--red)">↓ تراجعت</div><div class="value">{{ counters.declined }}</div></div>
+      <div class="stat-box"><div class="label" style="color:var(--gold)">🎯 أصبحت جاهزة</div><div class="value">{{ counters.became_ready }}</div></div>
+      <div class="stat-box"><div class="label" style="color:var(--muted)">فقدت الجاهزية</div><div class="value">{{ counters.lost_ready }}</div></div>
+      <div class="stat-box"><div class="label" style="color:var(--gold)">💎 أصبحت جوهرة</div><div class="value">{{ counters.became_gem }}</div></div>
+    </div>
+
+    {% if items %}
+      <div class="note" style="margin:16px 0 12px">📌 تغيّر السعر وحده لا يعني تحسّناً في الجودة — التصنيف مبنيّ على مقاييس التحليل لا على السعر.</div>
+      {% for it in items %}
+        {% set s = it.summary %}
+        <div class="panel" style="padding:12px 14px;margin-bottom:10px">
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+            <a href="{{ url_for('stock_report', ticker=it.ticker) }}" style="font-weight:900;font-size:17px;letter-spacing:.5px">{{ it.ticker }}</a>
+            {% if it.current.state_code %}<span class="state-pill s-{{ it.current.state_code }}">{{ it.current.state_code | state_label }}</span>{% endif %}
+            {% if s.classification == 'improved' %}<span class="pill buy">↑ تحسّن اليوم</span>
+            {% elif s.classification == 'declined' %}<span class="pill sell">↓ تراجع اليوم</span>
+            {% elif s.has_previous %}<span class="pill">● دون تغيّر جوهري</span>
+            {% else %}<span class="muted" style="font-size:12px">{{ s.note }}</span>{% endif %}
+          </div>
+          {% if s.changes %}
+            <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px">
+              {% for c in s.changes %}
+                <span class="pill" style="font-size:12px;color:{{ 'var(--green)' if c.dir == 'up' else 'var(--red)' }}">
+                  {{ c.label }}: {{ c.from }} {{ '↑' if c.dir == 'up' else '↓' }} {{ c.to }}
+                </span>
+              {% endfor %}
+            </div>
+          {% endif %}
+          {% if s.price_info %}
+            <div class="muted" style="font-size:11.5px;margin-top:6px">سعر التحليل: {{ s.price_info.from }} → {{ s.price_info.to }} (لا يُحتسب في تصنيف الجودة)</div>
+          {% endif %}
+        </div>
+      {% endfor %}
+    {% else %}
+      <div class="empty">لا توجد لقطات كافية بعد — تظهر المقارنة بعد ليلتين متتاليتين من التحديث الليلي.</div>
+    {% endif %}
+  </section>
+{% endblock %}

@@ -171,6 +171,18 @@ def _auto_refresh(app):
             except Exception as e:  # noqa: BLE001
                 print(f"[scheduler] تعذّر تسجيل نبض السوق: {e}")
 
+            # PHASE 5: تتبّع تطوّر الفرصة — لقطات تاريخية + كشف أحداث الحالة + ملء نتائج الأداء.
+            # يعمل فقط بعد تحديث مكتمل ومتحقّق (نفس البوابة أعلاه)؛ كل سهم معاملة ذرّية مستقلّة.
+            try:
+                from services import tracking
+                recs5, _ = screener.load_records()
+                r = tracking.record_nightly_tracking(recs5)
+                filled = tracking.fill_outcomes()
+                print(f"[scheduler] PHASE5: لقطات={r['snapshots']} أحداث={r['events']} "
+                      f"أخطاء={r['errors']} نتائج مملوءة={filled}")
+            except Exception as e:  # noqa: BLE001 — تتبّع PHASE 5 لا يجب أن يُسقط التقرير الصباحي
+                print(f"[scheduler] تعذّر تتبّع PHASE 5: {e}")
+
             # ختاماً: التقرير الصباحي المجمّع بتلغرام (خامل بلا إعداد، وفشله لا يؤثر)
             try:
                 _send_daily_report()
