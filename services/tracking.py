@@ -21,12 +21,18 @@ from datetime import date, datetime
 from sqlalchemy.exc import IntegrityError
 
 from services import screener
+from services.confidence import data_confidence, SCHEMA_VERSION
 from services.state import stock_state, TRACKED_EVENT_STATES, PERFORMANCE_EVENT_TYPES
 from models import (db, StockCache, StockSnapshot, StockStateEvent, StockStateOutcome,
                     PricePoint)
 
 HORIZONS = (1, 5, 10, 20)  # جلسات تداول
 _SPY = screener.MARKET_BENCHMARK
+_CONFIDENCE_UNAVAILABLE = {  # يُحفظ عند فشل حساب الثقة برمجياً (بلا نص Exception — يُسجَّل في Log فقط)
+    "schema_version": SCHEMA_VERSION,
+    "unavailable": True,
+    "reason_code": "confidence_computation_failed",
+}
 
 
 # ───────────────────────── أدوات دورة الحياة ─────────────────────────
@@ -57,6 +63,74 @@ def _parse_date(s):
         return None
 
 
+# ───────────────────────── مرجع الجلسة (expected_session) + extra_json ─────────────────────────
+
+def _spy_latest_date():
+    """أحدث تاريخ SPY مخزّن في PricePoint (مرجع جلسة مستقل يحترم العطل/الويكند)، أو None."""
+    dates = [p.date for p in PricePoint.query.filter_by(ticker=_SPY).all() if p.date is not None]
+    return max(dates) if dates else None
+
+
+def resolve_expected_session(spy_date, records, run_date):
+    """يحدّد expected_session_date بثقةٍ محروسة في مرجع SPY — دالة نقية حتمية (بلا now()).
+
+    القواعد (المعتمدة):
+    1) لا تاريخ SPY ⇒ None.
+    2) SPY أحدث من run_date ⇒ مرجع غير صالح ⇒ None.
+    3) أغلبية صريحة (> 50%) من سجلات الأسهم ذات التاريخ الصالح أحدث من SPY ⇒ SPY متأخّر ⇒ None (تحذير).
+    4) سجل شاذّ واحد أحدث من SPY (بلا أغلبية) ⇒ نُبقي SPY؛ الشاذّ يظهر Future ويأخذ Low.
+    5) التعادل/غياب الأغلبية الصريحة ⇒ نُبقي SPY.
+    لا يُستخدم analysis_date كمرجع للسهم نفسه. لا تقويم أيام أسبوع ولا مكتبة/API جديد.
+    """
+    if spy_date is None:
+        return None
+    if run_date is not None and spy_date > run_date:
+        return None
+    # نتجاهل العناصر None/غير dict بأمان (لا rec.get على غير قاموس، لا استثناء بسبب عنصر تالف).
+    valid = [d for d in (_parse_date(r.get("analysis_date"))
+                         for r in (records or []) if isinstance(r, dict)) if d is not None]
+    total = len(valid)
+    if total:
+        newer = sum(1 for d in valid if d > spy_date)
+        if newer * 2 > total:  # أغلبية صريحة (> 50%) — التعادل لا يُبطل
+            print(f"[tracking] ⚠️ مرجع SPY متأخّر: {newer}/{total} سهماً أحدث من {spy_date} — "
+                  f"expected_session=None (تحفّظ بحد أقصى Medium)")
+            return None
+    return spy_date
+
+
+def _build_extra_json(record, expected_session, existing_json, ticker, snap_date):
+    """يبني نص extra_json الجديد بأسلوب read-merge-dict مع سياسة صارمة للـJSON التالف/غير المطابق للعقد.
+
+    - None أو نص فارغ ⇒ ابدأ بقاموس جديد.
+    - JSON صالح dict ⇒ حافظ على كل المفاتيح وعدّل data_confidence فقط.
+    - JSON صالح لكنه list/string/number، أو JSON تالف ⇒ غير مطابق للعقد: **أبقِ النص الأصلي حرفياً**
+      بلا استبدال وبلا إضافة data_confidence، وسجّل تحذيراً (ticker+snap_date بلا تسريب النص).
+    الخرج حتمي (sort_keys=True). فشل حساب الثقة ⇒ يُحفظ سجل unavailable المعتمد (بلا نص Exception).
+    """
+    if existing_json is None or (isinstance(existing_json, str) and existing_json.strip() == ""):
+        base = {}
+    else:
+        try:
+            parsed = json.loads(existing_json)
+        except (ValueError, TypeError):
+            print(f"[tracking] ⚠️ extra_json تالف — {ticker} {snap_date}: أُبقي كما هو بلا تعديل")
+            return existing_json
+        if isinstance(parsed, dict):
+            base = parsed
+        else:
+            print(f"[tracking] ⚠️ extra_json غير مطابق للعقد (ليس dict) — {ticker} {snap_date}: أُبقي كما هو")
+            return existing_json
+
+    try:
+        conf = data_confidence(record, expected_session)
+    except Exception as e:  # noqa: BLE001 — الثقة اختيارية: لا تحجب اللقطة؛ Exception في Log فقط
+        print(f"[tracking] ⚠️ فشل حساب الثقة {ticker} {snap_date}: {e}")
+        conf = dict(_CONFIDENCE_UNAVAILABLE)
+    base["data_confidence"] = conf
+    return json.dumps(base, ensure_ascii=False, sort_keys=True)
+
+
 # ───────────────────────── بناء صفوف اللقطة/الحدث ─────────────────────────
 
 def _is_ready(record, tilt):
@@ -65,9 +139,13 @@ def _is_ready(record, tilt):
     return bool(c is not None and c >= 80 and tk in ("neu", "pos1", "pos2"))
 
 
-def _snapshot_row(record, ticker, today, code):
+def _snapshot_row(record, ticker, today, code, expected_session=None):
     tilt = screener.tech_tilt(record)
     algx = screener.algomatix_score(record)
+    # read-merge-dict: نقرأ extra_json الحالي (إن وُجد صف اليوم — same-day retry) ونحافظ على مفاتيحه.
+    existing = db.session.get(StockSnapshot, (ticker, today))
+    extra = _build_extra_json(record, expected_session,
+                              existing.extra_json if existing else None, ticker, today)
     return StockSnapshot(
         ticker=ticker, snap_date=today,
         analysis_price=screener.analysis_price(record),
@@ -82,7 +160,7 @@ def _snapshot_row(record, ticker, today, code):
         state_code=code,
         is_gem=screener.is_gem(record),
         is_ready=_is_ready(record, tilt),
-        extra_json=None,
+        extra_json=extra,
     )
 
 
@@ -147,8 +225,17 @@ def record_nightly_tracking(recs, today=None):
     today: يُحقن في الاختبارات لمحاكاة أيام متعددة (الإنتاج يستخدم date.today()).
     """
     today = today or date.today()
+    # نثبّت recs مرة واحدة (قد يكون generator أحادي المرور) فلا يُستهلك قبل حلقة اللقطات.
+    records = list(recs or [])
+    # مرجع الجلسة يُحسب **مرة واحدة** لكل تشغيل (لا مرة لكل سهم): SPY المخزّن + حراسة الأغلبية.
+    expected_session = resolve_expected_session(_spy_latest_date(), records, today)
     res = {"snapshots": 0, "events": 0, "errors": 0}
-    for rec in (recs or []):
+    for rec in records:
+        # عنصر تالف (None أو غير dict): لا rec.get عليه — نعدّه خطأً ونتابع بقية الأسهم.
+        if not isinstance(rec, dict):
+            res["errors"] += 1
+            print(f"[tracking] تعذّر تتبّع عنصر غير صالح (ليس dict) — نوعه {type(rec).__name__}")
+            continue
         ticker = rec.get("ticker")
         if not ticker:
             continue
@@ -167,7 +254,7 @@ def record_nightly_tracking(recs, today=None):
                 if ev is not None:
                     db.session.add(ev)
                 _persist_state_into_cache(ticker, state)
-                db.session.merge(_snapshot_row(rec, ticker, today, code))
+                db.session.merge(_snapshot_row(rec, ticker, today, code, expected_session))
                 db.session.commit()
                 if ev is not None:
                     res["events"] += 1
@@ -177,7 +264,7 @@ def record_nightly_tracking(recs, today=None):
                 # نتراجع كاملاً ثم نعيد كتابة اللقطة+الحالة فقط (بلا حدث) فلا نخسر لقطة صحيحة.
                 db.session.rollback()
                 _persist_state_into_cache(ticker, state)
-                db.session.merge(_snapshot_row(rec, ticker, today, code))
+                db.session.merge(_snapshot_row(rec, ticker, today, code, expected_session))
                 db.session.commit()
                 res["snapshots"] += 1
         except Exception as e:  # noqa: BLE001 — سهم واحد فقط يُتخطّى، لا يُجهض البقية
