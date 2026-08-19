@@ -16,12 +16,15 @@ tracking.py — تنظيم PHASE 5 المعتمد على قاعدة البيان
 """
 
 import json
+from collections.abc import Mapping
 from datetime import date, datetime
 
+from sqlalchemy import and_, func, select
 from sqlalchemy.exc import IntegrityError
 
 from services import screener
 from services.confidence import data_confidence, SCHEMA_VERSION
+from services.confidence_view import present_confidence_from_extra_json
 from services.state import stock_state, TRACKED_EVENT_STATES, PERFORMANCE_EVENT_TYPES
 from models import (db, StockCache, StockSnapshot, StockStateEvent, StockStateOutcome,
                     PricePoint)
@@ -509,3 +512,87 @@ def latest_changes():
     _order = {"improved": 0, "unchanged": 1, None: 2, "declined": 3}
     items.sort(key=lambda it: (_order.get(it["summary"]["classification"], 2), it["ticker"]))
     return items, counters
+
+
+# ───────────────────────── قراءة الثقة المجمّعة للعرض (READ-ONLY) ─────────────────────────
+# تقرأ أحدث لقطة لكل سهم باستعلام واحد (أعمدة ticker/snap_date/extra_json فقط — لا N+1، لا كائن كامل).
+# **قراءة فقط**: لا add/merge/delete/commit/flush، لا data_confidence، لا live_price/API، لا Backfill.
+# لا منطق عرض/تصنيف هنا — كل فكّ JSON وتصنيف missing/corrupt وبناء view-model في
+# services.confidence_view.present_confidence_from_extra_json. tracking يمرّر الخام فقط.
+
+def _clean_tickers(tickers):
+    """يطبّع رموز التصفية إلى قائمة رموز نصية فريدة (strip+upper) مع الحفاظ على أول ترتيب.
+
+    - None ⇒ None (كل الأسهم، بلا تصفية).
+    - نص واحد "AAPL" ⇒ رمز واحد ["AAPL"] (لا تُفكَّك أحرفه A/A/P/L).
+    - أي iterable (قائمة/tuple/generator صالح) ⇒ عناصره.
+    - تُقبل الرموز النصية غير الفارغة فقط بعد strip؛ تُطبَّق upper.
+    - تُتجاهل None/الأرقام/القوائم/القواميس/العناصر غير النصية بلا استثناء.
+    - scalar غير قابل للتكرار (مثل 42) ⇒ قائمة فارغة (تصفية بلا رموز).
+    - المُدخل لا يُعدَّل، والعناصر غير القابلة للـhash لا ترفع TypeError.
+    """
+    if tickers is None:
+        return None
+    if isinstance(tickers, str):
+        items = [tickers]                     # نص واحد = رمز واحد، لا يُفكَّك حرفاً حرفاً
+    elif isinstance(tickers, (bytes, bytearray, Mapping)):
+        # dict/أي Mapping (مفاتيحه ليست رموزاً) وbytes/bytearray ⇒ لا رموز (لا نُفكّكها).
+        return []
+    else:
+        try:
+            items = list(tickers)             # يستهلك generator مرّة واحدة؛ لا يعدّل قائمة موجودة
+        except TypeError:
+            return []                         # scalar غير قابل للتكرار (مثل 42) ⇒ لا رموز
+    out = []
+    seen = set()
+    for item in items:
+        if not isinstance(item, str):
+            continue                          # None/أرقام/قوائم/قواميس/غير نصي ⇒ تُتجاهل (seen نصّي فقط)
+        sym = item.strip().upper()
+        if not sym or sym in seen:
+            continue                          # نص فارغ أو مكرّر
+        seen.add(sym)
+        out.append(sym)
+    return out
+
+
+def _latest_snapshot_statement(wanted):
+    """يبني select() صريحاً لأحدث لقطة لكل سهم: subquery (ticker, MAX(snap_date)) GROUP BY ثم JOIN.
+
+    نُسقِط **الأعمدة الثلاثة اللازمة فقط** (ticker, snap_date, extra_json) لا كائن StockSnapshot كاملاً
+    — فلا تُقرأ بقية الأعمدة ولا يحدث lazy loading. wanted: قائمة رموز أو None لكل الأسهم.
+    الصياغة محمولة (SQLite + PostgreSQL). Statement صريح ليُنفَّذ عبر db.session.execute (قابل للـmock).
+    """
+    sub = select(StockSnapshot.ticker.label("t"),
+                 func.max(StockSnapshot.snap_date).label("mx"))
+    if wanted is not None:
+        sub = sub.where(StockSnapshot.ticker.in_(wanted))
+    sub = sub.group_by(StockSnapshot.ticker).subquery()
+    return (select(StockSnapshot.ticker,
+                   StockSnapshot.snap_date,
+                   StockSnapshot.extra_json)
+            .join(sub, and_(StockSnapshot.ticker == sub.c.t,
+                            StockSnapshot.snap_date == sub.c.mx)))
+
+
+def latest_confidence_map(tickers=None):
+    """يُرجع {ticker: confidence_view_model} لأحدث لقطة لكل سهم — قراءة مجمّعة بلا N+1.
+
+    tickers: قابل للتصفية (اختياري). None ⇒ كل الأسهم. تُزال التكرارات بأمان، والقائمة المُدخلة
+    لا تُعدَّل. tickers فارغة ⇒ {} بلا استعلام. السهم بلا أي لقطة لا يظهر في الخريطة.
+
+    لكل صف: يُمرَّر extra_json الخام + snap_date إلى confidence_view.present_confidence_from_extra_json
+    الذي يميّز missing/corrupt ويبني view-model. لا فكّ JSON ولا اختيار reason ولا بناء view-model هنا.
+    """
+    wanted = _clean_tickers(tickers)             # None ⇒ كل الأسهم؛ أو قائمة رموز فريدة نقية
+    if wanted is not None and not wanted:
+        return {}                                # تصفية بلا رموز صالحة ⇒ {} بلا استعلام (بلا execute)
+
+    out = {}
+    # no_autoflush: قراءة بحتة لا تُجبر flush لأي حالة معلّقة (تعزيز أمان القراءة).
+    with db.session.no_autoflush:
+        rows = db.session.execute(_latest_snapshot_statement(wanted)).all()   # استعلام واحد
+    for row in rows:
+        # صفوف الأعمدة (Row) تُقرأ بالاسم بلا استعلام إضافي ولا lazy loading.
+        out[row.ticker] = present_confidence_from_extra_json(row.extra_json, row.snap_date)
+    return out

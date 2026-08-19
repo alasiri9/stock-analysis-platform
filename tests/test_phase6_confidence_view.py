@@ -361,7 +361,7 @@ def test_17_module_purity():
     import types
     # الوحدات المستوردة فعلياً في مجال الملف ⊆ stdlib نقية (لا flask/models/requests/fmp/db...).
     imported = {n for n, val in vars(cv).items() if isinstance(val, types.ModuleType)}
-    _ALLOWED = {"math", "datetime"}
+    _ALLOWED = {"math", "datetime", "json"}   # json نقية (stdlib) — تُستخدم لفكّ extra_json داخل المقدّم
     _BANNED = {"flask", "models", "requests", "fmp_client", "finnhub_client", "screener", "app", "db"}
     check(imported <= _ALLOWED, f"الوحدات المستوردة ⊆ stdlib نقية (كان {sorted(imported)})")
     check(imported.isdisjoint(_BANNED), "لا استيراد DB/Flask/API/screener")
@@ -371,6 +371,51 @@ def test_17_module_purity():
     dc_with = dict(dc); dc_with["live_price"] = 999.0
     check(cv.present_confidence(dc, TODAY) == cv.present_confidence(dc_with, TODAY),
           "مفتاح live_price في المدخل لا يغيّر الخرج")
+
+
+# ═══════════════ 13) present_confidence_from_extra_json: تصنيف missing/corrupt نقي (المنقول من tracking) ═══════════════
+def test_18_present_confidence_from_extra_json():
+    print("\n[18] present_confidence_from_extra_json: missing/corrupt/valid + RecursionError، دالة نقية:")
+    pcx = cv.present_confidence_from_extra_json
+    # ── missing: None / نص فارغ / dict بلا المفتاح ──
+    for raw in (None, "", "   ", "\n\t"):
+        v = pcx(raw, TODAY)
+        check(v["available"] is False and v["reason_code"] == cv.REASON_MISSING, f"{raw!r} ⇒ missing")
+        check(v["band_class"] == "conf-na", f"{raw!r} ⇒ conf-na")
+    check(pcx(json.dumps({"foo": "bar"}), TODAY)["reason_code"] == cv.REASON_MISSING,
+          "dict صالح بلا data_confidence ⇒ missing")
+    # ── corrupt: JSON تالف / أعلى مستواه ليس dict / data_confidence ليس dict ──
+    for raw in ("{bad json ::", "[1,2,3]", '"a string"', "42", "true", "null"):
+        v = pcx(raw, TODAY)
+        check(v["available"] is False and v["reason_code"] == cv.REASON_CORRUPT, f"{raw!r} ⇒ corrupt")
+    for badval in (42, [1, 2], "x", None, True):
+        check(pcx(json.dumps({"data_confidence": badval}), TODAY)["reason_code"] == cv.REASON_CORRUPT,
+              f"data_confidence={badval!r} (ليس dict) ⇒ corrupt")
+    # ── data_confidence هو dict لكنه تالف بنيوياً ⇒ corrupt (عبر present_confidence) ──
+    v = pcx(json.dumps({"data_confidence": {"schema_version": 1, "score": 999, "band": "high"}}), TODAY)
+    check(v["reason_code"] == cv.REASON_CORRUPT, "data_confidence dict تالف بنيوياً ⇒ corrupt")
+    # ── نوع غير نصّي (دفاعي لعمود Text) ⇒ corrupt ──
+    check(pcx(123, TODAY)["reason_code"] == cv.REASON_CORRUPT, "نوع غير نصّي ⇒ corrupt (دفاعي)")
+    # ── valid ⇒ present_confidence (high) + as_of من snap_date ──
+    good = json.dumps({"data_confidence": _dc_high()})
+    v = pcx(good, date(2026, 8, 17))
+    check(v["available"] is True and v["band"] == "high", "صالح ⇒ high")
+    check(v["as_of"] == "2026-08-17", "as_of من snap_date")
+    # ── RecursionError عند فكّ JSON ⇒ corrupt بلا استثناء (لا MemoryError) ──
+    orig = cv.json.loads
+    def boom(*a, **k):
+        raise RecursionError("maximum recursion depth exceeded")
+    cv.json.loads = boom
+    try:
+        v = pcx('{"data_confidence": {}}', TODAY)
+    finally:
+        cv.json.loads = orig
+    check(v["available"] is False and v["reason_code"] == cv.REASON_CORRUPT, "RecursionError ⇒ corrupt")
+    # ── نقاء: لا تعديل مدخل، حتمية، JSON-serializable ──
+    v1 = pcx(good, TODAY); v2 = pcx(good, TODAY)
+    check(v1 == v2, "حتمية")
+    json.dumps(pcx(None, TODAY)); json.dumps(v1)   # لا استثناء
+    check(True, "الخرج JSON-serializable")
 
 
 def main():
@@ -388,6 +433,7 @@ def main():
         test_11_factor_order_frozen, test_12_pct_and_critical_flags, test_13_critical_below_half_true,
         test_14_missing_and_caps_safe, test_14b_caps_official_max_only, test_15_as_of_forms,
         test_16_no_mutation_deterministic_json, test_17_module_purity,
+        test_18_present_confidence_from_extra_json,
     ]
     for fn in tests:
         fn()

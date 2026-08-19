@@ -16,6 +16,7 @@ confidence_view.py — مقدّم عرض نقي لدرجة الثقة (Data Conf
 فلا تتغيّر قراءة اللقطات التاريخية إذا تغيّرت نواة confidence.py مستقبلاً. أي schema غير مدعوم ⇒ unavailable.
 """
 
+import json
 from datetime import date, datetime
 
 SCHEMA_VERSION = 1
@@ -58,11 +59,16 @@ _OFFICIAL_CAP_MAX = {"low": 49, "medium": 79}
 # نص واجهة ثابت يوضّح المعنى (الفصل عن جودة الفرصة/الجودة المالية).
 EXPLANATION_TEXT = "تقيس اكتمال وحداثة البيانات، ولا تقيس جودة الفرصة."
 
-# رموز أسباب عدم التوفّر (ثابتة قابلة للاختبار).
-REASON_MISSING = "missing"                        # None / ليس dict
-REASON_UNAVAILABLE = "unavailable"                # النواة أعلنت unavailable بلا سبب صالح
-REASON_UNSUPPORTED_SCHEMA = "unsupported_schema"  # schema_version مفقود/bool/غير مدعوم
-REASON_CORRUPT = "corrupt"                        # score/band/factors/raw/final غير متّسقة
+# رموز أسباب عدم التوفّر (ثابتة قابلة للاختبار) — تصف العقد الفعلي بلا غموض:
+REASON_MISSING = "missing"                        # لا توجد بيانات ثقة أصلاً:
+#   · على مستوى extra_json: None / نص فارغ (فراغات) / dict صالح بلا مفتاح data_confidence.
+#   · على مستوى present_confidence المباشر: stored=None (غياب البيانات).
+REASON_UNAVAILABLE = "unavailable"                # النواة أعلنت unavailable بلا سبب نصّي صالح.
+REASON_UNSUPPORTED_SCHEMA = "unsupported_schema"  # schema_version مفقود/bool/غير مدعوم.
+REASON_CORRUPT = "corrupt"                        # بيانات موجودة لكنها تالفة:
+#   · على مستوى extra_json: JSON لا يُفكّ، أو JSON صالح لكن أعلى مستواه ليس dict (list/scalar/string)،
+#     أو مفتاح data_confidence موجود لكنه ليس dict.
+#   · على مستوى present_confidence: score/band/factors/raw/final غير متّسقة.
 
 
 def _strict_int(value):
@@ -89,7 +95,12 @@ def _band_for_score(score):
 def _as_of_str(snap_date):
     """يحوّل snap_date إلى 'YYYY-MM-DD' صالح فعلياً، أو None (بلا استثناء).
 
-    يقبل date/datetime، أو نصاً يمثّل تاريخاً حقيقياً (يُتحقّق بـstrptime). '2026-99-99'/'garbage' ⇒ None.
+    - date/datetime ⇒ isoformat لتاريخه.
+    - النص يُقبل **فقط** إذا كان طوله 10 محارف بالضبط وبصيغة YYYY-MM-DD ويمثّل تاريخاً حقيقياً
+      (يُتحقّق عبر strptime، فلا [:10] قبل التحقّق). أي طول مختلف يُرفض قبل التحليل.
+    - لذلك تُرفض النصوص ذات اللاحقة صراحةً: "2026-08-17T12:00" و"2026-08-17garbage" ⇒ None (طولها ≠ 10).
+      وكذلك التواريخ المستحيلة مثل "2026-99-99" و"garbage" ⇒ None.
+    - أي نوع آخر ⇒ None.
     """
     if snap_date is None:
         return None
@@ -255,3 +266,38 @@ def present_confidence(stored, snap_date=None):
         "schema_version": SCHEMA_VERSION,
         "reason_code": None,
     }
+
+
+def present_confidence_from_extra_json(raw_extra_json, snap_date=None):
+    """يحوّل نص extra_json الخام (من StockSnapshot.extra_json) إلى view-model عرض — دالة نقية.
+
+    **كل** فكّ JSON وتصنيف missing/corrupt واستخراج data_confidence يقع هنا (لا في طبقة القراءة)،
+    فتبقى tracking بلا أي فحص JSON أو اختيار reason code أو بناء view-model.
+
+    التصنيف (لا استثناء، لا 500 في أي حالة):
+    - None / نص فارغ (فراغات فقط) / dict صالح بلا مفتاح data_confidence ⇒ missing (بيانات ناقصة).
+    - JSON غير قابل للفك (ValueError/TypeError/RecursionError)، أو JSON صالح لكن أعلى مستواه ليس dict
+      (list/scalar/string)، أو data_confidence موجود لكنه ليس dict ⇒ corrupt. **لا يُلتقط MemoryError.**
+    - dict فيه data_confidence (dict) ⇒ present_confidence (وهو من يحدّد unavailable/unsupported_schema/
+      corrupt البنيوي/high/medium/low).
+
+    نقية: لا DB، لا Flask، لا API، لا كتابة. raw_extra_json المتوقّع نصّ (عمود Text) أو None؛ التحقّق من
+    isinstance(str) دفاعيّ (عمود Text لا يُرجع Mapping) ويصنّف أي نوع غير متوقّع corrupt بلا افتراض نوعه.
+    """
+    as_of = _as_of_str(snap_date)
+    if raw_extra_json is None or (isinstance(raw_extra_json, str) and not raw_extra_json.strip()):
+        return _unavailable(REASON_MISSING, as_of=as_of)
+    if not isinstance(raw_extra_json, str):
+        return _unavailable(REASON_CORRUPT, as_of=as_of)   # دفاعي (عمود Text لا يصل هنا فعلياً)
+    try:
+        parsed = json.loads(raw_extra_json)
+    except (ValueError, TypeError, RecursionError):
+        return _unavailable(REASON_CORRUPT, as_of=as_of)   # JSON تالف أو شديد التداخل
+    if not isinstance(parsed, dict):
+        return _unavailable(REASON_CORRUPT, as_of=as_of)   # JSON صالح لكن أعلى مستواه ليس dict
+    if "data_confidence" not in parsed:
+        return _unavailable(REASON_MISSING, as_of=as_of)   # dict بلا المفتاح ⇒ بيانات ناقصة
+    dc = parsed["data_confidence"]
+    if not isinstance(dc, dict):
+        return _unavailable(REASON_CORRUPT, as_of=as_of)   # المفتاح موجود لكنه ليس dict
+    return present_confidence(dc, snap_date)
