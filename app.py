@@ -158,6 +158,27 @@ def _database_uri():
     return "sqlite:///local.db"
 
 
+def _confidence_view_map(tickers):
+    """خريطة view-model كثيفة لدرجة الثقة بالبيانات، مفتاحها الرمز المعروض.
+
+    tickers: رموز البطاقات المعروضة فعلياً فقط (لا كامل UNIVERSE). تُزال التكرارات مع حفظ الترتيب.
+    - قائمة فارغة ⇒ {} بلا أي استعلام.
+    - غير فارغة ⇒ استعلام واحد كحد أقصى عبر tracking.latest_confidence_map (قراءة مجمّعة بلا N+1).
+    - أي رمز بلا لقطة (غائب عن الخريطة) يُملأ مركزياً بـpresent_confidence(None)، فيصل القالب
+      view-model جاهزاً دائماً — بلا None وبلا تصنيف missing/corrupt في الراوت أو القالب.
+
+    القيمة view-model جاهز للعرض؛ لا فكّ JSON ولا استدعاء data_confidence ولا إعادة حساب هنا.
+    """
+    from services import tracking
+    from services.confidence_view import present_confidence
+    wanted = list(dict.fromkeys(t for t in tickers if t))   # إزالة التكرار مع حفظ الترتيب
+    if not wanted:
+        return {}
+    stored = tracking.latest_confidence_map(wanted)          # استعلام واحد كحد أقصى
+    unavailable = present_confidence(None)                    # fallback مركزي موحّد (غير متوفرة)
+    return {t: stored.get(t, unavailable) for t in wanted}
+
+
 def create_app():
     app = Flask(__name__)
     app.config["SQLALCHEMY_DATABASE_URI"] = _database_uri()
@@ -868,6 +889,12 @@ def create_app():
                      if (r.get("break_status") or {}).get("dir") == "breakout"
                      and (r.get("break_status") or {}).get("confirmed")]
         breakouts.sort(key=lambda r: r["break_status"].get("days_ago") or 0)
+        # درجة الثقة بالبيانات لبطاقات _scard الظاهرة فعلاً (results + ready + breakouts) — استعلام واحد.
+        confidence_map = _confidence_view_map(
+            [r["ticker"] for r in results]
+            + [r["ticker"] for r in ready]
+            + [r["ticker"] for r in breakouts]
+        )
         return render_template(
             "index.html",
             results=results, sectors=sectors, latest=latest,
@@ -875,6 +902,7 @@ def create_app():
             signals=screener.recent_signals(),
             launched=launched, perf=perf, mood=mood, market_dir=market_dir,
             breakouts=breakouts, sort=sort, preset=preset,
+            confidence_map=confidence_map,
         )
 
     @app.route("/gems")
@@ -882,7 +910,9 @@ def create_app():
         # الجواهر المخفية = نفس فلتر Piotroski>=8 من الماسح، بصفحة مستقلة
         records, latest = screener.load_records()
         results = screener.filter_records(records, piotroski_min=8)
-        return render_template("gems.html", results=results, latest=latest, total=len(records))
+        confidence_map = _confidence_view_map([r["ticker"] for r in results])
+        return render_template("gems.html", results=results, latest=latest, total=len(records),
+                               confidence_map=confidence_map)
 
     @app.route("/leaders")
     def leaders():
@@ -890,7 +920,9 @@ def create_app():
         # الترتيب بالنمو فقط عرض مفيد؛ الجودة/التأكيد يظهران على كل بطاقة (لا يُقدَّم كقيادة شاملة).
         records, latest = screener.load_records()
         results = screener.filter_records(records)[:10]
-        return render_template("leaders.html", results=results, latest=latest, total=len(records))
+        confidence_map = _confidence_view_map([r["ticker"] for r in results])
+        return render_template("leaders.html", results=results, latest=latest, total=len(records),
+                               confidence_map=confidence_map)
 
     @app.route("/prelaunch")
     def prelaunch():
@@ -1744,10 +1776,13 @@ def create_app():
         # نقاط Piotroski المتحققة (الناجحة فقط)
         pio = report.get("piotroski") or {}
         pio_met = [c for c in (pio.get("components") or []) if c.get("passed") is True]
+        # درجة الثقة بالبيانات لهذا السهم فقط (report مؤكّد غير None هنا) — استعلام واحد لرمز واحد.
+        confidence = _confidence_view_map([report["ticker"]]).get(report["ticker"])
         return render_template("stock.html", report=report, ticker=report["ticker"],
                                scan=scan, summary=summary, peers=peers, tech=tech,
                                pio_met=pio_met, meter=meter,
-                               price_cached=price_cached, price_time=price_time)
+                               price_cached=price_cached, price_time=price_time,
+                               confidence=confidence)
 
     # ===================== حاسبة حجم الصفقة =====================
 
