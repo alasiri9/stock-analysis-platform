@@ -162,6 +162,50 @@
           {% endif %}
         </div>
       </div>
+
+      {# ثقة البيانات (PHASE 6 F2 — STEP 3): تقرأ view-model الجاهز فقط (المتغيّر confidence من الراوت).
+         لا حساب/فكّ JSON/تصنيف/استدعاء present_confidence هنا. حارس آمن عند غياب confidence. #}
+      {% if confidence is defined and confidence %}
+      <section class="dc-panel {{ confidence.band_class }}" aria-labelledby="dc-title">
+        <div class="dc-head">
+          <span class="dc-ic" aria-hidden="true">🛡</span>
+          <h3 id="dc-title" class="dc-title">ثقة البيانات</h3>
+          <span class="conf-badge {{ confidence.band_class }}">{{ confidence.band_label }}{% if confidence.available and confidence.score_text %} · {{ confidence.score_text }}{% endif %}</span>
+        </div>
+        <p class="dc-explain">{{ confidence.explanation }}</p>
+        {% if confidence.as_of %}<p class="dc-asof">حتى تاريخ <time datetime="{{ confidence.as_of }}" dir="ltr">{{ confidence.as_of }}</time></p>{% endif %}
+        {% if confidence.available %}
+          <div class="dc-factors">
+            {% for f in confidence.factors %}
+            <div class="dc-factor{% if f.critical %} dc-critical{% endif %}{% if f.critical_below_half %} dc-below-half{% endif %}">
+              <div class="dc-factor-top">
+                <span class="dc-factor-label">{{ f.label }}{% if f.critical %} <span class="dc-crit-tag">ركيزة جوهرية</span>{% endif %}</span>
+                <span class="dc-factor-num" dir="ltr">{{ f.points }}/{{ f.max }} · {{ f.pct }}%</span>
+              </div>
+              <progress class="dc-progress" value="{{ f.points }}" max="{{ f.max }}" aria-label="{{ f.label }}: {{ f.points }} من {{ f.max }}"></progress>
+            </div>
+            {% endfor %}
+          </div>
+          {% if confidence.missing %}
+          <div class="dc-missing">
+            <div class="dc-missing-title">بيانات تحتاج إلى استكمال</div>
+            <ul>{% for m in confidence.missing %}<li>{{ m }}</li>{% endfor %}</ul>
+          </div>
+          {% endif %}
+          {% if confidence.caps_applied %}
+          <div class="dc-caps">
+            {% for c in confidence.caps_applied %}
+            <div class="dc-cap">
+              <div class="dc-cap-head">تم تطبيق حد أعلى للدرجة: <b dir="ltr">{{ c.max }}/100</b></div>
+              {% if c.reasons %}<ul>{% for cr in c.reasons %}<li>{{ cr }}</li>{% endfor %}</ul>{% endif %}
+            </div>
+            {% endfor %}
+          </div>
+          {% endif %}
+        {% endif %}
+      </section>
+      {% endif %}
+
       {% if meter %}
         {% from "_techmeter.html" import techmeter %}
         <div class="tmeter-wrap tmeter-inline">

@@ -773,6 +773,51 @@ table.framed-table th, table.framed-table td {
   .conf-badge .conf-score { display: none; }
 }
 
+/* ---------- لوحة ثقة البيانات في صفحة السهم (PHASE 6 F2 — STEP 3) ----------
+   لوحة محايدة واعية بالثيم (متغيّرات --panel-2/--border/--text/--muted) مع شريط لوني
+   جانبي حسب band. لا تُغيّر ألوان conf-* المقفلة (تُستعمل كما هي في الحبة). High أزرق لا أخضر. */
+.dc-panel { margin: 14px 0; padding: 14px 16px; background: var(--panel-2); color: var(--text);
+  border: 1px solid var(--border); border-inline-start: 4px solid var(--border);
+  border-radius: var(--radius);
+  --dc-critical: #ff8a8a; --dc-warning: #f5c451; }   /* ألوان مقفلة (داكن) — تباين AA مقيس */
+html.light .dc-panel { --dc-critical: #b91c1c; --dc-warning: #92400e; }   /* فاتح — تباين AA مقيس */
+.dc-panel.conf-high   { border-inline-start-color: #7c6fe6; }
+.dc-panel.conf-medium { border-inline-start-color: #f5c451; }
+.dc-panel.conf-low    { border-inline-start-color: var(--muted); }
+.dc-panel.conf-na     { border-inline-start-color: var(--muted); }
+.dc-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.dc-ic { font-size: 16px; line-height: 1; }
+.dc-title { margin: 0; font-size: 15px; font-weight: 900; color: var(--text); }
+.dc-head .conf-badge { margin-inline-start: auto; }
+.dc-explain { margin: 6px 0 0; font-size: 13px; color: var(--muted); line-height: 1.7; }
+.dc-asof { margin: 4px 0 0; font-size: 12px; color: var(--muted); }
+.dc-factors { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 18px; margin-top: 12px; }
+.dc-factor { min-width: 0; }
+.dc-factor-top { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; font-size: 12.5px; }
+.dc-factor-label { color: var(--text); overflow-wrap: anywhere; }
+.dc-factor-num { color: var(--muted); font-weight: 800; white-space: nowrap; flex-shrink: 0; }
+.dc-crit-tag { font-size: 10px; font-weight: 800; color: var(--muted); border: 1px solid var(--border);
+  border-radius: 999px; padding: 0 6px; margin-inline-start: 4px; white-space: nowrap; }
+.dc-progress { appearance: none; -webkit-appearance: none; width: 100%; height: 7px; margin-top: 5px;
+  border: none; border-radius: 999px; background: var(--border); overflow: hidden; }
+.dc-progress::-webkit-progress-bar { background: var(--border); border-radius: 999px; }
+.dc-progress::-webkit-progress-value { background: #7c6fe6; border-radius: 999px; }
+.dc-progress::-moz-progress-bar { background: #7c6fe6; border-radius: 999px; }
+/* العامل الجوهري المنخفض (critical_below_half الجاهز من view-model) — تمييز واضح بالنص واللون، بلا حساب عتبة */
+.dc-factor.dc-below-half .dc-factor-label { color: var(--dc-critical); font-weight: 800; }
+.dc-factor.dc-below-half .dc-crit-tag { color: var(--dc-critical); border-color: var(--dc-critical); }
+.dc-factor.dc-below-half .dc-progress::-webkit-progress-value { background: var(--dc-critical); }
+.dc-factor.dc-below-half .dc-progress::-moz-progress-bar { background: var(--dc-critical); }
+.dc-missing, .dc-caps { margin-top: 12px; padding: 10px 12px; border-radius: 10px;
+  background: rgba(245,196,81,.08); border: 1px solid rgba(245,196,81,.3); }
+.dc-missing-title, .dc-cap-head { font-size: 13px; font-weight: 800; color: var(--dc-warning); }
+.dc-missing ul, .dc-cap ul { margin: 6px 0 0; padding-inline-start: 20px; }
+.dc-missing li, .dc-cap li { font-size: 12.5px; color: var(--text); line-height: 1.7; overflow-wrap: anywhere; }
+.dc-cap + .dc-cap { margin-top: 8px; }
+@media (max-width: 560px) {
+  .dc-factors { grid-template-columns: 1fr; }
+}
+
 /* ---------- مقابل السوق (SPY benchmark) ---------- */
 .stat-box.beat-box { border-color: rgba(245,196,81,.45); background: rgba(245,196,81,.08); }
 

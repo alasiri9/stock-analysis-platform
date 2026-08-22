@@ -493,18 +493,19 @@ def test_15_css_locked_colors_and_names():
                         (".conf-low", "#cdd5e4", "#2b4371"), (".conf-na", "#cdd5e4", "#2b4371")]:
         block = css[css.index(sel):css.index(sel) + 120]
         check(fg in block and bg in block, f"{sel}: لون النص {fg} والخلفية {bg}")
-    # #7c6fe6 مسموح كحد/خلفية فقط، لا كلون نص
-    check(re.search(r'(?<!border-)color:\s*#7c6fe6', css) is None, "#7c6fe6 غير مستخدم كلون نص")
+    # #7c6fe6 مسموح كحد/خلفية فقط، لا كلون نص. نلتقط تصريح لون نص فعلي فقط: color: مباشرة بعد { أو ;
+    # (يستثني border-color / border-inline-start-color / background لأنها ليست تصريح color: مستقلاً)
+    check(re.search(r'[{;]\s*color:\s*#7c6fe6', css) is None, "#7c6fe6 غير مستخدم كلون نص")
     # لا selector جديد باسم .confidence (الموجودان مسبقاً فقط: `.confidence` و`.confidence b`)
     check(len(re.findall(r'\.confidence\b', css)) == 2, "لم يُنشأ/يُعدَّل selector باسم .confidence")
     check(".conf-badge" in css, ".conf-badge موجود")
 
 
 def test_16_cache_key_bumped():
-    print("\n[16] cache key في base.html رُفِع إلى ?v=20260821a:")
+    print("\n[16] cache key في base.html محدَّث (؟v الحالي موجود، وما قبل F2 غائب):")
     base = open(os.path.join(_ROOT, "templates", "base.html"), encoding="utf-8").read()
-    check("?v=20260821a" in base, "المفتاح الجديد موجود")
-    check("?v=20260816b" not in base, "المفتاح القديم أُزيل")
+    check("?v=20260822a" in base, "المفتاح الحالي موجود")
+    check("?v=20260816b" not in base, "مفتاح ما قبل F2 أُزيل")
 
 
 def test_17_tooltip_js_binds_conf_badge():
@@ -531,6 +532,236 @@ def test_17_tooltip_js_binds_conf_badge():
           "click يمنع الانتقال (preventDefault + stopPropagation)")
 
 
+# ═══════════════ STEP 3: لوحة ثقة البيانات في صفحة السهم ═══════════════
+# مواصفة العوامل السبعة (تطابق services.confidence_view._SCHEMA1_FACTORS)
+_FACTORS_SPEC = [
+    ("catalyst_completeness", "اكتمال درجة النمو (Catalyst)", 20),
+    ("piotroski_computability", "قابلية حساب Piotroski", 20),
+    ("technical_indicators", "توفّر المؤشرات الفنية", 20),
+    ("structure_availability", "توفّر هيكل السوق", 15),
+    ("frames_availability", "توفّر الفريمات الإضافية (الأسبوعي والشهري)", 10),
+    ("flow_availability", "توفّر تدفق السيولة", 5),
+    ("freshness", "حداثة البيانات", 10),
+]
+_CRIT_KEYS = {"catalyst_completeness", "piotroski_computability", "technical_indicators"}
+_BAND_LABELS = {"high": ("ثقة عالية", "conf-high"), "medium": ("ثقة متوسطة", "conf-medium"),
+                "low": ("ثقة منخفضة", "conf-low")}
+
+
+def _mk_factors(points):
+    out = []
+    for key, label, mx in _FACTORS_SPEC:
+        p = points.get(key, mx)
+        crit = key in _CRIT_KEYS
+        out.append({"key": key, "label": label, "points": p, "max": mx,
+                    "pct": int(round(p / mx * 100)) if mx else 0,
+                    "critical": crit, "critical_below_half": bool(crit and p < 0.5 * mx)})
+    return out
+
+
+def _mk_vm(band="high", score=95, as_of="2026-08-21", points=None, missing=None, caps=None):
+    bl, bc = _BAND_LABELS[band]
+    return {"available": True, "score": score, "score_text": f"{score}/100", "band": band,
+            "band_label": bl, "band_class": bc, "explanation": EXPLANATION_TEXT, "as_of": as_of,
+            "factors": _mk_factors(points or {}), "missing": list(missing or []),
+            "caps_applied": list(caps or []), "schema_version": 1, "reason_code": None}
+
+
+def _seed_report():
+    from models import StockCache
+    from datetime import datetime as _dt, timezone as _tz
+    report = {
+        "ticker": "AAPL", "name": "Apple Inc", "sector": "Technology", "price": 123.45,
+        "change": 1.2, "change_percent": 0.98, "analysis_price": 123.45,
+        "piotroski": {"score": 6, "computable": 9, "components": []},
+        "catalyst": {"score": 70, "complete": True, "components": []},
+        "indicators": [{"label": "MACD", "status": "bull", "value": "x"},
+                       {"label": "RSI", "status": "neutral", "value": "x"}],
+        "metrics": {"gross_margin": 40, "op_margin": 25, "pe": 20, "peg": 1.2, "roa": 10, "roe": 30},
+        "break_status": None, "sustained": None, "reversal": None, "insider_trades": [],
+        "fibonacci": None, "volume_profile": None, "atr_plan": None, "chart": None,
+    }
+    with app.app_context():
+        db.session.merge(StockCache(ticker="report:AAPL",
+                                    data_json=json.dumps(report, ensure_ascii=False),
+                                    updated_at=_dt.now(_tz.utc)))
+        db.session.commit()
+
+
+def _stock_html(vm=_UNSET, absent=False):
+    """يصيّر /stock/AAPL فعلياً (تقرير مخزّن) مع التحكّم في confidence عبر ترقيع _confidence_view_map."""
+    _seed_report()
+    m = {} if absent else {"AAPL": vm}
+    with patch.object(app_module, "_confidence_view_map", lambda tickers: m):
+        with _admin_client() as c:
+            r = c.get("/stock/AAPL")
+    return r.status_code, r.get_data(as_text=True)
+
+
+def test_18_panel_available_high():
+    print("\n[18] لوحة available high: موضع + band/score/explanation/as_of + 7 عوامل بالترتيب:")
+    st, html = _stock_html(_mk_vm(band="high", score=95, as_of="2026-08-21"))
+    check(st == 200, f"200 (كان {st})")
+    # حاوية section دلالية مربوطة بالعنوان
+    check('<section class="dc-panel conf-high" aria-labelledby="dc-title">' in html, "section + aria-labelledby + conf-high")
+    check('id="dc-title" class="dc-title">ثقة البيانات' in html, "العنوان يحمل id=dc-title الصحيح")
+    # الموضع: بعد score-cards وقبل tmeter
+    i_sc, i_dc, i_tm = html.index("score-cards"), html.index("dc-panel"), html.index("tmeter-wrap")
+    check(i_sc < i_dc < i_tm, "اللوحة بعد score-cards وقبل tmeter-wrap")
+    check("ثقة عالية" in html and "95/100" in html, "band_label + score_text")
+    check(EXPLANATION_TEXT in html, "explanation")
+    check('حتى تاريخ' in html and '<time datetime="2026-08-21" dir="ltr">2026-08-21</time>' in html,
+          "as_of بعنصر time بـdir=ltr (يبقى 2026-08-21)")
+    _nf = html.count('<progress class="dc-progress"')
+    check(_nf == 7, f"7 عوامل (كان {_nf})")
+    block = html[html.index('class="dc-factors"'):]   # داخل شبكة العوامل فقط (بعد أي نص سابق)
+    idx = [block.find(label) for _k, label, _m in _FACTORS_SPEC]
+    check(all(i >= 0 for i in idx) and idx == sorted(idx), f"العوامل بترتيب view-model ({idx})")
+    check("20/20 · 100%" in html, "points/max · pct")
+    check('<progress class="dc-progress" value="20" max="20"' in html, "progress دلالي value/max")
+    check("reason_code" not in html and "schema_version" not in html, "لا حقول داخلية")
+
+
+def test_19_panel_medium_low():
+    print("\n[19] medium/low: class وlabel من view-model فقط:")
+    _, hm = _stock_html(_mk_vm(band="medium", score=72))
+    check('class="dc-panel conf-medium"' in hm and "ثقة متوسطة" in hm and "72/100" in hm, "medium")
+    _, hl = _stock_html(_mk_vm(band="low", score=40))
+    check('class="dc-panel conf-low"' in hl and "ثقة منخفضة" in hl and "40/100" in hl, "low")
+
+
+def test_20_panel_critical_below_half():
+    print("\n[20] العامل الجوهري المنخفض: تمييز بصري من الأعلام الجاهزة (بلا حساب عتبة):")
+    # نُنقص عاملاً جوهرياً (technical_indicators) تحت النصف ⇒ critical_below_half=True
+    vm = _mk_vm(band="low", score=45, points={"technical_indicators": 4})
+    _, html = _stock_html(vm)
+    check("dc-below-half" in html, "class dc-below-half للعامل الجوهري المنخفض")
+    check(html.count("ركيزة جوهرية") == 3, "وسم «ركيزة جوهرية» للعوامل الجوهرية الثلاثة")
+    # عامل جوهري مكتمل لا يأخذ التمييز المنخفض
+    vm2 = _mk_vm(band="high", score=95)
+    _, html2 = _stock_html(vm2)
+    check("dc-below-half" not in html2, "لا dc-below-half عند اكتمال الجوهرية")
+
+
+def test_21_panel_missing():
+    print("\n[21] missing: عنوان ودّي + نصوص escaped · القائمة الفارغة لا تُنشئ صندوقاً:")
+    vm = _mk_vm(band="medium", score=70, missing=["حجم التداول < المطلوب"])
+    _, html = _stock_html(vm)
+    check("بيانات تحتاج إلى استكمال" in html, "عنوان missing الودّي")
+    check("حجم التداول &lt; المطلوب" in html, "النص escaped")
+    check("حجم التداول < المطلوب" not in html, "لا حقن خام لـ<")
+    _, html2 = _stock_html(_mk_vm(band="high", score=95, missing=[]))
+    check("dc-missing" not in html2, "قائمة فارغة ⇒ لا صندوق missing")
+
+
+def test_22_panel_caps():
+    print("\n[22] caps_applied: max + reasons · القيمة الداخلية cap لا تظهر · تعدّد لا يكسر:")
+    caps = [{"cap": "low", "max": 49, "reasons": ["بيانات ناقصة", "لقطة قديمة"]},
+            {"cap": "medium", "max": 79, "reasons": ["سبب آخر"]}]
+    vm = _mk_vm(band="low", score=49, caps=caps)
+    _, html = _stock_html(vm)
+    check("تم تطبيق حد أعلى للدرجة:" in html and "49/100" in html and "79/100" in html, "max لكل cap")
+    check("بيانات ناقصة" in html and "لقطة قديمة" in html and "سبب آخر" in html, "reasons")
+    # القيمة الداخلية low/medium يجب ألا تظهر كنص مستقل للمستخدم
+    import re
+    check(re.search(r">\s*(low|medium)\s*<", html) is None, "cap الداخلي (low/medium) لا يظهر كنص")
+    check(st_ok(html), "الصفحة لم تُكسر بتعدّد caps/reasons")
+
+
+def st_ok(html):
+    return "dc-caps" in html and "</html>" in html
+
+
+def test_23_panel_unavailable():
+    print("\n[23] unavailable: «غير متوفرة» + conf-na بلا score/factors/missing/caps بلا 500:")
+    vm = present_confidence(None, RUN)
+    st, html = _stock_html(vm)
+    check(st == 200, "200")
+    check('class="dc-panel conf-na"' in html, "dc-panel conf-na")
+    check("درجة الثقة غير متوفرة" in html, "نص غير متوفرة")
+    check("dc-factors" not in html and "dc-missing" not in html and "dc-caps" not in html, "لا عوامل/missing/caps")
+    check("reason_code" not in html and "schema_version" not in html, "لا حقول داخلية")
+
+
+def test_24_panel_as_of_none():
+    print("\n[24] as_of=None: لا تاريخ وهمي ولا عنصر time فارغ:")
+    vm = _mk_vm(band="high", score=95, as_of=None)
+    _, html = _stock_html(vm)
+    check("حتى تاريخ" not in html, "لا سطر «حتى تاريخ»")
+    check("<time" not in html, "لا عنصر time (فارغ أو غيره) في اللوحة")
+
+
+def test_25_panel_confidence_absent():
+    print("\n[25] غياب confidence من السياق: لا لوحة، بلا 500، بلا بيانات مصطنعة:")
+    st, html = _stock_html(absent=True)
+    check(st == 200, "200")
+    check("dc-panel" not in html, "لا لوحة عند غياب confidence")
+    check("score-cards" in html, "وبقية الصفحة سليمة")
+
+
+def test_26_cache_key_step3():
+    print("\n[26] cache key في base.html = ?v=20260822a:")
+    base = open(os.path.join(_ROOT, "templates", "base.html"), encoding="utf-8").read()
+    check("?v=20260822a" in base, "المفتاح الجديد موجود")
+    check("?v=20260821a" not in base, "مفتاح STEP 2 أُزيل")
+
+
+def test_27_panel_contrast_locked_pairs():
+    print("\n[27] تباين WCAG محسوب فعلياً لألوان critical/warning على panel/track (داكن+فاتح):")
+    # خلفيات اللوحة والمسار من متغيّرات الثيم: داكن --panel-2/--border · فاتح --panel-2/--border
+    DK_PANEL, DK_TRACK = "#1b2f57", "#2c3f66"
+    LT_PANEL, LT_TRACK = "#eef3fb", "#d6deec"
+    DC_CRIT_DK, DC_WARN_DK = "#ff8a8a", "#f5c451"
+    DC_CRIT_LT, DC_WARN_LT = "#b91c1c", "#92400e"
+    # (اسم، نص، خلفية، الهدف المعلَن)
+    pairs = [
+        ("critical dark/panel", DC_CRIT_DK, DK_PANEL, 5.82),
+        ("critical dark/track", DC_CRIT_DK, DK_TRACK, 4.60),
+        ("critical light/panel", DC_CRIT_LT, LT_PANEL, 5.81),
+        ("critical light/track", DC_CRIT_LT, LT_TRACK, 4.78),
+        ("warning dark/panel", DC_WARN_DK, DK_PANEL, 8.11),
+        ("warning light/panel", DC_WARN_LT, LT_PANEL, 6.36),
+    ]
+    for name, fg, bg, target in pairs:
+        ratio = _contrast(fg, bg)   # نفس دالة WCAG المستخدمة في test_14
+        check(ratio >= 4.5, f"{name}: {fg}/{bg} = {ratio:.2f}:1 (≥4.5)")
+        check(abs(ratio - target) <= 0.1, f"{name}: يطابق الهدف المعلَن ~{target} (فعلي {ratio:.2f})")
+    # الرموز الجديدة معرّفة في CSS كمتغيّرات مقفلة (داكن + فاتح)
+    css = open(os.path.join(_ROOT, "static", "style.css"), encoding="utf-8").read()
+    for hexv in (DC_CRIT_DK, DC_WARN_DK, DC_CRIT_LT, DC_WARN_LT):
+        check(hexv in css, f"{hexv} معرّف في CSS")
+    check("html.light .dc-panel" in css and "--dc-critical" in css and "--dc-warning" in css,
+          "متغيّرات --dc-critical/--dc-warning للوضعين")
+
+
+def test_28_integration_real_pipeline_no_patch():
+    print("\n[28] تكامل فعلي بلا ترقيع _confidence_view_map (لقطة StockSnapshot → القالب):")
+    with app.app_context():
+        _clear()
+        _seed_snap("AAPL", _dc_json())   # لقطة حقيقية بثقة صالحة (data_confidence من النواة)
+    _seed_report()
+    box = {}
+
+    def _do():
+        with _admin_client() as c:
+            r = c.get("/stock/AAPL")     # لا ترقيع: المسار الحقيقي latest_confidence_map→present_confidence_from_extra_json→app.py→stock.html
+        box["st"] = r.status_code
+        box["html"] = r.get_data(as_text=True)
+
+    with app.app_context():
+        writes = _count_writes(_do)      # عدّ الكتابة أثناء العرض فقط
+    st, html = box["st"], box["html"]
+    check(st == 200, f"200 (كان {st})")
+    check('<section class="dc-panel conf-high"' in html, "لوحة متاحة (conf-high من اللقطة الحقيقية)")
+    check("ثقة عالية" in html, "band")
+    import re
+    check(re.search(r'\d+/100', html) is not None, "score_text")
+    check('<time datetime="2026-08-21" dir="ltr">2026-08-21</time>' in html, "as_of من snap_date")
+    check(html.count('<progress class="dc-progress"') == 7, "العوامل السبعة")
+    check("reason_code" not in html and "schema_version" not in html, "لا حقول داخلية")
+    check(writes == 0, f"لا كتابة أثناء العرض (كان {writes})")
+
+
 # ═══════════════ التشغيل ═══════════════
 def run():
     tests = [
@@ -551,9 +782,20 @@ def run():
         test_15_css_locked_colors_and_names,
         test_16_cache_key_bumped,
         test_17_tooltip_js_binds_conf_badge,
+        test_18_panel_available_high,
+        test_19_panel_medium_low,
+        test_20_panel_critical_below_half,
+        test_21_panel_missing,
+        test_22_panel_caps,
+        test_23_panel_unavailable,
+        test_24_panel_as_of_none,
+        test_25_panel_confidence_absent,
+        test_26_cache_key_step3,
+        test_27_panel_contrast_locked_pairs,
+        test_28_integration_real_pipeline_no_patch,
     ]
     print("=" * 64)
-    print("PHASE 6 / F2 — STEP 1+2: Route Wiring + Card Badge")
+    print("PHASE 6 / F2 — STEP 1+2+3: Wiring + Card Badge + Stock Panel")
     print("=" * 64)
     for t in tests:
         t()
