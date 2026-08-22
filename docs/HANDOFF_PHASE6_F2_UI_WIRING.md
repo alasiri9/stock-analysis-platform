@@ -1,79 +1,64 @@
 # حالة العمل — PHASE 6 / F2: Data Confidence UI Wiring
 
-> ملف تسليم لحفظ الحالة بين الجلسات. **لا كود منفّذ بعد — الخطة فقط جاهزة ومعتمدة داخليًّا وتنتظر مراجعة Codex + إذن مستقل.**
+> **مكتملة عبر STEP 1–3**، ومعتمدة، ومرفوعة على الفرع النظيف. لم تُدمج في `main` ولم تُنشر بعد.
 
-## أين نحن الآن
-- **F2 (نواة Data Confidence) مدموجة في `main`** عبر PR #2 (`claude/phase6-f2-confidence-core`).
-- HEAD الحالي لـ`main` والفرع المخصّص: `6ff24aa` (Merge PR #2).
-- الفرع المخصّص للعمل القادم: `claude/american-platform-file-19r593` (أُعيد ضبطه فوق أحدث `main`).
-- **المرحلة القادمة (لم تبدأ):** ربط الثقة بالواجهة (UI Wiring). خطة كاملة جاهزة، تنتظر:
-  1. مراجعة Codex واعتمادها.
-  2. الإجابة عن سؤالين مفتوحين (أدناه).
-  3. إذن مستقل جديد لبدء التنفيذ (STEP 3A).
+## الخلاصة
+ربط **درجة ثقة البيانات (Data Confidence)** بالواجهة: شارة على بطاقات المسح، ولوحة تفصيلية في
+صفحة السهم — بعرض **الـview-model المخزّن فقط** (لا إعادة حساب، لا حفظ، لا API، لا كتابة).
 
-## القاعدة الحاكمة
-- **PLAN ONLY حتى الآن:** لا commit كود/لا push/لا PR/لا merge/لا deploy/لا migration/لا حذف — إلا بإذن مستقل جديد لكل خطوة.
-- كل دمج في `main` يَنشر تلقائيًّا على الموقع الحيّ خلال ~دقيقتين → **`python tests/smoke_test.py` إلزامي قبل أي دمج**.
+## الفروع والالتزامات
+- **الخط الأساسي لـ`main`:** `6ff24aa819dfd91b1a700e8aa467ef883dbc8523` (نواة F2 المدموجة عبر PR #2).
+- **الفرع النظيف للعمل:** `claude/american-platform-file-19r593-clean`
+- **الـcommits المكتملة (بالترتيب):**
+  - `c204b6095516fd3273b3e2f35074698710dd5773` — STEP 1: Backend Wiring (ربط الخريطة بالمسارات).
+  - `f53bd584f6254f7cc51ae91231228f6055c8fb83` — STEP 2: Card Badges + CSS + Tooltip.
+  - `ff26a2234d9745fbfc8700278fedc09e47616ea1` — STEP 3: Stock Detail Confidence Panel.
 
-## ما تعرضه المرحلة القادمة
-عرض `data_confidence` **المخزّنة فقط** (لا إعادة حساب/لا حفظ/لا DB/لا API/لا live price) عبر الـview-model الموجود:
-`present_confidence` · `present_confidence_from_extra_json` · `latest_confidence_map` (في `services/tracking.py`, `services/confidence_view.py`).
+## العقود النهائية (Backend → Template)
+- الرئيسية `/` تمرّر **اتحاد رموز `results` + `ready` + `breakouts`** (بطاقات `_scard` الظاهرة فعلاً).
+- `/gems` و`/leaders` تمرّران **رموز `results` فقط**.
+- صفحة السهم `/stock/<t>` تطلب **`[report["ticker"]]`** بعد التأكّد أن `report` ليست None
+  (مسار `report=None` يعود قبلها ⇒ صفر استعلام ثقة).
+- **ممنوع** استدعاء `latest_confidence_map()` بلا وسيط، و**ممنوع** جلب كامل UNIVERSE.
+- المُساعد `app._confidence_view_map(tickers)`: خريطة كثيفة — أي رمز بلا لقطة يُملأ مركزياً
+  بـ**`present_confidence(None)`** (fallback موحّد)، فيصل القالب view-model جاهزاً دائماً.
+- **استعلام واحد كحد أقصى** عند وجود رموز، و**صفر** للقائمة الفارغة. **لا N+1**، ولا كتابة،
+  ولا إعادة حساب، ولا API/live-price في مسار العرض.
+- **القوالب تقرأ view-model فقط** — لا فكّ JSON ولا تصنيف missing/corrupt ولا استدعاء
+  `present_confidence` داخل القالب.
+- **`/changes` و`templates/changes.html` مؤجّلان بالكامل ولم يُلمسا.**
 
-## المسارات والقوالب الفعلية (مؤكّدة بالكود)
-| المسار | دالة app.py | القالب | قائمة الأسهم |
-|---|---|---|---|
-| `/` | `index()` 820–878 | `index.html` | results/ready/breakouts (`.ticker`) |
-| `/gems` | `gems()` 880–885 | `gems.html` | results |
-| `/leaders` | `leaders()` 887–893 | `leaders.html` | results |
-| `/changes` | `changes()` 1591–1597 | `changes.html` | items[].ticker |
-| `/stock/<t>` | `stock_report()` 1640–1748 | `stock.html` | report.ticker |
+## الواجهة النهائية
+- **شارة الثقة** في بطاقات المسح (`_scard.html`): داخل `scard-top` بعد `state-pill`، تعرض
+  band_label + score_text (تُخفى الدرجة على الجوال، وتبقى في `aria-label`).
+- **لوحة ثقة البيانات** في `stock.html`: `<section aria-labelledby="dc-title">` بعد `score-cards`
+  وقبل `tmeter-wrap`، تعرض band + score + explanation + **as_of** (`<time dir="ltr">` يبقى YYYY-MM-DD)
+  + **العوامل السبعة** (points/max/pct + progress + تمييز `critical_below_half`) + **missing** + **caps_applied**.
+- **الألوان (مقفلة، تباين AA مقيس):** high أزرق `#a7c0e8`/`#2b3f79` (border `#7c6fe6`) — ليس أخضر ·
+  medium `#f5c451`/`#314468` · low & unavailable `#cdd5e4`/`#2b4371`.
+  متغيّرات اللوحة: critical داكن `#ff8a8a` / فاتح `#b91c1c` · warning داكن `#f5c451` / فاتح `#92400e`.
+- **tooltip يعمل للفأرة واللمس** عبر النظام المشترك (`pointerenter/pointerleave` مقيّدة بـ`pointerType==='mouse'`
+  + `click` toggle مع `preventDefault`/`stopPropagation` لمنع انتقال رابط البطاقة).
+- **cache key النهائي:** `?v=20260822a` في `base.html`.
+- **لا يُعرض `reason_code` ولا `schema_version`** للمستخدم في أي حالة.
 
-- البطاقة المشتركة `_scard.html` مُضمّنة في index (162،180،276) وgems (23) وleaders (25) وتستخدم `r.ticker`.
-- شارات حالية للاسترشاد: `badge-gem` (_scard:13)، `state-pill` (_scard:14) داخل `scard-top`.
-- نمط tooltip قابل لإعادة الاستخدام: `data-tip="..."` + CSS `.help-q`/`.nav-eye` (style.css:817).
-- كسر كاش CSS: `base.html:11` حاليًّا `?v=20260816b` (يُرفع مرّة واحدة عند تعديل CSS).
-- **لا كلاسات `conf-*` موجودة** (تجنّب `.confidence` في style.css:656 — نصّ مختلف).
+## النتائج النهائية (آخر تشغيل)
+- `python tests/test_phase6_ui_wiring.py` → **139 نجح / 0 فشل**.
+- `pytest tests/test_phase6_ui_wiring.py -q` → **28 passed**.
+- مجموعة F2 (confidence + persistence + confidence_view + confidence_read + ui_wiring) → **169 passed**.
+- `python tests/smoke_test.py` → **35 صفحة سليمة ✓**.
+- `pytest -q` (المجموعة الكاملة) → **26 failed / 302 passed** — والـ26 هي **baseline legacy مسجّلة**
+  (ملفات قديمة: persistence/audit_phase2/audit_phase4/phase5_baseline/audit_high_v2 تتصادم فقط عند
+  تشغيل المجلد كله في عملية واحدة؛ كلٌّ ينجح منفرداً؛ **0 إخفاق مُضاف** من هذا العمل).
+- Jinja parse + `py_compile` + `git diff --check` → سليمة.
 
-## عقد الربط (Backend → Template)
-- الصفحات ذات القوائم: `tracking.latest_confidence_map()` **بلا وسيط** → كل UNIVERSE (≤32) باستعلام **واحد** يغطّي كل القوائم.
-- صفحة السهم: `tracking.latest_confidence_map([report["ticker"]]).get(report["ticker"])`.
-- **تمرير صريح في المسارات فقط — لا `context_processor`** (يُشغّل الاستعلام على كل صفحة).
-- `_scard` يقرأ `confidence_map.get(r.ticker)` من dict جاهز → **لا N+1**. القيمة view-model جاهزة للعرض → **لا helper إضافي**، فقط حارس Jinja.
-- غياب ticker من الخريطة → `None` → «غير متوفرة» بلا خطأ.
+## الملفات المعدّلة في STEP 1–3
+`app.py` · `templates/_scard.html` · `templates/stock.html` · `static/style.css` · `templates/base.html`
+· `tests/test_phase6_ui_wiring.py` (جديد). **مجمّدة/لم تُمَسّ:** `services/confidence*.py` · `services/tracking.py`
+· `models.py` · `templates/changes.html` · `index/gems/leaders.html`.
 
-## نصوص الواجهة (من الـview-model)
-- high = «ثقة عالية» / لون **أزرق-نيلي (ليس أخضر)** · medium = «ثقة متوسطة» / كهرماني · low = «ثقة منخفضة» / رمادي.
-- missing + corrupt → موحّدان «درجة الثقة غير متوفرة» (رمادي محايد). `reason_code`/`schema_version` **داخلي فقط، لا يُعرض للمستخدم**. لا JSON/تفاصيل مخيفة.
-- جملة `explanation` ملازمة. فصل بصري تام عن جودة السهم (Piotroski) وقوة الفرصة (Algomatix/جاهز).
-- البطاقة: حبة `conf-badge` آخر `scard-top` (بعد state-pill/gem)، تُخفى `score_text` على الجوال.
-- صفحة السهم: لوحة قرب `score-cards` (stock.html:139): band + score + as_of + عوامل (factors) + missing ودّيًّا.
-
-## الملفات المتوقّع تعديلها (عند الإذن)
-`app.py` (Prod) · `templates/_scard.html` · `templates/stock.html` · `static/style.css` · `templates/base.html` (رفع ?v=) · `templates/changes.html` (اختياري/مؤجّل) · جديد `tests/test_phase6_ui_wiring.py`.
-**بلا تعديل:** index/gems/leaders.html (include فقط) · confidence*.py/tracking.py (مجمّدة) · models.py.
-
-## المراحل والـcommits المقترحة
-- **STEP 3A** — ربط backend: `app.py` + `tests/test_phase6_ui_wiring.py` → `feat(phase6): wire confidence map into scanner routes`
-- **STEP 3B** — شارة البطاقة + CSS + ?v=: `_scard.html`+`style.css`+`base.html` → `feat(phase6): add data confidence badge to stock card`
-- **STEP 3C** — لوحة صفحة السهم: `stock.html` → `feat(phase6): add data confidence panel to stock page`
-- **STEP 3D** — تلميع/legend/(changes)/اختبارات → `feat(phase6): polish confidence UI (legend, responsive, tests)`
-
-## مصفوفة الاختبارات (قبل أي دمج)
-```
-python -m pytest tests/test_phase6_ui_wiring.py -rA -q        # جديد: استعلام واحد/صفحة، 5 حالات، لا N+1/write/API
-python -m pytest tests/test_phase6_confidence.py tests/test_phase6_confidence_read.py \
-                tests/test_phase6_confidence_view.py tests/test_phase6_persistence.py -q
-python tests/test_logic_audit_phase*.py                       # PHASE 1–5
-python tests/smoke_test.py                                    # إلزامي قبل الدمج (لا 500)
-git diff --check                                              # مسافات
-```
-
-## حواف مضمونة (بلا HTTP 500 — مثبتة بـF2)
-NULL/فارغ→missing · تالف/بنية/score خارج→corrupt · snap_date غير صالح→as_of None · ticker غائب→na · قائمة فارغة→{} · تكرار/حالة أحرف→`_clean_tickers`.
-
-## أسئلة مفتوحة (تحتاج قرار أحمد قبل STEP 3A)
-1. **`/changes`:** ضمن المرحلة الأولى (STEP 3D) أم مرحلة لاحقة مستقلة؟
-2. **لون `high`:** نيلي `#7c6fe6` أم أزرق فاتح `#a7c0e8`؟
-
-## أول خطوة عند العودة
-اقرأ هذا الملف → انتظر اعتماد Codex + جواب السؤالين + إذن مستقل → ابدأ STEP 3A (backend wiring + ملف الاختبار) فقط.
+## الحالة والخطوة القادمة
+- **STEP 1–3 مكتملة ومعتمدة ومرفوعة** على `claude/american-platform-file-19r593-clean`.
+- **لا PR ولا merge ولا deploy حتى الآن.**
+- **الدمج إلى `main` قد يشغّل النشر التلقائي على الموقع الحيّ خلال ~دقيقتين** — يحتاج **إذناً مستقلاً**
+  و**فحوص ما قبل النشر** (`smoke_test` إلزامي).
