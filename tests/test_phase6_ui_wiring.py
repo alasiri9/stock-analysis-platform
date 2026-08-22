@@ -53,6 +53,9 @@ from app import app, _confidence_view_map  # noqa: E402
 from models import db, StockSnapshot  # noqa: E402
 from services import tracking, screener, analysis  # noqa: E402
 from services.confidence import data_confidence, CONFIDENCE_TECHNICAL_INDICATOR_KEYS  # noqa: E402
+from services.confidence_view import present_confidence, EXPLANATION_TEXT  # noqa: E402
+
+_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 _passed = 0
 _failed = 0
@@ -367,6 +370,167 @@ def test_10_stock_none_report_zero_confidence_call():
     check(dict(calls)["stock.html"].get("report") is None, "report=None فعلاً")
 
 
+# ═══════════════ STEP 2: شارة البطاقة + CSS + cache key ═══════════════
+def _card_rec(ticker):
+    return {"ticker": ticker, "name": "Test Co", "sector": None,
+            "catalyst": 70, "catalyst_complete": True, "piotroski": 6,
+            "indicators": [], "change_percent": None}
+
+
+_UNSET = object()
+
+
+def _render_scard(rec, cmap=_UNSET):
+    """يصيّر _scard.html وحده بسياق مُتحكَّم به — نعطّل دوال البطاقة الأخرى (globals) لعزل الشارة."""
+    from flask import render_template_string
+    env = app.jinja_env
+    keys = ("is_gem", "measures_met", "current_price", "piotroski_computable",
+            "tech_tilt", "is_golden", "bullish_reasons")
+    saved = {k: env.globals.get(k) for k in keys}
+    env.globals.update(is_gem=lambda r: False, measures_met=lambda r: 0,
+                       current_price=lambda r: None, piotroski_computable=lambda r: 9,
+                       tech_tilt=lambda r: None, is_golden=lambda r: False,
+                       bullish_reasons=lambda r: [])
+    try:
+        with app.test_request_context("/"):
+            ctx = {"r": rec}
+            if cmap is not _UNSET:
+                ctx["confidence_map"] = cmap
+            return render_template_string("{% set rank=1 %}{% include '_scard.html' %}", **ctx)
+    finally:
+        env.globals.update(saved)
+
+
+def _badge_attrs(html):
+    """يستخرج سمات وسم conf-badge نفسه (data-tip/aria-label/class) — لا بحث عام في HTML."""
+    import re
+    m = re.search(r'<span class="conf-badge[^"]*"[^>]*>', html)
+    if not m:
+        return None
+    tag = m.group(0)
+    def _attr(name):
+        a = re.search(name + r'="([^"]*)"', tag)
+        return a.group(1) if a else None
+    return {"class": _attr("class"), "data-tip": _attr("data-tip"), "aria-label": _attr("aria-label")}
+
+
+def test_11_badge_available_renders_view_model():
+    print("\n[11] الشارة تعرض view-model الجاهز (data-tip=explanation · aria-label يضمّه):")
+    with app.app_context():
+        vm = present_confidence(data_confidence(_record(), RUN), RUN)
+        check(vm["available"] and vm["band"] == "high", "view-model متاح high (تحضير)")
+        html = _render_scard(_card_rec("AAA"), {"AAA": vm})
+        at = _badge_attrs(html)
+        check(at is not None, "وسم conf-badge موجود")
+        check(at["class"] == f"conf-badge {vm['band_class']}", f"class = conf-badge {vm['band_class']}")
+        check(vm["score_text"] in html and "conf-score" in html, "score_text ظاهر (سطح المكتب)")
+        # data-tip == explanation (مطابقة تامة، لا بحث عام)
+        check(at["data-tip"] == vm["explanation"] == EXPLANATION_TEXT, "data-tip يساوي explanation تماماً")
+        # aria-label يتضمّن band_label + score_text + explanation
+        check(vm["band_label"] in at["aria-label"], "aria-label يتضمّن band_label")
+        check(vm["score_text"] in at["aria-label"], "aria-label يتضمّن score_text")
+        check(vm["explanation"] in at["aria-label"], "aria-label يتضمّن explanation")
+        check("reason_code" not in html, "لا reason_code في HTML")
+
+
+def test_12_badge_unavailable_safe():
+    print("\n[12] الشارة عند unavailable: «غير متوفرة» بلا score وبلا reason_code وبلا 500:")
+    with app.app_context():
+        vm = present_confidence(None, RUN)   # fallback مركزي
+        check(vm["available"] is False and vm["band_class"] == "conf-na", "unavailable/conf-na (تحضير)")
+        html = _render_scard(_card_rec("BBB"), {"BBB": vm})
+        check("conf-badge conf-na" in html, "class = conf-badge conf-na")
+        check("درجة الثقة غير متوفرة" in html, "نص «غير متوفرة» ظاهر")
+        check("conf-score" not in html, "لا score span (score_text=None)")
+        check("reason_code" not in html and vm["reason_code"] not in html, "لا reason_code/سبب مسرّب")
+
+
+def test_13_badge_safe_without_context():
+    print("\n[13] غياب confidence_map ⇒ لا شارة، بلا 500 (يحافظ على fallback backend):")
+    with app.app_context():
+        html_none = _render_scard(_card_rec("CCC"))              # بلا confidence_map إطلاقاً
+        check("conf-badge" not in html_none, "لا شارة عند غياب السياق")
+        check("scard-ticker" in html_none, "والبطاقة تُصيّر طبيعياً (لا 500)")
+        html_empty = _render_scard(_card_rec("DDD"), {})         # confidence_map فارغ
+        check("conf-badge" not in html_empty, "لا شارة عند خريطة فارغة")
+
+
+# ─── تباين WCAG على لون الحبة الصلب نفسه (حساب فعلي، لا نظر) ───
+def _rel_lum(hexc):
+    r, g, b = (int(hexc[i:i + 2], 16) / 255 for i in (1, 3, 5))
+
+    def _lin(c):
+        return c / 12.92 if c <= 0.03928 else ((c + 0.055) / 1.055) ** 2.4
+
+    R, G, B = _lin(r), _lin(g), _lin(b)
+    return 0.2126 * R + 0.7152 * G + 0.0722 * B
+
+
+def _contrast(fg, bg):
+    l1, l2 = _rel_lum(fg), _rel_lum(bg)
+    hi, lo = max(l1, l2), min(l1, l2)
+    return (hi + 0.05) / (lo + 0.05)
+
+
+def test_14_contrast_meets_aa():
+    print("\n[14] تباين WCAG AA (≥4.5) على الخلفيات الصلبة المقفلة:")
+    pairs = [
+        ("high", "#a7c0e8", "#2b3f79"),
+        ("medium", "#f5c451", "#314468"),
+        ("low", "#cdd5e4", "#2b4371"),
+        ("unavailable", "#cdd5e4", "#2b4371"),
+    ]
+    for name, fg, bg in pairs:
+        ratio = _contrast(fg, bg)
+        check(ratio >= 4.5, f"{name}: {fg} على {bg} = {ratio:.2f}:1 (≥4.5)")
+
+
+def test_15_css_locked_colors_and_names():
+    print("\n[15] CSS: أسماء conf-* بالألوان المقفلة · #7c6fe6 ليس نصاً · لا selector جديد .confidence:")
+    import re
+    css = open(os.path.join(_ROOT, "static", "style.css"), encoding="utf-8").read()
+    for sel, fg, bg in [(".conf-high", "#a7c0e8", "#2b3f79"), (".conf-medium", "#f5c451", "#314468"),
+                        (".conf-low", "#cdd5e4", "#2b4371"), (".conf-na", "#cdd5e4", "#2b4371")]:
+        block = css[css.index(sel):css.index(sel) + 120]
+        check(fg in block and bg in block, f"{sel}: لون النص {fg} والخلفية {bg}")
+    # #7c6fe6 مسموح كحد/خلفية فقط، لا كلون نص
+    check(re.search(r'(?<!border-)color:\s*#7c6fe6', css) is None, "#7c6fe6 غير مستخدم كلون نص")
+    # لا selector جديد باسم .confidence (الموجودان مسبقاً فقط: `.confidence` و`.confidence b`)
+    check(len(re.findall(r'\.confidence\b', css)) == 2, "لم يُنشأ/يُعدَّل selector باسم .confidence")
+    check(".conf-badge" in css, ".conf-badge موجود")
+
+
+def test_16_cache_key_bumped():
+    print("\n[16] cache key في base.html رُفِع إلى ?v=20260821a:")
+    base = open(os.path.join(_ROOT, "templates", "base.html"), encoding="utf-8").read()
+    check("?v=20260821a" in base, "المفتاح الجديد موجود")
+    check("?v=20260816b" not in base, "المفتاح القديم أُزيل")
+
+
+def test_17_tooltip_js_binds_conf_badge():
+    print("\n[17] نظام التلميحات: .conf-badge + فصل hover الفأرة عن اللمس + منع انتقال الرابط:")
+    import re
+    base = open(os.path.join(_ROOT, "templates", "base.html"), encoding="utf-8").read()
+    m = re.search(r'querySelectorAll\(([\'"])(.*?)\1\)\.forEach', base)
+    check(m is not None, "querySelectorAll(...).forEach موجود")
+    selector = m.group(2)
+    for cls in (".nav-eye", ".help", ".help-q", ".conf-badge"):
+        check(cls in selector, f"{cls} ضمن محدد التلميح المشترك")
+    block = base[m.start():m.start() + 900]
+    # hover عبر pointerenter/pointerleave مقيّدة بـpointerType==='mouse' (لا إظهار على اللمس قبل click)
+    check("pointerenter" in block and "pointerleave" in block, "hover عبر pointerenter/pointerleave")
+    check(re.search(r"pointerenter[\s\S]{0,80}pointerType\s*===\s*['\"]mouse['\"]", block) is not None,
+          "pointerenter يُظهر للفأرة فقط (pointerType==='mouse')")
+    check(re.search(r"pointerleave[\s\S]{0,80}pointerType\s*===\s*['\"]mouse['\"]", block) is not None,
+          "pointerleave يُخفي للفأرة فقط (pointerType==='mouse')")
+    # لم يعد hover الاصطناعي (mouseenter) يُظهر التلميح
+    check("addEventListener('mouseenter'" not in block and 'addEventListener("mouseenter"' not in block,
+          "لا mouseenter يُظهر التلميح (منع hover الاصطناعي من اللمس)")
+    # click وحده يبدّل ويمنع انتقال رابط البطاقة
+    check("preventDefault" in block and "stopPropagation" in block,
+          "click يمنع الانتقال (preventDefault + stopPropagation)")
+
+
 # ═══════════════ التشغيل ═══════════════
 def run():
     tests = [
@@ -380,9 +544,16 @@ def run():
         test_8_empty_lists_zero_confidence_call,
         test_9_stock_present_requests_single_ticker,
         test_10_stock_none_report_zero_confidence_call,
+        test_11_badge_available_renders_view_model,
+        test_12_badge_unavailable_safe,
+        test_13_badge_safe_without_context,
+        test_14_contrast_meets_aa,
+        test_15_css_locked_colors_and_names,
+        test_16_cache_key_bumped,
+        test_17_tooltip_js_binds_conf_badge,
     ]
     print("=" * 64)
-    print("PHASE 6 / F2 — STEP 1: Backend Route Wiring")
+    print("PHASE 6 / F2 — STEP 1+2: Route Wiring + Card Badge")
     print("=" * 64)
     for t in tests:
         t()

@@ -755,6 +755,24 @@ table.framed-table th, table.framed-table td {
 .state-pill.s-LOSING_MOMENTUM { color: var(--gold); border-color: rgba(245,196,81,.45); background: rgba(245,196,81,.08); }
 .state-pill.s-INVALIDATED { color: var(--red); border-color: rgba(239,68,68,.5); background: rgba(239,68,68,.10); }
 
+/* ---------- شارة ثقة البيانات (PHASE 6 F2) — تعرض view-model الجاهز من backend ----------
+   خلفيات صلبة مقفلة (تباين AA مقيس على لون الحبة نفسه، لا على خلفية البطاقة شبه الشفّافة).
+   الأزرق/النيلي متعمّد ليختلف عن الأخضر (فرصة) والذهبي (جودة) فلا تُفهم كإشارة شراء. */
+.conf-badge { display: inline-flex; align-items: center; gap: 5px; max-width: 100%;
+  font-size: 11px; font-weight: 800; line-height: 1.5; white-space: nowrap;
+  padding: 2px 8px; border-radius: 999px; border: 1px solid transparent; }
+.conf-badge .conf-ico { font-size: 11px; line-height: 1; }
+.conf-badge .conf-label { overflow: hidden; text-overflow: ellipsis; }
+.conf-badge .conf-score { font-weight: 900; }
+.conf-high   { color: #a7c0e8; background: #2b3f79; border-color: #7c6fe6; }
+.conf-medium { color: #f5c451; background: #314468; }
+.conf-low    { color: #cdd5e4; background: #2b4371; }
+.conf-na     { color: #cdd5e4; background: #2b4371; }
+/* الجوال: أخفِ الدرجة بصرياً فقط (aria-label يحملها كاملة لقارئ الشاشة) — يمنع أي تمدّد أفقي */
+@media (max-width: 560px) {
+  .conf-badge .conf-score { display: none; }
+}
+
 /* ---------- مقابل السوق (SPY benchmark) ---------- */
 .stat-box.beat-box { border-color: rgba(245,196,81,.45); background: rgba(245,196,81,.08); }
 
