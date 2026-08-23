@@ -12,6 +12,9 @@
     <div class="scard-top">
       {% if gem %}<span class="badge-gem">💎 جوهرة</span>{% endif %}
       {% if r.state and r.state.code and r.state.code != 'WATCH' %}<span class="state-pill s-{{ r.state.code }}"{% if r.state.missing_conditions_count %} title="ينقصه {{ r.state.missing_conditions_count }} شرط للانتقال إلى {{ r.state.next_state_label }}"{% endif %}>{{ r.state.label }}</span>{% endif %}
+      {# شارة ثقة البيانات — view-model جاهز من backend عبر confidence_map؛ لا فكّ JSON ولا تصنيف missing/corrupt هنا #}
+      {% set cf = confidence_map.get(r.ticker) if confidence_map is defined and confidence_map else none %}
+      {% if cf %}<span class="conf-badge {{ cf.band_class }}" data-tip="{{ cf.explanation }}" role="img" aria-label="درجة ثقة البيانات: {{ cf.band_label }}{% if cf.score_text %} ({{ cf.score_text }}){% endif %} — {{ cf.explanation }}"><span class="conf-ico" aria-hidden="true">🛡</span><span class="conf-label">{{ cf.band_label }}</span>{% if cf.score_text %}<span class="conf-score">{{ cf.score_text }}</span>{% endif %}</span>{% endif %}
       <span class="scard-ticker"{% if triple_up_tickers is defined and r.ticker in triple_up_tickers %} style="color:var(--green)"{% endif %}>{{ r.ticker }}</span>
       <span class="scard-price" dir="ltr">{% set _cp = current_price(r) %}{{ "%.2f $"|format(_cp) if _cp is not none else '—' }}</span>
       {% set chp = r.get('change_percent') %}
