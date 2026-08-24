@@ -502,10 +502,10 @@ def test_15_css_locked_colors_and_names():
 
 
 def test_16_cache_key_bumped():
-    print("\n[16] cache key في base.html محدَّث (؟v الحالي موجود، وما قبل F2 غائب):")
+    print("\n[16] cache key في base.html محدَّث (؟v الحالي موجود، والسابق غائب):")
     base = open(os.path.join(_ROOT, "templates", "base.html"), encoding="utf-8").read()
-    check("?v=20260822a" in base, "المفتاح الحالي موجود")
-    check("?v=20260816b" not in base, "مفتاح ما قبل F2 أُزيل")
+    check("?v=20260824a" in base, "المفتاح الحالي موجود")
+    check("?v=20260822a" not in base, "المفتاح السابق أُزيل")
 
 
 def test_17_tooltip_js_binds_conf_badge():
@@ -700,10 +700,10 @@ def test_25_panel_confidence_absent():
 
 
 def test_26_cache_key_step3():
-    print("\n[26] cache key في base.html = ?v=20260822a:")
+    print("\n[26] cache key في base.html = ?v=20260824a:")
     base = open(os.path.join(_ROOT, "templates", "base.html"), encoding="utf-8").read()
-    check("?v=20260822a" in base, "المفتاح الجديد موجود")
-    check("?v=20260821a" not in base, "مفتاح STEP 2 أُزيل")
+    check("?v=20260824a" in base, "المفتاح الجديد موجود")
+    check("?v=20260822a" not in base, "المفتاح السابق أُزيل")
 
 
 def test_27_panel_contrast_locked_pairs():
