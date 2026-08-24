@@ -172,14 +172,97 @@ def test_date_ltr_computed(page, server_url):
     assert txt == "2026-08-21", f"نص التاريخ تغيّر ({txt})"
 
 
-# ═══════════ overflow أفقي للصفحة كاملة — المقياس الرسمي (scrollingElement) ═══════════
+# ═══════════ overflow أفقي — مقياس واعٍ بشريط التمرير (RTL gutter) ═══════════
+# الإشارة الموثوقة: أقصى تجاوز لأي عنصر مرئي خارج «إطار العرض المرئي» المستقر
+# [visualViewport.offsetLeft, +width]. هذا الإطار لا يتأثر بإزاحة شريط التمرير الرأسي في RTL
+# التي تُزيح مستطيل documentElement بـ~13px تحت محاكاة الجوال (كانت تُنتج إيجابية كاذبة).
+# يُضاف اتساع html/body نفسيهما بالعرض فقط (rootWidth/bodyWidth - viewWidth) دون مقارنة حوافهما
+# left/right المُزاحة بالـgutter. scrollRange إشارة مؤكِّدة ثانوية (≤1 في الأساس بكل الحالات)
+# لكنها تبقى 0 تحت محاكاة الجوال فلا يصح اشتراطها ككاشف، وقياسها محميّ بـtry/finally يستعيد
+# scrollLeft الأصلي. أُسقطت إشارتا scrollWidth/effectiveOverflow لأنهما مجمَّدتان تحت المحاكاة
+# (scrollWidth=innerWidth ثابتاً) فلا تكشفان تجاوزاً حقيقياً. راجع docs/E2E_PLAYWRIGHT.md.
 # ثماني حالات مستقلة (صفحتان × حجمان × ثيمان)؛ فشل الرئيسية لا يمنع فحص صفحة السهم.
+
+_MEASURE_JS = """() => {
+  const se = document.scrollingElement;
+  const vv = window.visualViewport;
+  const viewLeft = vv ? vv.offsetLeft : 0;
+  const viewRight = vv ? (vv.offsetLeft + vv.width) : se.clientWidth;
+  const viewWidth = viewRight - viewLeft;
+  let maxOverflow = 0;
+  // حواف أبناء body مقابل إطار العرض المستقر (يمين/يسار)
+  document.querySelectorAll('body *').forEach(el => {
+    const r = el.getBoundingClientRect();
+    if (r.width > 0 && r.height > 0) {
+      const o = Math.max(0, r.right - viewRight, viewLeft - r.left);
+      if (o > maxOverflow) maxOverflow = o;
+    }
+  });
+  // اتساع html/body نفسيهما بالعرض فقط (لا left/right فإزاحتهما ناتجة عن gutter في RTL)
+  const rootWidth = document.documentElement.getBoundingClientRect().width;
+  const bodyWidth = document.body.getBoundingClientRect().width;
+  maxOverflow = Math.max(maxOverflow, 0, rootWidth - viewWidth, bodyWidth - viewWidth);
+  // مدى التمرير الأفقي (إشارة مؤكِّدة ثانوية) مع حماية واستعادة scrollLeft
+  const initialScrollLeft = se.scrollLeft;
+  let scrollRange = 0;
+  try {
+    se.scrollLeft = 1000000; const mx = se.scrollLeft;
+    se.scrollLeft = -1000000; const mn = se.scrollLeft;
+    scrollRange = Math.abs(mx - mn);
+  } finally {
+    se.scrollLeft = initialScrollLeft;
+  }
+  return {
+    clientWidth: se.clientWidth, scrollWidth: se.scrollWidth, innerWidth: window.innerWidth,
+    viewWidth: Math.round(viewWidth * 100) / 100,
+    rootWidth: Math.round(rootWidth * 100) / 100,
+    bodyWidth: Math.round(bodyWidth * 100) / 100,
+    initialScrollLeft: Math.round(initialScrollLeft * 100) / 100,
+    scrollRange,
+    maxOverflow: Math.round(maxOverflow * 100) / 100,
+  };
+}"""
+
+# يحقن عنصراً أعرض من الإطار بـextra px (تجاوز حقيقي عبر حواف العناصر)، ويُزال في finally.
+_INJECT_JS = """(extra) => {
+  const d = document.createElement('div');
+  d.id = 'e2e-overflow-probe';
+  d.style.cssText = 'height:1px; background:transparent; pointer-events:none; width:'
+    + (window.innerWidth + extra) + 'px;';
+  document.body.appendChild(d);
+}"""
+
+# الإزالة تستعيد scrollLeft إلى قيمته الأصلية الممرَّرة حرفياً (لا تصفّره؛ الأصل على RTL = -13).
+_REMOVE_JS = """(originalScrollLeft) => {
+  const d = document.getElementById('e2e-overflow-probe');
+  if (d) d.remove();
+  document.scrollingElement.scrollLeft = originalScrollLeft;
+}"""
+
+# يوسّع html أو body نفسه بعرض صريح أكبر من إطار العرض بـextra px (تجاوز عبر اتساع الجذر/الجسم).
+_INJECT_WIDTH_JS = """(a) => {
+  const el = (a.tgt === 'html') ? document.documentElement : document.body;
+  el.dataset.e2ePrevWidth = el.style.width || '';
+  el.style.width = (window.visualViewport.width + a.extra) + 'px';
+}"""
+
+_REMOVE_WIDTH_JS = """(a) => {
+  const el = (a.tgt === 'html') ? document.documentElement : document.body;
+  el.style.width = el.dataset.e2ePrevWidth || '';
+  delete el.dataset.e2ePrevWidth;
+  document.scrollingElement.scrollLeft = a.originalScrollLeft;
+}"""
+
+
+def _assert_page_no_real_overflow(m, ctx):
+    assert m["maxOverflow"] <= 1, f"عنصر مرئي يتجاوز إطار العرض في {ctx}: {m}"
+    assert m["scrollRange"] <= 1, f"مدى تمرير أفقي فعلي في {ctx}: {m}"
+
+
 def _assert_no_overflow_full_page(page, base_url, path, theme):
     _open(page, base_url, path, theme)
-    m = page.evaluate("() => { const s = document.scrollingElement;"
-                      " return { sw: s.scrollWidth, cw: s.clientWidth }; }")
-    assert m["sw"] <= m["cw"] + 1, (
-        f"overflow أفقي في {path} ({theme}): scrollWidth={m['sw']} > clientWidth={m['cw']}+1")
+    m = page.evaluate(_MEASURE_JS)
+    _assert_page_no_real_overflow(m, f"{path} ({theme})")
 
 
 @pytest.mark.browser_context_args(**DESKTOP)
@@ -204,6 +287,61 @@ def test_no_overflow_mobile_dark(page, server_url, path):
 @pytest.mark.parametrize("path", ["/", "/stock/AAPL"])
 def test_no_overflow_mobile_light(page, server_url, path):
     _assert_no_overflow_full_page(page, server_url, path, "light")
+
+
+# انحدار (حواف العناصر): المقياس يكشف تجاوزاً حقيقياً 8px (أصغر من الـgutter ~13px) و50px
+# (أكبر منه). يُلتقط scrollLeft الأصلي، ويُستعاد حرفياً في finally، ويُتحقَّق من عودته والنظافة.
+@pytest.mark.browser_context_args(**MOBILE)
+@pytest.mark.parametrize("extra", [8, 50])
+def test_overflow_metric_detects_injected(page, server_url, extra):
+    _open(page, server_url, "/", "dark")
+    base = page.evaluate(_MEASURE_JS)
+    _assert_page_no_real_overflow(base, "الأساس /")
+    original = page.evaluate("document.scrollingElement.scrollLeft")
+    try:
+        page.evaluate(_INJECT_JS, extra)
+        inj = page.evaluate(_MEASURE_JS)
+        assert inj["maxOverflow"] >= extra - 2, \
+            f"لم يُكشف تجاوز {extra}px عبر حواف العناصر: {inj}"
+    finally:
+        page.evaluate(_REMOVE_JS, original)
+    cleaned = page.evaluate(_MEASURE_JS)
+    _assert_page_no_real_overflow(cleaned, "بعد التنظيف /")
+    assert page.evaluate("!document.getElementById('e2e-overflow-probe')"), \
+        "عنصر الحقن #e2e-overflow-probe ما زال موجوداً في DOM"
+    assert abs(cleaned["initialScrollLeft"] - original) <= 1, \
+        f"scrollLeft لم يعُد لأصله {original}: {cleaned}"
+
+
+# انحدار (اتساع الجذر/الجسم): توسيع html أو body نفسه بعرض صريح أكبر من الإطار يجب أن يُكشف
+# عبر مسار rootWidth/bodyWidth (لا عبر حواف left/right المُزاحة). يُستعاد العرض وscrollLeft معاً.
+@pytest.mark.browser_context_args(**MOBILE)
+@pytest.mark.parametrize("tgt", ["html", "body"])
+@pytest.mark.parametrize("extra", [8, 50])
+def test_overflow_metric_detects_wide_root(page, server_url, tgt, extra):
+    _open(page, server_url, "/", "dark")
+    _style_width = "(t) => (t === 'html' ? document.documentElement : document.body).style.width"
+    base = page.evaluate(_MEASURE_JS)
+    _assert_page_no_real_overflow(base, "الأساس /")
+    original_width = page.evaluate(_style_width, tgt)  # نص style.width الأصلي حرفياً
+    original = base["initialScrollLeft"]
+    try:
+        page.evaluate(_INJECT_WIDTH_JS, {"tgt": tgt, "extra": extra})
+        inj = page.evaluate(_MEASURE_JS)
+        assert inj["maxOverflow"] >= extra - 2, \
+            f"لم يُكشف اتساع {tgt} بـ{extra}px عبر rootWidth/bodyWidth: {inj}"
+    finally:
+        page.evaluate(_REMOVE_WIDTH_JS, {"tgt": tgt, "originalScrollLeft": original})
+    cleaned = page.evaluate(_MEASURE_JS)
+    _assert_page_no_real_overflow(cleaned, "بعد التنظيف /")
+    assert page.evaluate(_style_width, tgt) == original_width, \
+        f"style.width لـ{tgt} لم يعُد للأصل ({original_width!r})"
+    assert abs(cleaned["rootWidth"] - base["rootWidth"]) <= 1, \
+        f"rootWidth لم يعُد للأساس: base={base['rootWidth']} cleaned={cleaned['rootWidth']}"
+    assert abs(cleaned["bodyWidth"] - base["bodyWidth"]) <= 1, \
+        f"bodyWidth لم يعُد للأساس: base={base['bodyWidth']} cleaned={cleaned['bodyWidth']}"
+    assert abs(cleaned["initialScrollLeft"] - original) <= 1, \
+        f"scrollLeft لم يعُد لأصله {original}: {cleaned}"
 
 
 # ═══════════ التباين المحسوب — warning + critical (dark/light) ═══════════

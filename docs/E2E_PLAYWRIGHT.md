@@ -32,16 +32,41 @@ bash scripts/run_e2e.sh
 للمستخدم.
 
 ## overflow — المقياس الرسمي (ثماني حالات مستقلة)
-`document.scrollingElement.scrollWidth <= clientWidth + 1` على الصفحة كاملة، بثماني حالات
-pytest **مستقلة** (صفحتان `/` و`/stock/AAPL` × حجمان desktop/mobile × ثيمان dark/light) عبر
-`parametrize("path", …)` — فشل الرئيسية لا يمنع فحص صفحة السهم. بلا `skip/xfail` وبلا مقارنة
-بـ`innerWidth` وبلا تضييق القياس.
-> ⚠️ **محلياً على Chromium 141** يفشل فحص الرئيسية على الجوال فقط (`scrollWidth=404 > clientWidth=390`)؛
-> الدليل يرجّح أنه أثر عرض شريط التمرير الرأسي في RTL تحت محاكاة الجوال على المتصفح غير المطابق
-> (لا child/pseudo يتجاوز، والصفحة لا تتمرّر أفقياً). **الحسم بمرجع Chromium 151 في CI** (المرحلة ب):
-> إن اختفى ⇒ يمرّ بلا تغيير. **وإن استمرّ على 151، فالرأي الفني الموصى به هو إصلاح التخطيط مستقلاً
-> قبل إغلاق البند 8** (تخفيف معيار «خلو الصفحة من overflow» ليس خياراً فنياً مساوياً). لا يُصلَح
-> CSS/إنتاج بناءً على نتيجة 141.
+الإشارة الموثوقة = **أقصى تجاوز لأي عنصر مرئي خارج «إطار العرض المرئي» المستقر**
+`[visualViewport.offsetLeft, +visualViewport.width]` على الصفحة كاملة، بثماني حالات pytest
+**مستقلة** (صفحتان `/` و`/stock/AAPL` × حجمان desktop/mobile × ثيمان dark/light) عبر
+`parametrize("path", …)` — فشل الرئيسية لا يمنع فحص صفحة السهم. المعيار: `maxOverflow <= 1`
+(الكاشف الأساسي) مع `scrollRange <= 1` (إشارة مؤكِّدة ثانوية). بلا `skip/xfail` وبلا مقارنة
+بـ`innerWidth` وبلا `overflow-x:hidden`.
+
+بالإضافة إلى حواف أبناء `body`، يُقاس **اتساع `html`/`body` نفسيهما بالعرض فقط**
+(`rootWidth - viewWidth`, `bodyWidth - viewWidth`) دون مقارنة حوافهما `left/right` المُزاحة
+بالـgutter في RTL — فيُكتشف اتساع صريح للجذر/الجسم حتى لو لم يتجاوز أيّ عنصر ابن الإطار.
+وقياس `scrollRange` محميّ بـ`try/finally` يستعيد `scrollLeft` الأصلي (على RTL = `-13`) حتى مع
+استثناء، ويُعاد `initialScrollLeft` ضمن القيم التشخيصية.
+
+> ⚠️ **لماذا تغيّر المقياس (توثيق خطأ في المقياس القديم):** كان المقياس السابق
+> `scrollWidth <= clientWidth + 1`. فشل في CI بالمتصفح المطابق **Chromium 151.0.7922.34**
+> (الجولة **32768932821**) على الرئيسية-الجوال فقط: `scrollWidth=404 > clientWidth=390`،
+> `innerWidth=404`، **مدى التمرير الأفقي = 0**، و**لا عنصر مرئي يتجاوز إطار العرض فعلاً**.
+> التشخيص المُثبَت تجريبياً (على 141 المطابق سلوكياً لـ151 في هذه النقطة): تحت محاكاة الجوال في
+> RTL يُزيح شريط التمرير الرأسي مستطيل `documentElement` بـ~13px، ويبقى `scrollWidth=innerWidth=404`
+> **مجمَّداً لا يتغيّر حتى عند حقن تجاوز حقيقي**، ويبقى `scrollRange=0`. ⇒ إشارات
+> `scrollWidth`/`effectiveOverflow`/`scrollRange` **عاجزة تحت المحاكاة**: لا تميّز الأساس النظيف عن
+> تجاوز حقيقي. لذا اعتُمد قياس حواف العناصر مقابل إطار `visualViewport` (لا مستطيل `documentElement`
+> المُزاح)، فيعطي **الأساس = 0 في كل الحالات الثماني** ويكشف التجاوز المحقون. **هذا تصحيح للمقياس
+> فقط داخل ملف الاختبار — بلا أي تعديل CSS/قالب/إنتاج**، ومعيار «خلو الصفحة من overflow» لم يُخفَّف.
+
+### انحدار الكشف (حقن تجاوز حقيقي)
+- **حواف العناصر** — `test_overflow_metric_detects_injected` (`extra=8`, `extra=50`): يحقن عنصراً
+  بعرض `innerWidth+extra`، يؤكّد `maxOverflow >= extra-2`، يُزيله في `finally` مع استعادة
+  `scrollLeft` الأصلي، ثم يتحقّق من عودة `maxOverflow<=1` و`scrollLeft` للأصل ضمن 1px.
+- **اتساع الجذر/الجسم** — `test_overflow_metric_detects_wide_root` (`tgt∈{html,body}` × `extra∈{8,50}`):
+  يضبط عرضاً صريحاً على `html`/`body` أكبر من الإطار بـextra، يؤكّد كشفه عبر مسار
+  `rootWidth/bodyWidth`، ثم يستعيد العرض و`scrollLeft` ويتحقّق من النظافة والعودة.
+
+يثبت هذا أن المقياس يكشف تجاوزاً حقيقياً **أصغر من الـgutter (8px)** و**أكبر منه (50px)** —
+سواء عبر عنصر ابن أو عبر اتساع الجذر/الجسم — فلا يُخفيه، ولا يترك أثراً على موضع التمرير.
 
 ## العزل والأمان (fail-closed)
 - خادم اختبار في **عملية مستقلة** ببيئة **allowlist** (لا نسخة كاملة من `os.environ`).
@@ -84,13 +109,14 @@ pytest **مستقلة** (صفحتان `/` و`/stock/AAPL` × حجمان desktop/
 المنخفض. النسب بعد التنفيذ: **الداكن 5.38:1 · الفاتح 4.82:1** (كلاهما ≥AA). واختبار E2E يفرضها في
 الوضعين. (تطلّب هذا تحديث cache key في `base.html` إلى `?v=20260824a` واختباري cache key.)
 
-## المصفوفة — 22 اختباراً (محلياً على 141: 20 ✓ / 2 ✗ = الرئيسية-جوال overflow فقط)
+## المصفوفة — 28 اختباراً (محلياً على 141: 28 ✓)
 `e2e/test_confidence_ui_e2e.py`:
 - شارة: hover-يُظهر-ويطابق-data-tip/mouseleave-يُخفي · tap-toggle-يطابق-النص+منع الانتقال(جوال).
 - score: مخفي(جوال)/ظاهر(مكتب) عبر `.conf-badge .conf-score` computed.
 - لوحة السهم: الموضع+7 عوامل+section/aria+غياب reason_code/schema_version · missing+caps+عامل
   جوهري تحت النصف(MSFT) · unavailable بلا عوامل(NVDA) · تاريخ `.dc-asof time` LTR محسوب.
-- overflow×8 (الصفحة كاملة، حالات مستقلة: /+/stock × desktop/mobile × dark/light).
+- overflow×8 (الصفحة كاملة، حالات مستقلة: /+/stock × desktop/mobile × dark/light) +
+  انحدار الكشف×6 (حواف العناصر: 8px،50px · اتساع الجذر/الجسم: html/body × 8px،50px).
 - تباين×2 (dark/light): warning (`.dc-missing-title`,`.dc-cap-head`) + critical
   (`.dc-below-half .dc-factor-label`,`.dc-below-half .dc-crit-tag`) + العادي
   (`.dc-factor:not(.dc-below-half) .dc-crit-tag`) بتركيب alpha ثم WCAG≥AA.
