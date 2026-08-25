@@ -21,3 +21,6 @@ venv/
 
 # إعدادات Claude Code المحلية (خاصة بالجهاز)
 .claude/settings.local.json
+
+# مخرجات اختبارات E2E (لقطات/traces عند الفشل) — لا تُلتزم
+e2e/_artifacts/
